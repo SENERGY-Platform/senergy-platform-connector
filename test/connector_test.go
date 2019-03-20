@@ -131,12 +131,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	broker, err := kafka.GetBroker(config.ZookeeperUrl)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = kafka.InitTopic(broker, config.KafkaEventTopic)
+	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
 	if err != nil {
 		t.Error(err)
 		return
@@ -376,12 +371,7 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	broker, err := kafka.GetBroker(config.ZookeeperUrl)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	err = kafka.InitTopic(broker, config.KafkaEventTopic)
+	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
 	if err != nil {
 		t.Error(err)
 		return
