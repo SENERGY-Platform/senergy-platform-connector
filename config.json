@@ -1,0 +1,27 @@
+{
+  "WebhookPort": "8080",
+  "Protocol": "connector",
+
+  "IotRepoUrl":"http://iot:8080",
+
+  "MemcachedUrl": "memcahed:11211",
+  "MqttBroker": "mqtt:1883",
+
+  "AmqpUrl": "amqp://user:pw@rabbitmq:5672/",
+  "DeviceLogTopic": "device_log",
+  "GatewayLogTopic": "gateway_log",
+
+  "ZookeeperUrl":"zk:2181",
+  "KafkaGroupName": "senergyconnector",
+
+  "KafkaResponseTopic":"response",
+  "KafkaEventTopic":"event",
+  "FatalKafkaError":true,
+
+  "AuthEndpoint":     "http://keycloak:8080",
+  "AuthClientId":     "",
+  "AuthClientSecret": "",
+  "AuthExpirationTimeBuffer": 1,
+
+  "CheckHub": true
+}
