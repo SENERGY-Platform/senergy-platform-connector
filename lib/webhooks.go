@@ -51,6 +51,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			sendError(writer, err.Error(), http.StatusUnauthorized)
 			return
 		}
+		if config.Debug {
+			log.Println("DEBUG: /publish", msg)
+		}
 		if msg.Username != config.AuthClientId {
 			prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
 			if err != nil {
@@ -138,6 +141,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			sendError(writer, err.Error(), http.StatusUnauthorized)
 			return
 		}
+		if config.Debug {
+			log.Println("DEBUG: /subscribe", msg)
+		}
 		if msg.Username != config.AuthClientId {
 			token, err := connector.Security().GenerateUserToken(msg.Username)
 			if err != nil {
@@ -199,6 +205,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			sendError(writer, err.Error(), http.StatusUnauthorized)
 			return
 		}
+		if config.Debug {
+			log.Println("DEBUG: /login", msg)
+		}
 		//log.Println("DEBUG: /login", msg)
 		if msg.Username != config.AuthClientId {
 			if !msg.CleanSession {
@@ -255,6 +264,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("ERROR: InitWebhooks::disconnect::jsondecoding", err)
 			return
 		}
+		if config.Debug {
+			log.Println("DEBUG: /disconnect", msg)
+		}
 		err = logger.LogGatewayDisconnect(msg.ClientId)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
@@ -269,6 +281,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("ERROR: InitWebhooks::unsubscribe::jsondecoding", err)
 			sendError(writer, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if config.Debug {
+			log.Println("DEBUG: /unsubscribe", msg)
 		}
 		//defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 		defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "next"})
