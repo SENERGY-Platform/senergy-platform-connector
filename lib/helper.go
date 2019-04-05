@@ -39,6 +39,10 @@ func userMayAccessDevice(iot *iot.Iot, token security.JwtToken, deviceUri string
 		return false, deviceId, err
 	}
 	for _, entity := range entities {
+		//single level mqtt-topic wildcard
+		if serviceUri == "+" {
+			return true, entity.Device.Id, nil
+		}
 		for _, service := range entity.Services {
 			if service.Url == serviceUri {
 				return true, entity.Device.Id, nil
