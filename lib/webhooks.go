@@ -127,6 +127,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			}
 
 		}
+		if config.Debug {
+			log.Println("DEBUG: respond ok")
+		}
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
@@ -271,6 +274,22 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
 			return
+		}
+		token, err := connector.Security().Access()
+		if err != nil {
+			log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
+			return
+		}
+		devices, err := connector.Iot().GetHubDevicesAsId(msg.ClientId, token)
+		if err != nil {
+			log.Println("ERROR: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
+			return
+		}
+		for _, device := range devices {
+			err = logger.LogDeviceDisconnect(device)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::disconnect::LogDeviceDisconnect", err)
+			}
 		}
 	})
 
