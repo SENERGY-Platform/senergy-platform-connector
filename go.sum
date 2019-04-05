@@ -51,6 +51,8 @@ github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190312132456-533bb3e
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190312132456-533bb3e6eeed/go.mod h1:NEwQEyXD/OTqz9uRzILLfHP+JM0S5S7ze1BHx4Wkm4E=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190320120718-df6d0e2c2ea7 h1:3NpcgvqJLbfHcLqnqPohSwUTd6NHRyypskvLpDsnqxc=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190320120718-df6d0e2c2ea7/go.mod h1:NEwQEyXD/OTqz9uRzILLfHP+JM0S5S7ze1BHx4Wkm4E=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190405094126-ccb80c027c66 h1:Pfcq9arkmao7huXhb+qlyyHkWCLM8JHeRSr/eB2y0sA=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190405094126-ccb80c027c66/go.mod h1:NEwQEyXD/OTqz9uRzILLfHP+JM0S5S7ze1BHx4Wkm4E=
 github.com/SmartEnergyPlatform/amqp-wrapper-lib v0.0.0-20181018071408-32e07d9d89bb h1:wkigEsq8SRUzIbsA5gAWhZ7a1CECn1vnhpElcoA6evE=
 github.com/SmartEnergyPlatform/amqp-wrapper-lib v0.0.0-20181018071408-32e07d9d89bb/go.mod h1:X1U6gbRInWfBsFKgb/owoLNZp2NSx6vLnUPbw6bjEN4=
 github.com/SmartEnergyPlatform/formatter-lib v0.0.0-20181018082014-b45c9317bb5e h1:zb96w1DbEUogL2IDxFJ0GuHN2ukO1la1iWTnK6ld/4Q=

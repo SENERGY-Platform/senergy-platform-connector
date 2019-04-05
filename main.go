@@ -61,6 +61,7 @@ func main() {
 		log.Fatal("ERROR: logger ", err)
 	}
 	defer logger.Stop()
+	logger.Debug = config.Debug
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice)
 

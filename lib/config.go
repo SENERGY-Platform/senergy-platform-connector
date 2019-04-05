@@ -57,6 +57,8 @@ type ConfigStruct struct {
 	MqttBroker string
 
 	CheckHub bool
+
+	Debug bool
 }
 
 type Config = *ConfigStruct
