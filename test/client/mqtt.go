@@ -46,7 +46,7 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	token := this.mqtt.Subscribe("command/"+deviceUri+"/"+serviceUri, 2, func(client paho.Client, message paho.Message) {
+	token := this.mqtt.Subscribe("command/"+deviceUri+"/"+serviceUri, 1, func(client paho.Client, message paho.Message) {
 		request := lib.RequestEnvelope{}
 		err := json.Unmarshal(message.Payload(), &request)
 		if err != nil {
@@ -71,6 +71,19 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 	return nil
 }
 
+func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error) {
+	if !this.mqtt.IsConnected() {
+		log.Println("WARNING: mqtt client not connected")
+		return errors.New("mqtt client not connected")
+	}
+	token := this.mqtt.Unsubscribe("command/" + deviceUri + "/" + serviceUri)
+	if token.Wait() && token.Error() != nil {
+		log.Println("Error on Client.Unsubscribe(): ", token.Error())
+		return token.Error()
+	}
+	return nil
+}
+
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
 	return this.publish("event/"+deviceUri+"/"+serviceUri, msg)
 }
@@ -84,7 +97,7 @@ func (this *Client) publish(topic string, msg interface{}) (err error) {
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	token := this.mqtt.Publish(topic, 2, false, string(payload))
+	token := this.mqtt.Publish(topic, 1, false, string(payload))
 	if token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Publish(): ", token.Error())
 		return token.Error()

@@ -46,8 +46,8 @@ type SubscribeWebhookMsg struct {
 }
 
 type UnsubscribeWebhookMsg struct {
-	Username string            `json:"username"`
-	Topics   []WebhookmsgTopic `json:"topics"`
+	Username string   `json:"username"`
+	Topics   []string `json:"topics"`
 }
 
 type LoginWebhookMsg struct {

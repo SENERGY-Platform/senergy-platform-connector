@@ -305,7 +305,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("DEBUG: /unsubscribe", msg)
 		}
 		//defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
-		defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "next"})
+		defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 		if msg.Username != config.AuthClientId {
 			token, err := connector.Security().GenerateUserToken(msg.Username)
 			if err != nil {
@@ -313,13 +313,13 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 			for _, topic := range msg.Topics {
-				prefix, deviceUri, serviceUri, err := parseTopic(topic.Topic)
+				prefix, deviceUri, serviceUri, err := parseTopic(topic)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::parseTopic", err)
 					return
 				}
-				if prefix != "cmd" {
-					log.Println("WARNING: InitWebhooks::unsubscribe prefix != 'cmd'", prefix)
+				if prefix != "command" {
+					log.Println("WARNING: InitWebhooks::unsubscribe prefix != 'command'", prefix)
 					return
 				}
 				access, deviceId, err := userMayAccessDevice(connector.Iot(), token, deviceUri, serviceUri)
