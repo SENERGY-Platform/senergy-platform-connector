@@ -127,9 +127,6 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			}
 
 		}
-		if config.Debug {
-			log.Println("DEBUG: respond ok")
-		}
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
