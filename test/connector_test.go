@@ -35,21 +35,6 @@ import (
 	"time"
 )
 
-func TestServerStartup(t *testing.T) {
-	t.Parallel()
-	config, err := lib.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	config, shutdown, err := server.New(config)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer shutdown()
-}
-
 func TestWithClient(t *testing.T) {
 	t.Parallel()
 	config, err := lib.LoadConfig("../config.json")
@@ -162,7 +147,11 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	producer := kafka.PrepareProducer(config.ZookeeperUrl)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(2 * time.Second) //wait for creation of devices
@@ -402,7 +391,11 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	producer := kafka.PrepareProducer(config.ZookeeperUrl)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(2 * time.Second) //wait for creation of devices
@@ -685,7 +678,11 @@ func TestUnsubscribe(t *testing.T) {
 		return
 	}
 
-	producer := kafka.PrepareProducer(config.ZookeeperUrl)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(2 * time.Second) //wait for creation of devices
