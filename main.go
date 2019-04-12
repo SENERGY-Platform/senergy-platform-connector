@@ -56,6 +56,10 @@ func main() {
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 	})
 
+	if config.Debug {
+		connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
+	}
+
 	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
 	if err != nil {
 		log.Fatal("ERROR: logger ", err)
