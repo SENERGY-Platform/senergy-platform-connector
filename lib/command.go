@@ -41,7 +41,7 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 			return err
 		}
 		if config.Debug {
-			log.Println("DEBUG: sned command to mqtt", "command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, envelope)
+			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, envelope)
 		}
 		return mqtt.Publish("command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, string(b))
 	}
