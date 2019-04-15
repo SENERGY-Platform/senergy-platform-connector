@@ -24,8 +24,11 @@ import (
 	"log"
 )
 
-func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt) platform_connector_lib.AsyncCommandHandler {
+func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg) (err error) {
+		if config.Debug {
+			log.Println("DEBUG: receive command", commandRequest.DeviceInstanceId, commandRequest.ServiceId, commandRequest.ProtocolParts)
+		}
 		correlationId, err := correlationservice.Save(commandRequest)
 		if err != nil {
 			log.Println("ERROR: unable to save correlation", err)
@@ -36,6 +39,9 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 		if err != nil {
 			log.Println("ERROR: unable to marshal envelope", err)
 			return err
+		}
+		if config.Debug {
+			log.Println("DEBUG: sned command to mqtt", "command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, envelope)
 		}
 		return mqtt.Publish("command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, string(b))
 	}

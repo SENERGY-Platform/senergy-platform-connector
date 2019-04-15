@@ -75,7 +75,7 @@ func main() {
 	}
 	defer mqtt.Close()
 
-	connector.SetAsyncCommandHandler(lib.GetCommandHandler(correlationservice, mqtt))
+	connector.SetAsyncCommandHandler(lib.GetCommandHandler(correlationservice, mqtt, config))
 
 	err = connector.Start()
 	if err != nil {

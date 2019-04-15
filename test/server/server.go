@@ -281,7 +281,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		return config, shutdown, err
 	}
 
-	connector.SetAsyncCommandHandler(lib.GetCommandHandler(correlationservice, mqtt))
+	connector.SetAsyncCommandHandler(lib.GetCommandHandler(correlationservice, mqtt, config))
 
 	err = connector.Start()
 	if err != nil {
