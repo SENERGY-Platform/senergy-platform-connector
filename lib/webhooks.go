@@ -111,7 +111,8 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				request, err := correlation.Get(msg.CorrelationId)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
-					sendError(writer, err.Error(), http.StatusBadRequest)
+					//sendError(writer, err.Error(), http.StatusBadRequest)
+					_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
 					return
 				}
 				err = connector.HandleCommandResponse(request, msg.Payload)
