@@ -23,5 +23,7 @@
   "AuthClientSecret": "",
   "AuthExpirationTimeBuffer": 1,
 
-  "CheckHub": true
+  "CheckHub": true,
+
+  "CorrelationExpiration": 60
 }

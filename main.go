@@ -37,7 +37,7 @@ func main() {
 		log.Fatal("ERROR: unable to load config ", err)
 	}
 
-	correlationservice := correlation.New(10, config.MemcachedUrl)
+	correlationservice := correlation.New(int32(config.CorrelationExpiration), config.MemcachedUrl)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		FatalKafkaError:          config.FatalKafkaError,

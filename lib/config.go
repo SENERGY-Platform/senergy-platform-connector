@@ -59,6 +59,8 @@ type ConfigStruct struct {
 	CheckHub bool
 
 	Debug bool
+
+	CorrelationExpiration int64
 }
 
 type Config = *ConfigStruct
