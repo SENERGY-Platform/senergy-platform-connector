@@ -32,7 +32,7 @@ func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
 	if len(additionalInfo) > 0 {
 		statusCode = additionalInfo[0]
 	}
-	http.Error(writer, fmt.Sprintf(`"result": { "error": "%s" }`, msg), statusCode)
+	http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
 	/*
 		_, err := fmt.Fprintf(writer, `"result": { "error": "%s" }`, msg)
 		if err != nil {
