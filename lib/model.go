@@ -37,6 +37,7 @@ type PublishWebhookMsg struct {
 
 type WebhookmsgTopic struct {
 	Topic string `json:"topic"`
+	Qos   int64  `json:"qos"`
 }
 
 type SubscribeWebhookMsg struct {

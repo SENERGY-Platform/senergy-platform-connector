@@ -81,4 +81,8 @@ func (this *Client) Stop() {
 	this.mqtt.Disconnect(0)
 }
 
+func (this *Client) Mqtt() paho.Client {
+	return this.mqtt
+}
+
 type DeviceRepresentation = model.ProvisioningDevice

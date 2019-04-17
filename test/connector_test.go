@@ -27,6 +27,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"os"
 	"reflect"
@@ -34,6 +35,73 @@ import (
 	"testing"
 	"time"
 )
+
+func TestErrorSubscription(t *testing.T) {
+	t.Parallel()
+	config, err := lib.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	config, shutdown, err := server.New(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if true {
+		defer shutdown()
+	}
+
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+		{
+			Name:    "test1",
+			Uri:     "test1",
+			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
+			Tags:    []string{},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defer c.Stop()
+
+	//kafka consumer to ensure no timouts on webhook because topics had to be created
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+		return nil
+	}, func(err error, consumer *kafka.Consumer) {
+		t.Error(err)
+	})
+	defer eventConsumer.Stop()
+	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
+		return nil
+	}, func(err error, consumer *kafka.Consumer) {
+		t.Error(err)
+	})
+	defer eventConsumer2.Stop()
+
+	time.Sleep(5 * time.Second)
+
+	token := c.Mqtt().Subscribe("#", 1, func(i mqtt.Client, message mqtt.Message) {
+		t.Error("should never be called", string(message.Payload()))
+	})
+	if token.Wait() && token.Error() != nil {
+		t.Error(token.Error())
+		return
+	}
+
+	time.Sleep(1 * time.Second)
+
+	log.Println("DEBUG: send event")
+	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	time.Sleep(5 * time.Second)
+}
 
 func TestWithClient(t *testing.T) {
 	t.Parallel()

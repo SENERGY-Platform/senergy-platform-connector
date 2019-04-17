@@ -28,17 +28,34 @@ import (
 )
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
-	statusCode := http.StatusBadRequest
-	if len(additionalInfo) > 0 {
-		statusCode = additionalInfo[0]
+	//http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
+	_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
+	//_, err := fmt.Fprintf(writer, `{"result": "next"}`)
+	//_, err := fmt.Fprintf(writer, `{"result": "ok"}`)
+	if err != nil {
+		log.Println("ERROR: unable to send error msg:", err, msg, additionalInfo)
 	}
-	http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
-	/*
-		_, err := fmt.Fprintf(writer, `"result": { "error": "%s" }`, msg)
-		if err != nil {
-			log.Println("ERROR: unable to send error msg:", err, additionalInfo)
-		}
-	*/
+}
+
+func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
+	topics := []interface{}{}
+	for _, topic := range ok {
+		topics = append(topics, topic)
+	}
+	for _, topic := range rejected {
+		topics = append(topics, map[string]interface{}{
+			"topic": topic.Topic,
+			"qos":   128,
+		})
+	}
+	msg := map[string]interface{}{
+		"result": "ok",
+		"topics": topics,
+	}
+	err := json.NewEncoder(writer).Encode(msg)
+	if err != nil {
+		log.Println("ERROR: unable to send sendSubscriptionResult msg:", err)
+	}
 }
 
 func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
@@ -145,11 +162,12 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if config.Debug {
 			log.Println("DEBUG: /subscribe", msg)
 		}
+		ok := []WebhookmsgTopic{}
+		rejected := []WebhookmsgTopic{}
 		if msg.Username != config.AuthClientId {
 			token, err := connector.Security().GenerateUserToken(msg.Username)
 			if err != nil {
 				log.Println("ERROR: InitWebhooks::subscribe::GenerateUserToken", err)
-
 				sendError(writer, err.Error(), http.StatusUnauthorized)
 				return
 			}
@@ -157,21 +175,27 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				prefix, deviceUri, serviceUri, err := parseTopic(topic.Topic)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
-					sendError(writer, err.Error(), http.StatusUnauthorized)
-					return
+					//sendError(writer, err.Error(), http.StatusUnauthorized)
+					//return
+					rejected = append(rejected, topic)
+					continue
 				}
 				if config.CheckHub {
 					err := checkHub(connector, token, msg.ClientId, deviceUri)
 					if err != nil {
 						log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
-						sendError(writer, err.Error())
-						return
+						//sendError(writer, err.Error())
+						//return
+						rejected = append(rejected, topic)
+						continue
 					}
 				}
 				if prefix != "command" {
 					log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
-					sendError(writer, "expect username as topic prefix", http.StatusUnauthorized)
-					return
+					//sendError(writer, "expect username as topic prefix", http.StatusUnauthorized)
+					//return
+					rejected = append(rejected, topic)
+					continue
 				}
 				access, deviceId, err := userMayAccessDevice(connector.Iot(), token, deviceUri, serviceUri)
 				if err != nil {
@@ -181,20 +205,18 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				}
 				if !access {
 					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
-					sendError(writer, err.Error(), http.StatusUnauthorized)
-					return
+					rejected = append(rejected, topic)
+					continue
 				}
 				err = logger.LogDeviceConnect(deviceId)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
-					sendError(writer, err.Error(), http.StatusUnauthorized)
-					return
 				}
+				ok = append(ok, topic)
 			}
-		}
-		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-		if err != nil {
-			log.Println("ERROR: InitWebhooks::subscribe unable to fprint:", err)
+			sendSubscriptionResult(writer, ok, rejected)
+		} else {
+			sendError(writer, "connector does not subscribe", http.StatusUnauthorized)
 		}
 	})
 
