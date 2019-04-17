@@ -64,3 +64,18 @@ func checkHub(connector *platform_connector_lib.Connector, token security.JwtTok
 	}
 	return errors.New("device is not assigned to hub")
 }
+
+func checkEvent(connector *platform_connector_lib.Connector, token security.JwtToken, deviceUri string, serviceUri string) (err error) {
+	devices, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
+	if err != nil {
+		return err
+	}
+	for _, device := range devices {
+		for _, service := range device.Services {
+			if service.Url == serviceUri {
+				return nil
+			}
+		}
+	}
+	return errors.New("not found")
+}

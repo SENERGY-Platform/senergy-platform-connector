@@ -29,8 +29,8 @@ import (
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
 	//http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
-	_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
-	//_, err := fmt.Fprintf(writer, `{"result": "next"}`)
+	//_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
+	_, err := fmt.Fprintf(writer, `{"result": "next"}`)
 	//_, err := fmt.Fprintf(writer, `{"result": "ok"}`)
 	if err != nil {
 		log.Println("ERROR: unable to send error msg:", err, msg, additionalInfo)
@@ -110,6 +110,13 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					log.Println("ERROR: InitWebhooks::publish::event::json", err)
 					sendError(writer, err.Error(), http.StatusBadRequest)
 					return
+				}
+				if !config.CheckHub {
+					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
+						log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
+						sendError(writer, err.Error(), http.StatusInternalServerError)
+						return
+					}
 				}
 				err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
 				if err != nil {

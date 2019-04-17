@@ -37,7 +37,6 @@ import (
 )
 
 func TestErrorSubscription(t *testing.T) {
-	t.Parallel()
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -103,8 +102,63 @@ func TestErrorSubscription(t *testing.T) {
 	time.Sleep(5 * time.Second)
 }
 
+func TestErrorPublish(t *testing.T) {
+	config, err := lib.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	config, shutdown, err := server.New(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if true {
+		defer shutdown()
+	}
+
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+		{
+			Name:    "test1",
+			Uri:     "test1",
+			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
+			Tags:    []string{},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defer c.Stop()
+
+	//kafka consumer to ensure no timouts on webhook because topics had to be created
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+		return nil
+	}, func(err error, consumer *kafka.Consumer) {
+		t.Error(err)
+	})
+	defer eventConsumer.Stop()
+	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
+		return nil
+	}, func(err error, consumer *kafka.Consumer) {
+		t.Error(err)
+	})
+	defer eventConsumer2.Stop()
+
+	time.Sleep(5 * time.Second)
+
+	log.Println("DEBUG: send event")
+	err = c.SendEvent("foo", "bar", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
+	if err != nil {
+		return
+	}
+
+	t.Error("miss expected error")
+}
+
 func TestWithClient(t *testing.T) {
-	t.Parallel()
+
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -337,7 +391,7 @@ func TestWithClient(t *testing.T) {
 }
 
 func TestWithClientReconnect(t *testing.T) {
-	t.Parallel()
+
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -635,7 +689,7 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 }
 
 func TestUnsubscribe(t *testing.T) {
-	t.Parallel()
+
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
