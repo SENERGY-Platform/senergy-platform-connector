@@ -309,7 +309,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 		devices, err := connector.Iot().GetHubDevicesAsId(msg.ClientId, token)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
+			if config.Debug {
+				log.Println("DEBUG: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
+			}
 			return
 		}
 		for _, device := range devices {
