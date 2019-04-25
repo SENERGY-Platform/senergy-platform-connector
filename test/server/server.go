@@ -201,6 +201,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 			return
 		}
 		config.MemcachedUrl = memIp + ":11211"
+		config.IotCacheUrls = memIp + ":11211"
 	}()
 
 	wait.Add(1)
@@ -259,6 +260,10 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		IotRepoUrl:               config.IotRepoUrl,
 		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
+
+		DeviceExpiration:     int32(config.DeviceExpiration),
+		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
+		CacheUrl:             strings.Split(config.IotCacheUrls, ","),
 	})
 
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))

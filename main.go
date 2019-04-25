@@ -25,6 +25,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -54,6 +55,10 @@ func main() {
 		IotRepoUrl:               config.IotRepoUrl,
 		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
+
+		CacheUrl:             strings.Split(config.IotCacheUrls, ","),
+		DeviceExpiration:     int32(config.DeviceCacheExpiration),
+		DeviceTypeExpiration: int32(config.DeviceTypeCacheExpiration),
 	})
 
 	if config.Debug {

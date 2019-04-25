@@ -66,7 +66,7 @@ func checkHub(connector *platform_connector_lib.Connector, token security.JwtTok
 }
 
 func checkEvent(connector *platform_connector_lib.Connector, token security.JwtToken, deviceUri string, serviceUri string) (err error) {
-	devices, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
+	devices, err := connector.IotCache.WithToken(token).DeviceUrlToIotDevice(deviceUri)
 	if err != nil {
 		return err
 	}

@@ -25,5 +25,9 @@
 
   "CheckHub": false,
 
-  "CorrelationExpiration": 60
+  "CorrelationExpiration": 60,
+
+  "IotCacheUrls":  "memcahed:11211",
+  "DeviceExpiration" : 60,
+  "DeviceTypeExpiration": 60
 }

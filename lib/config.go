@@ -61,6 +61,10 @@ type ConfigStruct struct {
 	Debug bool
 
 	CorrelationExpiration int64
+
+	IotCacheUrls         string
+	DeviceExpiration     int64
+	DeviceTypeExpiration int64
 }
 
 type Config = *ConfigStruct

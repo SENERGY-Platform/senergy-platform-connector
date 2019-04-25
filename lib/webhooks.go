@@ -111,16 +111,13 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					sendError(writer, err.Error(), http.StatusBadRequest)
 					return
 				}
-				//HandleDeviceRefEventWithAuthToken already checks
-				/*
-					if !config.CheckHub {
-						if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
-							log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
-							sendError(writer, err.Error(), http.StatusInternalServerError)
-							return
-						}
+				if !config.CheckHub {
+					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
+						log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
+						sendError(writer, err.Error(), http.StatusInternalServerError)
+						return
 					}
-				*/
+				}
 				err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
