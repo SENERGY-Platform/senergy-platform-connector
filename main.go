@@ -57,12 +57,13 @@ func main() {
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
 		CacheUrl:             strings.Split(config.IotCacheUrls, ","),
-		DeviceExpiration:     int32(config.DeviceCacheExpiration),
-		DeviceTypeExpiration: int32(config.DeviceTypeCacheExpiration),
+		DeviceExpiration:     int32(config.DeviceExpiration),
+		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
 	})
 
 	if config.Debug {
 		connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
+		connector.IotCache.Debug = true
 	}
 
 	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)

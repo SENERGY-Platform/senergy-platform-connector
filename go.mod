@@ -2,7 +2,7 @@ module gilhub.com/SENERGY-Platform/senergy-platform-connector
 
 require (
 	github.com/SENERGY-Platform/iot-device-repository v0.0.0-20190411071940-270889a26f60
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190424122011-8c3c8b39478f
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190425131945-df4f43b12c4f
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/ory/dockertest v3.3.4+incompatible
@@ -13,4 +13,4 @@ require (
 )
 
 //uncomment to test local changes of platform-connector-lib
-replace github.com/SENERGY-Platform/platform-connector-lib => ../platform-connector-lib
+//replace github.com/SENERGY-Platform/platform-connector-lib => ../platform-connector-lib
