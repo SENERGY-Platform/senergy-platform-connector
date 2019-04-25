@@ -25,6 +25,8 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"log"
 	"net/http"
+	"net/http/pprof"
+	_ "net/http/pprof"
 )
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
@@ -58,104 +60,108 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
-	router := http.NewServeMux()
-	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
-		msg := PublishWebhookMsg{}
-		err := json.NewDecoder(request.Body).Decode(&msg)
+func handlePublish(writer http.ResponseWriter, request *http.Request, config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) {
+	msg := PublishWebhookMsg{}
+	err := json.NewDecoder(request.Body).Decode(&msg)
+	if err != nil {
+		log.Println("ERROR: InitWebhooks::publish::jsondecoding", err)
+		sendError(writer, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if config.Debug {
+		log.Println("DEBUG: /publish", msg)
+	}
+	if msg.Username != config.AuthClientId {
+		prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish::jsondecoding", err)
+			log.Println("ERROR: InitWebhooks::publish::parseTopic", err)
 			sendError(writer, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		if config.Debug {
-			log.Println("DEBUG: /publish", msg)
+
+		token, err := connector.Security().GenerateUserToken(msg.Username)
+		if err != nil {
+			log.Println("ERROR: InitWebhooks::publish::GenerateUserToken", err)
+			sendError(writer, err.Error(), http.StatusUnauthorized)
+			return
 		}
-		if msg.Username != config.AuthClientId {
-			prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
+
+		if config.CheckHub {
+			err := checkHub(connector, token, msg.ClientId, deviceUri)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::parseTopic", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
+				log.Println("ERROR: InitWebhooks::publish::checkHub", err)
+				sendError(writer, err.Error())
 				return
 			}
+		}
 
-			token, err := connector.Security().GenerateUserToken(msg.Username)
+		payload, err := base64.StdEncoding.DecodeString(msg.Payload)
+		if err != nil {
+			log.Println("ERROR: InitWebhooks::publish::base64decoding", err)
+			sendError(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		switch prefix {
+		case "event":
+			event := platform_connector_lib.EventMsg{}
+			err = json.Unmarshal(payload, &event)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::GenerateUserToken", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
-				return
-			}
-
-			if config.CheckHub {
-				err := checkHub(connector, token, msg.ClientId, deviceUri)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::checkHub", err)
-					sendError(writer, err.Error())
-					return
-				}
-			}
-
-			payload, err := base64.StdEncoding.DecodeString(msg.Payload)
-			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::base64decoding", err)
+				log.Println("ERROR: InitWebhooks::publish::event::json", err)
 				sendError(writer, err.Error(), http.StatusBadRequest)
 				return
 			}
-
-			switch prefix {
-			case "event":
-				event := platform_connector_lib.EventMsg{}
-				err = json.Unmarshal(payload, &event)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::event::json", err)
-					sendError(writer, err.Error(), http.StatusBadRequest)
-					return
-				}
-				if !config.CheckHub {
-					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
-						log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
-						sendError(writer, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				}
-				err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
+			if !config.CheckHub {
+				if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
+					log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
 					sendError(writer, err.Error(), http.StatusInternalServerError)
 					return
 				}
-			case "response":
-				msg := ResponseEnvelope{}
-				err = json.Unmarshal(payload, &msg)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::json", err)
-					sendError(writer, err.Error(), http.StatusBadRequest)
-					return
-				}
-				request, err := correlation.Get(msg.CorrelationId)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
-					//sendError(writer, err.Error(), http.StatusBadRequest)
-					_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
-					return
-				}
-				err = connector.HandleCommandResponse(request, msg.Payload)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::HandleCommandResponse", err)
-					sendError(writer, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			default:
-				log.Println("ERROR: InitWebhooks::publish prefix not allowed", prefix, msg.Username)
-				sendError(writer, "unexpected prefix", http.StatusUnauthorized)
+			}
+			err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
+				sendError(writer, err.Error(), http.StatusInternalServerError)
 				return
 			}
+		case "response":
+			msg := ResponseEnvelope{}
+			err = json.Unmarshal(payload, &msg)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::publish::response::json", err)
+				sendError(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+			request, err := correlation.Get(msg.CorrelationId)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
+				//sendError(writer, err.Error(), http.StatusBadRequest)
+				_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
+				return
+			}
+			err = connector.HandleCommandResponse(request, msg.Payload)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::publish::response::HandleCommandResponse", err)
+				sendError(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		default:
+			log.Println("ERROR: InitWebhooks::publish prefix not allowed", prefix, msg.Username)
+			sendError(writer, "unexpected prefix", http.StatusUnauthorized)
+			return
+		}
 
-		}
-		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
-		}
+	}
+	_, err = fmt.Fprint(writer, `{"result": "ok"}`)
+	if err != nil {
+		log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+	}
+}
+
+func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
+	router := http.NewServeMux()
+	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
+		handlePublish(writer, request, config, connector, logger, correlation)
 	})
 
 	router.HandleFunc("/subscribe", func(writer http.ResponseWriter, request *http.Request) {
@@ -368,6 +374,19 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			}
 		}
 	})
+
+	//runtime.SetBlockProfileRate(1)
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+
 	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router}
 	go func() {
 		log.Println("Listening on ", server.Addr)
