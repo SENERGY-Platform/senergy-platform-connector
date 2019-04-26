@@ -65,6 +65,9 @@ type ConfigStruct struct {
 	IotCacheUrls         string
 	DeviceExpiration     int64
 	DeviceTypeExpiration int64
+
+	TokenCacheUrls       string
+	TokenCacheExpiration int64
 }
 
 type Config = *ConfigStruct

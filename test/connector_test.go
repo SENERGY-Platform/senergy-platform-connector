@@ -635,7 +635,7 @@ func TestWithClientReconnect(t *testing.T) {
 }
 
 func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.Envelope, err error) {
-	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer).Access()
+	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}).Access()
 	if err != nil {
 		return result, err
 	}

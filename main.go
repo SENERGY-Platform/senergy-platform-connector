@@ -25,7 +25,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
@@ -38,7 +37,7 @@ func main() {
 		log.Fatal("ERROR: unable to load config ", err)
 	}
 
-	correlationservice := correlation.New(int32(config.CorrelationExpiration), config.MemcachedUrl)
+	correlationservice := correlation.New(int32(config.CorrelationExpiration), lib.StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		FatalKafkaError:          config.FatalKafkaError,
@@ -56,9 +55,12 @@ func main() {
 		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
-		CacheUrl:             strings.Split(config.IotCacheUrls, ","),
+		IotCacheUrl:          lib.StringToList(config.IotCacheUrls),
 		DeviceExpiration:     int32(config.DeviceExpiration),
 		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
+
+		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
+		TokenCacheExpiration: int32(config.TokenCacheExpiration),
 	})
 
 	if config.Debug {

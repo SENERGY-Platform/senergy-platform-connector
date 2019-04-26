@@ -202,6 +202,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		}
 		config.MemcachedUrl = memIp + ":11211"
 		config.IotCacheUrls = memIp + ":11211"
+		config.TokenCacheUrls = memIp + ":11211"
 	}()
 
 	wait.Add(1)
@@ -244,7 +245,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 
 	//senergy-connector
 
-	correlationservice := correlation.New(10, config.MemcachedUrl)
+	correlationservice := correlation.New(10, lib.StringToList(config.MemcachedUrl)...)
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		FatalKafkaError:          config.FatalKafkaError,
 		Protocol:                 config.Protocol,
@@ -263,7 +264,10 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 
 		DeviceExpiration:     int32(config.DeviceExpiration),
 		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
-		CacheUrl:             strings.Split(config.IotCacheUrls, ","),
+		IotCacheUrl:          strings.Split(config.IotCacheUrls, ","),
+
+		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
+		TokenCacheExpiration: int32(config.TokenCacheExpiration),
 	})
 
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))

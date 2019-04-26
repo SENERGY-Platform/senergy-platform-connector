@@ -79,3 +79,15 @@ func checkEvent(connector *platform_connector_lib.Connector, token security.JwtT
 	}
 	return errors.New("not found")
 }
+
+func StringToList(str string) []string {
+	temp := strings.Split(str, ",")
+	result := []string{}
+	for _, e := range temp {
+		trimmed := strings.TrimSpace(e)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}

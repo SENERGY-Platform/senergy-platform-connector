@@ -29,5 +29,8 @@
 
   "IotCacheUrls":  "memcahed:11211",
   "DeviceExpiration" : 60,
-  "DeviceTypeExpiration": 60
+  "DeviceTypeExpiration": 60,
+
+  "TokenCacheUrls": "memcahed:11211",
+  "TokenCacheExpiration": 3600
 }
