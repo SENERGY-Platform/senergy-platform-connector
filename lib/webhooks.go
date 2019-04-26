@@ -79,7 +79,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 
-			token, err := connector.Security().GenerateUserToken(msg.Username)
+			token, err := connector.Security().GetCachedUserToken(msg.Username)
 			if err != nil {
 				log.Println("ERROR: InitWebhooks::publish::GenerateUserToken", err)
 				sendError(writer, err.Error(), http.StatusUnauthorized)
