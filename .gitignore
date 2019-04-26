@@ -2,3 +2,4 @@ connector
 .idea/
 platform-connector
 senergy-platform-connector
+test/trace/
