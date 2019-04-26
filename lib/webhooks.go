@@ -25,6 +25,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"log"
 	"net/http"
+	"net/http/pprof"
 )
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
@@ -368,6 +369,20 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			}
 		}
 	})
+
+	if config.Debug {
+		router.HandleFunc("/debug/pprof/", pprof.Index)
+		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		router.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		router.Handle("/debug/pprof/block", pprof.Handler("block"))
+		router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+		router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	}
+
 	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router}
 	go func() {
 		log.Println("Listening on ", server.Addr)
