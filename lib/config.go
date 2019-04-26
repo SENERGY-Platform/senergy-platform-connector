@@ -68,6 +68,9 @@ type ConfigStruct struct {
 
 	TokenCacheUrls       string
 	TokenCacheExpiration int64
+
+	SyncKafka           bool
+	SyncKafkaIdempotent bool
 }
 
 type Config = *ConfigStruct

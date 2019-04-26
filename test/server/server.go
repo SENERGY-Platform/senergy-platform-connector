@@ -268,6 +268,9 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 
 		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
 		TokenCacheExpiration: int32(config.TokenCacheExpiration),
+
+		SyncKafka:           config.SyncKafka,
+		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
 	})
 
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))

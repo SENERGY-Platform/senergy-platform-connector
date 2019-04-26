@@ -32,5 +32,8 @@
   "DeviceTypeExpiration": 60,
 
   "TokenCacheUrls": "memcahed:11211",
-  "TokenCacheExpiration": 3600
+  "TokenCacheExpiration": 3600,
+
+  "SyncKafka": true,
+  "SyncKafkaIdempotent": true
 }
