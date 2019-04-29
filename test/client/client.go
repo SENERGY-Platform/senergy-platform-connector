@@ -65,6 +65,23 @@ func New(mqttUrl string, provisioningUrl string, authUrl string, userName string
 	return
 }
 
+func NewWithoutProvisioning(mqttUrl string, provisioningUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+	client = &Client{
+		authUrl:         authUrl,
+		mqttUrl:         mqttUrl,
+		provisioningUrl: provisioningUrl,
+		HubId:           hubId,
+		hubName:         hubName,
+		username:        userName,
+		password:        password,
+		clientId:        Id,
+		clientSecret:    Secret,
+		devices:         devices,
+	}
+	err = client.startMqtt()
+	return
+}
+
 type Client struct {
 	mqttUrl         string
 	provisioningUrl string
