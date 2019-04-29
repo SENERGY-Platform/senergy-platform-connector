@@ -1,4 +1,4 @@
-module gilhub.com/SENERGY-Platform/senergy-platform-connector
+module github.com/SENERGY-Platform/senergy-platform-connector
 
 require (
 	github.com/SENERGY-Platform/iot-device-repository v0.0.0-20190411071940-270889a26f60
