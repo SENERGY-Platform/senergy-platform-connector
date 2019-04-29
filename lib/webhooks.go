@@ -267,6 +267,9 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				sendError(writer, "client id is unknown as hub id")
 				return
 			}
+
+			connector.EnsureTopics(token, 100, 1, 1)
+
 			if exists {
 				err = logger.LogGatewayConnect(msg.ClientId)
 				if err != nil {

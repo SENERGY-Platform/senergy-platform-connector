@@ -74,12 +74,6 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		return times
 	}
 
-	err = kafka.InitTopic(config.ZookeeperUrl, "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e")
-	if err != nil {
-		t.Error(err)
-		return times
-	}
-
 	time.Sleep(2 * time.Second)
 
 	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
