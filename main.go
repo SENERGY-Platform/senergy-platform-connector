@@ -62,8 +62,9 @@ func main() {
 		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
 		TokenCacheExpiration: int32(config.TokenCacheExpiration),
 
-		SyncKafka:           config.SyncKafka,
-		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
+		SyncKafka:             config.SyncKafka,
+		SyncKafkaIdempotent:   config.SyncKafkaIdempotent,
+		KafkaProducerPoolSize: config.KafkaProducerPoolSize,
 	})
 
 	if config.Debug {

@@ -269,7 +269,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true, 1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -513,7 +513,7 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true, 1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -800,7 +800,7 @@ func TestUnsubscribe(t *testing.T) {
 		return
 	}
 
-	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true)
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true, 1)
 	if err != nil {
 		t.Error(err)
 		return
