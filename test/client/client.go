@@ -23,6 +23,10 @@ import (
 	"time"
 )
 
+//values are matching to test server produced by /senergy-platform-connector/test/server/server.go
+var Id = "connector"
+var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
+
 func New(mqttUrl string, provisioningUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
 	client = &Client{
 		authUrl:         authUrl,
@@ -32,8 +36,8 @@ func New(mqttUrl string, provisioningUrl string, authUrl string, userName string
 		hubName:         hubName,
 		username:        userName,
 		password:        password,
-		clientId:        "connector",
-		clientSecret:    "d61daec4-40d6-4d3e-98c9-f3b515696fc6",
+		clientId:        Id,
+		clientSecret:    Secret,
 		devices:         devices,
 	}
 	token, err := client.login()
