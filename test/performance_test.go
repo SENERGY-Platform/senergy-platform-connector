@@ -1,11 +1,11 @@
 package test
 
 import (
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/lib"
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/test/client"
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	"log"
 	"os"
 	"path/filepath"

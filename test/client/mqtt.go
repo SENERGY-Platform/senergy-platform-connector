@@ -19,8 +19,8 @@ package client
 import (
 	"encoding/json"
 	"errors"
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 )

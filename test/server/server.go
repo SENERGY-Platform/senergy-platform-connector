@@ -18,11 +18,11 @@ package server
 
 import (
 	"encoding/json"
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/iot-device-repository/lib/persistence/ordf"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"

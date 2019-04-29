@@ -18,10 +18,10 @@ package main
 
 import (
 	"flag"
-	"gilhub.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"log"
 	"os"
 	"os/signal"
