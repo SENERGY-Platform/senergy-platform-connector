@@ -26,6 +26,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"time"
 )
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
@@ -62,6 +63,12 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
+		if config.Debug {
+			now := time.Now()
+			defer func(start time.Time) {
+				log.Println("DEBUG: /publish in ", time.Now().Sub(start))
+			}(now)
+		}
 		msg := PublishWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
@@ -119,32 +126,36 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 						return
 					}
 				}
-				err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
-					sendError(writer, err.Error(), http.StatusInternalServerError)
-					return
+				if !config.MqttPublishAuthOnly {
+					err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
+					if err != nil {
+						log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
+						sendError(writer, err.Error(), http.StatusInternalServerError)
+						return
+					}
 				}
 			case "response":
-				msg := ResponseEnvelope{}
-				err = json.Unmarshal(payload, &msg)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::json", err)
-					sendError(writer, err.Error(), http.StatusBadRequest)
-					return
-				}
-				request, err := correlation.Get(msg.CorrelationId)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
-					//sendError(writer, err.Error(), http.StatusBadRequest)
-					_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
-					return
-				}
-				err = connector.HandleCommandResponse(request, msg.Payload)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::response::HandleCommandResponse", err)
-					sendError(writer, err.Error(), http.StatusInternalServerError)
-					return
+				if !config.MqttPublishAuthOnly {
+					msg := ResponseEnvelope{}
+					err = json.Unmarshal(payload, &msg)
+					if err != nil {
+						log.Println("ERROR: InitWebhooks::publish::response::json", err)
+						sendError(writer, err.Error(), http.StatusBadRequest)
+						return
+					}
+					request, err := correlation.Get(msg.CorrelationId)
+					if err != nil {
+						log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
+						//sendError(writer, err.Error(), http.StatusBadRequest)
+						_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
+						return
+					}
+					err = connector.HandleCommandResponse(request, msg.Payload)
+					if err != nil {
+						log.Println("ERROR: InitWebhooks::publish::response::HandleCommandResponse", err)
+						sendError(writer, err.Error(), http.StatusInternalServerError)
+						return
+					}
 				}
 			default:
 				log.Println("ERROR: InitWebhooks::publish prefix not allowed", prefix, msg.Username)

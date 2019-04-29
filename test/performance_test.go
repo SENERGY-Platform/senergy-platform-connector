@@ -2,7 +2,6 @@ package test
 
 import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -57,6 +56,9 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		t.Error(err)
 		return times
 	}
+	config.KafkaEventTopic = ""
+	config.Debug = true
+	config.MqttPublishAuthOnly = false
 	config.SyncKafka = syncProd
 	config.SyncKafkaIdempotent = idempotent
 	config, shutdown, err := server.New(config)
@@ -66,12 +68,6 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 	}
 	if true {
 		defer shutdown()
-	}
-
-	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
-	if err != nil {
-		t.Error(err)
-		return times
 	}
 
 	time.Sleep(2 * time.Second)
@@ -136,7 +132,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		}
 		trace.Stop()
 		times = append(times, time.Now().Sub(starttime))
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return times

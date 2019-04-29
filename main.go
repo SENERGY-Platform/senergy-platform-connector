@@ -37,6 +37,10 @@ func main() {
 		log.Fatal("ERROR: unable to load config ", err)
 	}
 
+	if config.KafkaEventTopic == "-" || config.KafkaEventTopic == "false" {
+		config.KafkaEventTopic = ""
+	}
+
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), lib.StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
@@ -64,6 +68,7 @@ func main() {
 
 		SyncKafka:           config.SyncKafka,
 		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
+		Debug:               config.Debug,
 	})
 
 	if config.Debug {

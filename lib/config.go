@@ -71,6 +71,8 @@ type ConfigStruct struct {
 
 	SyncKafka           bool
 	SyncKafkaIdempotent bool
+
+	MqttPublishAuthOnly bool
 }
 
 type Config = *ConfigStruct

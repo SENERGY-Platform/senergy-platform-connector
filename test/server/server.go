@@ -271,6 +271,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 
 		SyncKafka:           config.SyncKafka,
 		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
+		Debug:               config.Debug,
 	})
 
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
