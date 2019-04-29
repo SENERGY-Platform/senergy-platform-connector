@@ -35,6 +35,5 @@
   "TokenCacheExpiration": 3600,
 
   "SyncKafka": true,
-  "SyncKafkaIdempotent": true,
-  "KafkaProducerPoolSize": 10
+  "SyncKafkaIdempotent": true
 }
