@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/cache"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -56,9 +57,10 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		t.Error(err)
 		return times
 	}
+	cache.Debug = true
 	config.KafkaEventTopic = ""
 	config.Debug = true
-	config.MqttPublishAuthOnly = false
+	config.MqttPublishAuthOnly = true
 	config.SyncKafka = syncProd
 	config.SyncKafkaIdempotent = idempotent
 	config, shutdown, err := server.New(config)
