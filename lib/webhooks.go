@@ -191,7 +191,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 			for _, topic := range msg.Topics {
-				prefix, deviceUri, serviceUri, err := parseTopic(topic.Topic)
+				prefix, deviceUri, _, err := parseTopic(topic.Topic)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
 					//sendError(writer, err.Error(), http.StatusUnauthorized)
@@ -216,18 +216,13 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					rejected = append(rejected, topic)
 					continue
 				}
-				access, deviceId, err := userMayAccessDevice(connector.Iot(), token, deviceUri, serviceUri)
+				device, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
-					sendError(writer, err.Error(), http.StatusUnauthorized)
-					return
-				}
-				if !access {
-					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
+					log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
 					rejected = append(rejected, topic)
 					continue
 				}
-				err = logger.LogDeviceConnect(deviceId)
+				err = logger.LogDeviceConnect(device.Id)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
 				}
@@ -357,7 +352,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 			for _, topic := range msg.Topics {
-				prefix, deviceUri, serviceUri, err := parseTopic(topic)
+				prefix, deviceUri, _, err := parseTopic(topic)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::parseTopic", err)
 					return
@@ -366,16 +361,12 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					log.Println("WARNING: InitWebhooks::unsubscribe prefix != 'command'", prefix)
 					return
 				}
-				access, deviceId, err := userMayAccessDevice(connector.Iot(), token, deviceUri, serviceUri)
+				device, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::unsubscribe::CheckEndpointAuth", err)
+					log.Println("ERROR: InitWebhooks::unsubscribe::DeviceUrlToIotDevice", err)
 					return
 				}
-				if !access {
-					log.Println("ERROR: InitWebhooks::unsubscribe::CheckEndpointAuth", err)
-					return
-				}
-				err = logger.LogDeviceDisconnect(deviceId)
+				err = logger.LogDeviceDisconnect(device.Id)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::CheckEndpointAuth", err)
 					return

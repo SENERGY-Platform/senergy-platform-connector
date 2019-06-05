@@ -39,7 +39,7 @@ func getHash(representations []DeviceRepresentation) string {
 }
 
 func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error) {
-	iotClient := iot.New(this.provisioningUrl, "")
+	iotClient := iot.New(this.semanticRepoUrl, this.deviceRepoUrl, "")
 	hash := getHash(this.devices)
 	exists := false
 	deviceUris := []string{}
@@ -79,22 +79,21 @@ func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error
 }
 
 func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, err error) {
-	iotClient := iot.New(this.provisioningUrl, "")
+	iotClient := iot.New(this.semanticRepoUrl, this.deviceRepoUrl, "")
 	for _, device := range this.devices {
-		entities, err := iotClient.DeviceUrlToIotDevice(device.Uri, token)
-		if err != nil {
+		_, err := iotClient.DeviceUrlToIotDevice(device.Uri, token)
+		if err != nil && err != security.ErrorNotFound {
 			log.Println("ERROR: iotClient.DeviceUrlToIotDevice()", err)
 			return false, err
 		}
-		if len(entities) > 0 {
-			return false, nil
+		if err == security.ErrorNotFound {
+			_, err = iotClient.CreateIotDevice(device, token)
+			if err != nil {
+				log.Println("ERROR: iotClient.CreateIotDevice()", err)
+				return false, err
+			}
+			newDevices = true
 		}
-		_, err = iotClient.CreateIotDevice(device, token)
-		if err != nil {
-			log.Println("ERROR: iotClient.CreateIotDevice()", err)
-			return false, err
-		}
-		newDevices = true
 	}
 	return newDevices, nil
 }

@@ -27,11 +27,12 @@ import (
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
-func New(mqttUrl string, provisioningUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func New(mqttUrl string, semanticRepoUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
 	client = &Client{
 		authUrl:         authUrl,
 		mqttUrl:         mqttUrl,
-		provisioningUrl: provisioningUrl,
+		semanticRepoUrl: semanticRepoUrl,
+		deviceRepoUrl:   deviceRepoUrl,
 		HubId:           hubId,
 		hubName:         hubName,
 		username:        userName,
@@ -65,11 +66,12 @@ func New(mqttUrl string, provisioningUrl string, authUrl string, userName string
 	return
 }
 
-func NewWithoutProvisioning(mqttUrl string, provisioningUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func NewWithoutProvisioning(mqttUrl string, semanticRepoUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
 	client = &Client{
 		authUrl:         authUrl,
 		mqttUrl:         mqttUrl,
-		provisioningUrl: provisioningUrl,
+		semanticRepoUrl: semanticRepoUrl,
+		deviceRepoUrl:   deviceRepoUrl,
 		HubId:           hubId,
 		hubName:         hubName,
 		username:        userName,
@@ -84,7 +86,8 @@ func NewWithoutProvisioning(mqttUrl string, provisioningUrl string, authUrl stri
 
 type Client struct {
 	mqttUrl         string
-	provisioningUrl string
+	semanticRepoUrl string
+	deviceRepoUrl   string
 	authUrl         string
 	HubId           string
 

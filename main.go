@@ -56,6 +56,7 @@ func main() {
 		AuthClientId:             config.AuthClientId,
 		AuthEndpoint:             config.AuthEndpoint,
 		IotRepoUrl:               config.IotRepoUrl,
+		DeviceRepoUrl:            config.DeviceRepoUrl,
 		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 

@@ -3,6 +3,7 @@ package test
 import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/cache"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -28,7 +29,7 @@ func Test1000p(t *testing.T) {
 }
 
 func Test1000pConf(t *testing.T) {
-	results := [][]time.Duration{}
+	results := [][]map[string]time.Duration{}
 	results = append(results, test_n(1000, true, t, true, true, "./trace/trace_1000pConf_tt.out"))
 	results = append(results, test_n(1000, true, t, true, false, "./trace/trace_1000pConf_tf.out"))
 	results = append(results, test_n(1000, true, t, false, false, "./trace/trace_1000pConf_ff.out"))
@@ -51,7 +52,7 @@ func Test10000p(t *testing.T) {
 	log.Println(test_n(10000, true, t, true, true, "./trace/trace_10000p.out"))
 }
 
-func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, tracefiles ...string) (times []time.Duration) {
+func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, tracefiles ...string) (times []map[string]time.Duration) {
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -60,7 +61,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 	cache.Debug = true
 	config.KafkaEventTopic = ""
 	config.Debug = true
-	config.MqttPublishAuthOnly = true
+	config.MqttPublishAuthOnly = false
 	config.SyncKafka = syncProd
 	config.SyncKafkaIdempotent = idempotent
 	config, shutdown, err := server.New(config)
@@ -74,7 +75,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 
 	time.Sleep(2 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -90,6 +91,11 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 	defer c.Stop()
 
 	for _, tracefile := range tracefiles {
+		var sendTime time.Duration
+		var firstConsumeTime time.Duration
+		var allConsumedTime time.Duration
+		wait := sync.WaitGroup{}
+		wait.Add(3)
 		err = os.MkdirAll(filepath.Dir(tracefile), os.ModePerm)
 		if err != nil {
 			t.Error(err)
@@ -103,37 +109,80 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		}
 		defer file.Close()
 
-		starttime := time.Now()
-		err = trace.Start(file)
+		first := make(chan bool, n+1)
+		if config.MqttPublishAuthOnly {
+			first <- true
+		}
+		all := sync.WaitGroup{}
+		if !config.MqttPublishAuthOnly {
+			all.Add(n)
+		}
+
+		consumer, err := kafka.NewConsumer(config.ZookeeperUrl, "stress-test-consumer", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+			log.Println("consumed: ", topic)
+			first <- true
+			all.Done()
+			return nil
+		}, func(err error, consumer *kafka.Consumer) {
+			log.Println(err)
+			t.Error(err)
+		})
 		if err != nil {
 			t.Error(err)
-			return times
+			return
 		}
-		wait := sync.WaitGroup{}
-		for i := 0; i < n; i++ {
-			if parallel {
-				wait.Add(1)
-				go func() {
+
+		starttime := time.Now()
+
+		go func() {
+			<-first
+			firstConsumeTime = time.Now().Sub(starttime)
+			wait.Done()
+		}()
+
+		go func() {
+			all.Wait()
+			allConsumedTime = time.Now().Sub(starttime)
+			wait.Done()
+		}()
+
+		go func() {
+			err = trace.Start(file)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			waitAllSend := sync.WaitGroup{}
+			for i := 0; i < n; i++ {
+				if parallel {
+					waitAllSend.Add(1)
+					go func() {
+						err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
+						if err != nil {
+							t.Error(err)
+						}
+						waitAllSend.Done()
+					}()
+				} else {
 					err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
 					if err != nil {
 						t.Error(err)
+						waitAllSend.Done()
+						return
 					}
-					wait.Done()
-				}()
-			} else {
-				err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
-				if err != nil {
-					t.Error(err)
-					times = append(times, time.Now().Sub(starttime))
-					return times
 				}
 			}
-		}
-		if parallel {
-			wait.Wait()
-		}
-		trace.Stop()
-		times = append(times, time.Now().Sub(starttime))
+			if parallel {
+				waitAllSend.Wait()
+			}
+			trace.Stop()
+			sendTime = time.Now().Sub(starttime)
+			wait.Done()
+		}()
+
+		wait.Wait()
+		consumer.Stop()
+		times = append(times, map[string]time.Duration{"sendTime": sendTime, "firstConsumeTime": firstConsumeTime, "allConsumedTime": allConsumedTime})
 		time.Sleep(2 * time.Second)
 	}
 

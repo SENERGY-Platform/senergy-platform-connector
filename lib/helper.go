@@ -19,7 +19,6 @@ package lib
 import (
 	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/iot"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"strings"
 )
@@ -31,25 +30,6 @@ func parseTopic(topic string) (prefix string, deviceUri string, serviceUri strin
 		return
 	}
 	return parts[0], parts[1], parts[2], nil
-}
-
-func userMayAccessDevice(iot *iot.Iot, token security.JwtToken, deviceUri string, serviceUri string) (access bool, deviceId string, err error) {
-	entities, err := iot.DeviceUrlToIotDevice(deviceUri, token)
-	if err != nil {
-		return false, deviceId, err
-	}
-	for _, entity := range entities {
-		//single level mqtt-topic wildcard
-		if serviceUri == "+" {
-			return true, entity.Device.Id, nil
-		}
-		for _, service := range entity.Services {
-			if service.Url == serviceUri {
-				return true, entity.Device.Id, nil
-			}
-		}
-	}
-	return false, "", nil
 }
 
 func checkHub(connector *platform_connector_lib.Connector, token security.JwtToken, hubId string, deviceUri string) (err error) {
@@ -66,15 +46,17 @@ func checkHub(connector *platform_connector_lib.Connector, token security.JwtTok
 }
 
 func checkEvent(connector *platform_connector_lib.Connector, token security.JwtToken, deviceUri string, serviceUri string) (err error) {
-	devices, err := connector.IotCache.WithToken(token).DeviceUrlToIotDevice(deviceUri)
+	device, err := connector.IotCache.WithToken(token).DeviceUrlToIotDevice(deviceUri)
 	if err != nil {
 		return err
 	}
-	for _, device := range devices {
-		for _, service := range device.Services {
-			if service.Url == serviceUri {
-				return nil
-			}
+	dt, err := connector.IotCache.WithToken(token).GetDeviceType(device.DeviceType)
+	if err != nil {
+		return err
+	}
+	for _, service := range dt.Services {
+		if service.Url == serviceUri {
+			return nil
 		}
 	}
 	return errors.New("not found")

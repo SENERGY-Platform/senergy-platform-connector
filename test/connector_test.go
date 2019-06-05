@@ -51,7 +51,7 @@ func TestErrorSubscription(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -117,7 +117,7 @@ func TestErrorPublish(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -173,7 +173,7 @@ func TestWithClient(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -406,7 +406,7 @@ func TestWithClientReconnect(t *testing.T) {
 		defer shutdown()
 	}
 
-	c1, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c1, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -417,7 +417,7 @@ func TestWithClientReconnect(t *testing.T) {
 	c1.Stop()
 	time.Sleep(1 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", c1.HubId, "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", c1.HubId, "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -639,45 +639,40 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 	if err != nil {
 		return result, err
 	}
-	entities, err := iot.New(config.IotRepoUrl, "").DeviceUrlToIotDevice(deviceUri, token)
+	iot := iot.New(config.IotRepoUrl, config.DeviceRepoUrl, "")
+	device, err := iot.DeviceUrlToIotDevice(deviceUri, token)
 	if err != nil {
 		return result, err
 	}
+	dt, err := iot.GetDeviceType(device.DeviceType, token)
 
 	found := false
-	for _, device := range entities {
-		for _, service := range device.Services {
-			if service.Url == serviceUri {
-				found = true
-				result.ServiceId = service.Id
-				result.DeviceId = device.Device.Id
+	for _, service := range dt.Services {
+		if service.Url == serviceUri {
+			found = true
+			result.ServiceId = service.Id
+			result.DeviceId = device.Id
+			value := model.ProtocolMsg{
+				Service:          service,
+				ServiceId:        service.Id,
+				ServiceUrl:       serviceUri,
+				DeviceUrl:        deviceUri,
+				DeviceInstanceId: device.Id,
+				OutputName:       "result",
+				TaskId:           "",
+				WorkerId:         "",
+			}
 
-				fullService, err := iot.New(config.IotRepoUrl, "").GetService(service.Id, token)
+			if msg != nil {
+				payload, err := json.Marshal(msg)
 				if err != nil {
 					return result, err
 				}
-				value := model.ProtocolMsg{
-					Service:          fullService,
-					ServiceId:        service.Id,
-					ServiceUrl:       serviceUri,
-					DeviceUrl:        deviceUri,
-					DeviceInstanceId: device.Device.Id,
-					OutputName:       "result",
-					TaskId:           "",
-					WorkerId:         "",
-				}
-
-				if msg != nil {
-					payload, err := json.Marshal(msg)
-					if err != nil {
-						return result, err
-					}
-					value.ProtocolParts = []model.ProtocolPart{{Value: string(payload), Name: "metrics"}}
-				}
-
-				result.Value = value
-
+				value.ProtocolParts = []model.ProtocolPart{{Value: string(payload), Name: "metrics"}}
 			}
+
+			result.Value = value
+
 		}
 	}
 
@@ -704,7 +699,7 @@ func TestUnsubscribe(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",

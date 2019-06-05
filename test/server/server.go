@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/iot-device-repository/lib/persistence/ordf"
 	"github.com/SENERGY-Platform/platform-connector-lib"
@@ -29,6 +30,9 @@ import (
 	"github.com/segmentio/kafka-go"
 	"github.com/streadway/amqp"
 	"github.com/wvanbergen/kazoo-go"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net"
 	"net/http"
@@ -113,6 +117,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		var elasticIp string
 		var ontoIp string
 		var amqpIp string
+		var mongoIp string
 
 		wait2.Add(1)
 		go func() {
@@ -160,6 +165,20 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 			}
 		}()
 
+		wait2.Add(1)
+		go func() {
+			defer wait2.Done()
+			closer, _, ip, err := MongoTestServer(pool)
+			mongoIp = ip
+			listMux.Lock()
+			closerList = append(closerList, closer)
+			listMux.Unlock()
+			if err != nil {
+				globalError = err
+				return
+			}
+		}()
+
 		wait2.Wait()
 
 		if globalError != nil {
@@ -175,6 +194,18 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 			globalError = err
 			return
 		}
+
+		//device-repo
+		closeDRepo, _, dIp, err := DeviceRepo(pool, mongoIp, amqpIp, permIp)
+		listMux.Lock()
+		closerList = append(closerList, closeDRepo)
+		listMux.Unlock()
+		if err != nil {
+			log.Println("ERROR: in DeviceRepo()", err)
+			globalError = err
+			return
+		}
+		config.DeviceRepoUrl = "http://" + dIp + ":8080"
 
 		//iot-repo
 		closeIot, _, iotIp, err := IotRepo(pool, ontoIp, amqpIp, permIp)
@@ -259,6 +290,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		AuthClientId:             config.AuthClientId,
 		AuthEndpoint:             config.AuthEndpoint,
 		IotRepoUrl:               config.IotRepoUrl,
+		DeviceRepoUrl:            config.DeviceRepoUrl,
 		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
@@ -462,6 +494,23 @@ func Memcached(pool *dockertest.Pool) (closer func(), hostPort string, ipAddress
 	return func() { mem.Close() }, hostPort, mem.Container.NetworkSettings.IPAddress, err
 }
 
+func MongoTestServer(pool *dockertest.Pool) (closer func(), hostPort string, ipAddress string, err error) {
+	log.Println("start mongodb")
+	repo, err := pool.Run("mongo", "4.1.11", []string{})
+	if err != nil {
+		return func() {}, "", "", err
+	}
+	hostPort = repo.GetPort("27017/tcp")
+	err = pool.Retry(func() error {
+		log.Println("try mongodb connection...")
+		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:"+hostPort))
+		err = client.Ping(ctx, readpref.Primary())
+		return err
+	})
+	return func() { repo.Close() }, hostPort, repo.Container.NetworkSettings.IPAddress, err
+}
+
 func IotOntology(pool *dockertest.Pool) (closer func(), hostPort string, ipAddress string, err error) {
 	log.Println("start iot ontology")
 	onto, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/iot-ontology", "unstable", []string{
@@ -488,6 +537,29 @@ func IotOntology(pool *dockertest.Pool) (closer func(), hostPort string, ipAddre
 		return err
 	})
 	return func() { onto.Close() }, hostPort, onto.Container.NetworkSettings.IPAddress, err
+}
+
+func DeviceRepo(pool *dockertest.Pool, mongoIp string, amqpIp string, permsearchIp string) (closer func(), hostPort string, ipAddress string, err error) {
+	log.Println("start device repo")
+	repo, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/device-repository", "unstable", []string{
+		"MONGO_URL=" + "mongodb://" + mongoIp + ":27017",
+		"AMQP_URL=" + "amqp://guest:guest@" + amqpIp + ":5672/",
+		"PERMISSIONS_URL=" + "http://" + permsearchIp + ":8080",
+		"MONGO_REPL_SET=false",
+	})
+	if err != nil {
+		return func() {}, "", "", err
+	}
+	hostPort = repo.GetPort("8080/tcp")
+	err = pool.Retry(func() error {
+		log.Println("try repo connection...")
+		_, err := http.Get("http://" + repo.Container.NetworkSettings.IPAddress + ":8080/")
+		if err != nil {
+			log.Println(err)
+		}
+		return err
+	})
+	return func() { repo.Close() }, hostPort, repo.Container.NetworkSettings.IPAddress, err
 }
 
 func IotRepo(pool *dockertest.Pool, ontoIp string, amqpIp string, permsearchIp string) (closer func(), hostPort string, ipAddress string, err error) {
