@@ -95,6 +95,8 @@ github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190604132028-6360a4d
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190604132028-6360a4df8d39/go.mod h1:837swQvxmgX6JOxJCihGt64YVpw/o2SHQ8WVi5j2358=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190604141125-eb4559aea07d h1:cKJcZmIn930oQjY8c+XuK+wASSRdv0S6dIJSc+jqcOE=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190604141125-eb4559aea07d/go.mod h1:837swQvxmgX6JOxJCihGt64YVpw/o2SHQ8WVi5j2358=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190614082042-079b95ad4361 h1:weo5ZtZHZQyri0r4ffuvD5JtZM9626qRurHGC3/co4c=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190614082042-079b95ad4361/go.mod h1:837swQvxmgX6JOxJCihGt64YVpw/o2SHQ8WVi5j2358=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/sarama v1.22.0 h1:rtiODsvY4jW6nUV6n3K+0gx/8WlAwVt+Ixt6RIvpYyo=
 github.com/Shopify/sarama v1.22.0/go.mod h1:lm3THZ8reqBDBQKQyb5HB3sY1lKp3grEbQ81aWSgPp4=
