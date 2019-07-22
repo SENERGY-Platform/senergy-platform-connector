@@ -16,19 +16,33 @@ import (
 	"time"
 )
 
+var testPerformance = false
+
 func Test100p(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(100, true, t, true, true, "./trace/trace_100p.out"))
 }
 
 func Test100px2(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(100, true, t, true, true, "./trace/trace_100px2_1.out", "./trace/trace_100px2_2.out"))
 }
 
 func Test1000p(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(1000, true, t, true, true, "./trace/trace_1000p.out"))
 }
 
 func Test1000pConf(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	results := [][]map[string]time.Duration{}
 	results = append(results, test_n(1000, true, t, true, true, "./trace/trace_1000pConf_tt.out"))
 	results = append(results, test_n(1000, true, t, true, false, "./trace/trace_1000pConf_tf.out"))
@@ -37,18 +51,30 @@ func Test1000pConf(t *testing.T) {
 }
 
 func Test1000px2(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(1000, true, t, true, true, "./trace/trace_1000px2_1.out", "./trace/trace_1000px2_2.out"))
 }
 
 func Test1000(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(1000, false, t, true, true, "./trace/trace_1000.out"))
 }
 
 func Test10000(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(10000, false, t, true, true, "./trace/trace_10000.out"))
 }
 
 func Test10000p(t *testing.T) {
+	if !testPerformance {
+		t.Skip("set testPerformance = true")
+	}
 	log.Println(test_n(10000, true, t, true, true, "./trace/trace_10000p.out"))
 }
 
