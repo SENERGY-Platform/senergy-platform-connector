@@ -388,7 +388,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	}
 
-	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router}
+	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router, WriteTimeout: 10 * time.Second}
 	go func() {
 		log.Println("Listening on ", server.Addr)
 		if err := server.ListenAndServe(); err != nil {
