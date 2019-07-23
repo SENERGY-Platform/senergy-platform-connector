@@ -30,6 +30,7 @@ import (
 )
 
 func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
+	log.Println("DEBUG: send error:", msg)
 	//http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
 	//_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
 	_, err := fmt.Fprintf(writer, `{"result": "next"}`)
@@ -388,7 +389,10 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	}
 
-	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second}
+	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
+	server.RegisterOnShutdown(func() {
+		log.Println("DEBUG: server shutdown")
+	})
 	go func() {
 		log.Println("Listening on ", server.Addr)
 		if err := server.ListenAndServe(); err != nil {
