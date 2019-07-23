@@ -63,6 +63,10 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 
 func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
 	router := http.NewServeMux()
+	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	})
+
 	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
 		if config.Debug {
 			now := time.Now()
