@@ -26,6 +26,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -76,6 +77,8 @@ func main() {
 		connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
 		connector.IotCache.Debug = true
 	}
+
+	time.Sleep(5 * time.Second) //wait for routing tables in cluster
 
 	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
 	if err != nil {
