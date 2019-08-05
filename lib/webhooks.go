@@ -17,12 +17,14 @@
 package lib
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -64,6 +66,8 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
+		msg, err := ioutil.ReadAll(request.Body)
+		log.Println("DEBUG: /health", err, string(msg))
 		writer.WriteHeader(http.StatusOK)
 	})
 
@@ -404,5 +408,18 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Fatal(err)
 		}
 	}()
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		for t := range ticker.C {
+			resp, err := http.Post("http://localhost:"+config.WebhookPort, "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
+			if err != nil {
+				log.Fatal("FATAL: connection test:", err)
+			}
+			ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+		}
+	}()
+
 	return server
 }
