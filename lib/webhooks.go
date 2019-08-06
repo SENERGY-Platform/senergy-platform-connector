@@ -67,7 +67,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		msg, err := ioutil.ReadAll(request.Body)
-		log.Println("DEBUG: /health", err, string(msg))
+		log.Println("INFO: /health", err, string(msg))
 		writer.WriteHeader(http.StatusOK)
 	})
 
