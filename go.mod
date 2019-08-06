@@ -18,4 +18,4 @@ require (
 )
 
 //uncomment to test local changes of platform-connector-lib
-//replace github.com/SENERGY-Platform/platform-connector-lib => ../platform-connector-lib
+replace github.com/SENERGY-Platform/platform-connector-lib => ../platform-connector-lib

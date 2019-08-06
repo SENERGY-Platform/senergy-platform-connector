@@ -51,7 +51,7 @@ func TestErrorSubscription(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -117,7 +117,7 @@ func TestErrorPublish(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -173,7 +173,7 @@ func TestWithClient(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -406,7 +406,7 @@ func TestWithClientReconnect(t *testing.T) {
 		defer shutdown()
 	}
 
-	c1, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c1, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -417,7 +417,7 @@ func TestWithClientReconnect(t *testing.T) {
 	c1.Stop()
 	time.Sleep(1 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", c1.HubId, "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", c1.HubId, "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -639,7 +639,7 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.IotRepoUrl, config.DeviceRepoUrl, "")
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "")
 	device, err := iot.DeviceUrlToIotDevice(deviceUri, token)
 	if err != nil {
 		return result, err
@@ -699,7 +699,7 @@ func TestUnsubscribe(t *testing.T) {
 		defer shutdown()
 	}
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",

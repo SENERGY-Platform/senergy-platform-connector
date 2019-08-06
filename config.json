@@ -2,7 +2,7 @@
   "WebhookPort": "8080",
   "Protocol": "connector",
 
-  "IotRepoUrl":"http://iot:8080",
+  "DeviceManagerUrl":"http://iot:8080",
   "DeviceRepoUrl": "http://device-repo:8080",
 
   "MemcachedUrl": "memcahed:11211",

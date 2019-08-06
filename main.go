@@ -38,10 +38,6 @@ func main() {
 		log.Fatal("ERROR: unable to load config ", err)
 	}
 
-	if config.KafkaEventTopic == "-" || config.KafkaEventTopic == "false" {
-		config.KafkaEventTopic = ""
-	}
-
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), lib.StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
@@ -56,9 +52,8 @@ func main() {
 		AuthClientSecret:         config.AuthClientSecret,
 		AuthClientId:             config.AuthClientId,
 		AuthEndpoint:             config.AuthEndpoint,
-		IotRepoUrl:               config.IotRepoUrl,
+		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
-		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
 		IotCacheUrl:          lib.StringToList(config.IotCacheUrls),

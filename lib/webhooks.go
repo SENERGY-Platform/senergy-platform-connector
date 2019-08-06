@@ -225,7 +225,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					rejected = append(rejected, topic)
 					continue
 				}
-				device, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
+				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
 				if err != nil {
 					log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
 					rejected = append(rejected, topic)
@@ -283,7 +283,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 
-			connector.EnsureTopics(token, 100, 1, 1)
+			//TODO: connector.EnsureTopics(token, 100, 1, 1)
 
 			if exists {
 				err = logger.LogGatewayConnect(msg.ClientId)
@@ -326,15 +326,20 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
 			return
 		}
-		devices, err := connector.Iot().GetHubDevicesAsId(msg.ClientId, token)
+		hub, err := connector.Iot().GetHub(msg.ClientId, token)
 		if err != nil {
 			if config.Debug {
 				log.Println("DEBUG: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
 			}
 			return
 		}
-		for _, device := range devices {
-			err = logger.LogDeviceDisconnect(device)
+		for _, localId := range hub.DeviceLocalIds {
+			device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(localId)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::disconnect::GetDeviceByLocalId", err)
+				continue
+			}
+			err = logger.LogDeviceDisconnect(device.Id)
 			if err != nil {
 				log.Println("ERROR: InitWebhooks::disconnect::LogDeviceDisconnect", err)
 			}
@@ -370,7 +375,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					log.Println("WARNING: InitWebhooks::unsubscribe prefix != 'command'", prefix)
 					return
 				}
-				device, err := connector.Iot().DeviceUrlToIotDevice(deviceUri, token)
+				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::DeviceUrlToIotDevice", err)
 					return
@@ -412,7 +417,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 		for t := range ticker.C {
-			log.Println("DEBUG: connectivity test: " + t.String())
+			log.Println("INFO: connectivity test: " + t.String())
 			client := http.Client{
 				Timeout: 5 * time.Second,
 			}

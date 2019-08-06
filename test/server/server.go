@@ -216,7 +216,7 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 			globalError = err
 			return
 		}
-		config.IotRepoUrl = "http://" + iotIp + ":8080"
+		config.DeviceManagerUrl = "http://" + iotIp + ":8080"
 	}()
 
 	wait.Add(1)
@@ -289,9 +289,8 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		AuthClientSecret:         config.AuthClientSecret,
 		AuthClientId:             config.AuthClientId,
 		AuthEndpoint:             config.AuthEndpoint,
-		IotRepoUrl:               config.IotRepoUrl,
+		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
-		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
 		DeviceExpiration:     int32(config.DeviceExpiration),
