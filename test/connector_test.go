@@ -54,6 +54,7 @@ func Test(t *testing.T) {
 }
 
 func TestErrorSubscription(t *testing.T) {
+	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -119,6 +120,7 @@ func TestErrorSubscription(t *testing.T) {
 }
 
 func TestErrorPublish(t *testing.T) {
+	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -179,6 +181,7 @@ func TestErrorPublish(t *testing.T) {
 }
 
 func TestWithClient(t *testing.T) {
+	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -410,7 +413,7 @@ func TestWithClient(t *testing.T) {
 }
 
 func TestWithClientReconnect(t *testing.T) {
-
+	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -701,7 +704,7 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 }
 
 func TestUnsubscribe(t *testing.T) {
-
+	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
