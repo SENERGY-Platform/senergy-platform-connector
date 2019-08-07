@@ -17,7 +17,6 @@
 package client
 
 import (
-	"github.com/SENERGY-Platform/iot-device-repository/lib/model"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"time"
@@ -27,19 +26,19 @@ import (
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
-func New(mqttUrl string, semanticRepoUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
 	client = &Client{
-		authUrl:         authUrl,
-		mqttUrl:         mqttUrl,
-		semanticRepoUrl: semanticRepoUrl,
-		deviceRepoUrl:   deviceRepoUrl,
-		HubId:           hubId,
-		hubName:         hubName,
-		username:        userName,
-		password:        password,
-		clientId:        Id,
-		clientSecret:    Secret,
-		devices:         devices,
+		authUrl:          authUrl,
+		mqttUrl:          mqttUrl,
+		deviceManagerUrl: deviceManagerUrl,
+		deviceRepoUrl:    deviceRepoUrl,
+		HubId:            hubId,
+		hubName:          hubName,
+		username:         userName,
+		password:         password,
+		clientId:         Id,
+		clientSecret:     Secret,
+		devices:          devices,
 	}
 	token, err := client.login()
 	if err != nil {
@@ -66,30 +65,30 @@ func New(mqttUrl string, semanticRepoUrl string, deviceRepoUrl string, authUrl s
 	return
 }
 
-func NewWithoutProvisioning(mqttUrl string, semanticRepoUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
 	client = &Client{
-		authUrl:         authUrl,
-		mqttUrl:         mqttUrl,
-		semanticRepoUrl: semanticRepoUrl,
-		deviceRepoUrl:   deviceRepoUrl,
-		HubId:           hubId,
-		hubName:         hubName,
-		username:        userName,
-		password:        password,
-		clientId:        Id,
-		clientSecret:    Secret,
-		devices:         devices,
+		authUrl:          authUrl,
+		mqttUrl:          mqttUrl,
+		deviceManagerUrl: deviceManagerUrl,
+		deviceRepoUrl:    deviceRepoUrl,
+		HubId:            hubId,
+		hubName:          hubName,
+		username:         userName,
+		password:         password,
+		clientId:         Id,
+		clientSecret:     Secret,
+		devices:          devices,
 	}
 	err = client.startMqtt()
 	return
 }
 
 type Client struct {
-	mqttUrl         string
-	semanticRepoUrl string
-	deviceRepoUrl   string
-	authUrl         string
-	HubId           string
+	mqttUrl          string
+	deviceRepoUrl    string
+	deviceManagerUrl string
+	authUrl          string
+	HubId            string
 
 	username string
 	password string
@@ -109,4 +108,8 @@ func (this *Client) Mqtt() paho.Client {
 	return this.mqtt
 }
 
-type DeviceRepresentation = model.ProvisioningDevice
+type DeviceRepresentation struct {
+	IotType string `json:"iot_type"`
+	Uri     string `json:"uri"`
+	Name    string `json:"name"`
+}

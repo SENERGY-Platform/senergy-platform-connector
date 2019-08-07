@@ -36,6 +36,23 @@ import (
 	"time"
 )
 
+func Test(t *testing.T) {
+	t.Skip("tests only container startup")
+	config, err := lib.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	config, shutdown, err := server.New(config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if true {
+		defer shutdown()
+	}
+}
+
 func TestErrorSubscription(t *testing.T) {
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
@@ -51,12 +68,17 @@ func TestErrorSubscription(t *testing.T) {
 		defer shutdown()
 	}
 
+	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -67,18 +89,12 @@ func TestErrorSubscription(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
 	defer eventConsumer.Stop()
-	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
-	defer eventConsumer2.Stop()
 
 	time.Sleep(5 * time.Second)
 
@@ -117,12 +133,17 @@ func TestErrorPublish(t *testing.T) {
 		defer shutdown()
 	}
 
+	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -133,7 +154,7 @@ func TestErrorPublish(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
@@ -158,7 +179,6 @@ func TestErrorPublish(t *testing.T) {
 }
 
 func TestWithClient(t *testing.T) {
-
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -173,12 +193,17 @@ func TestWithClient(t *testing.T) {
 		defer shutdown()
 	}
 
+	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -238,14 +263,8 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -406,12 +425,17 @@ func TestWithClientReconnect(t *testing.T) {
 		defer shutdown()
 	}
 
+	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	c1, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	c1.Stop()
@@ -421,8 +445,7 @@ func TestWithClientReconnect(t *testing.T) {
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -482,14 +505,8 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -639,16 +656,16 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "")
-	device, err := iot.DeviceUrlToIotDevice(deviceUri, token)
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl)
+	device, err := iot.GetDeviceByLocalId(deviceUri, token)
 	if err != nil {
 		return result, err
 	}
-	dt, err := iot.GetDeviceType(device.DeviceType, token)
+	dt, err := iot.GetDeviceType(device.DeviceTypeId, token)
 
 	found := false
 	for _, service := range dt.Services {
-		if service.Url == serviceUri {
+		if service.LocalId == serviceUri {
 			found = true
 			result.ServiceId = service.Id
 			result.DeviceId = device.Id
@@ -699,12 +716,17 @@ func TestUnsubscribe(t *testing.T) {
 		defer shutdown()
 	}
 
+	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -764,14 +786,8 @@ func TestUnsubscribe(t *testing.T) {
 		return
 	}
 
-	err = kafka.InitTopic(config.ZookeeperUrl, config.KafkaEventTopic)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
