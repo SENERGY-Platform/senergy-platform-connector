@@ -144,7 +144,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 			all.Add(n)
 		}
 
-		consumer, err := kafka.NewConsumer(config.ZookeeperUrl, "stress-test-consumer", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+		consumer, err := kafka.NewConsumer(config.ZookeeperUrl, "stress-test-consumer", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 			log.Println("consumed: ", topic)
 			first <- true
 			all.Done()

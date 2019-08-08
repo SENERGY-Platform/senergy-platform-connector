@@ -2,7 +2,7 @@ module github.com/SENERGY-Platform/senergy-platform-connector
 
 require (
 	github.com/SENERGY-Platform/iot-device-repository v0.0.0-20190411071940-270889a26f60
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190724063317-f63f04f4269d
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20190808075042-f446588fed4b
 	github.com/SmartEnergyPlatform/formatter-lib v0.0.0-20181018082014-b45c9317bb5e // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eclipse/paho.mqtt.golang v1.1.1

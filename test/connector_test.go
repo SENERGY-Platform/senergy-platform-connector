@@ -67,13 +67,13 @@ func TestErrorSubscription(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
 	defer eventConsumer.Stop()
-	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
+	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
@@ -133,13 +133,13 @@ func TestErrorPublish(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
 	defer eventConsumer.Stop()
-	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
+	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
@@ -245,7 +245,7 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -254,7 +254,7 @@ func TestWithClient(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -489,7 +489,7 @@ func TestWithClientReconnect(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -498,7 +498,7 @@ func TestWithClientReconnect(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -771,7 +771,7 @@ func TestUnsubscribe(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -780,7 +780,7 @@ func TestUnsubscribe(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
