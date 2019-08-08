@@ -20,10 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/iot"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
-	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -54,7 +51,6 @@ func Test(t *testing.T) {
 }
 
 func TestErrorSubscription(t *testing.T) {
-	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -90,7 +86,7 @@ func TestErrorSubscription(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
@@ -120,7 +116,6 @@ func TestErrorSubscription(t *testing.T) {
 }
 
 func TestErrorPublish(t *testing.T) {
-	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -156,13 +151,13 @@ func TestErrorPublish(t *testing.T) {
 	defer c.Stop()
 
 	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
 	defer eventConsumer.Stop()
-	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte) error {
+	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte, t time.Time) error {
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
@@ -181,7 +176,6 @@ func TestErrorPublish(t *testing.T) {
 }
 
 func TestWithClient(t *testing.T) {
-	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -267,7 +261,7 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -276,7 +270,7 @@ func TestWithClient(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -298,7 +292,7 @@ func TestWithClient(t *testing.T) {
 	}
 	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
-	time.Sleep(2 * time.Second) //wait for creation of devices
+	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{
 		"level":      9,
 		"title":      "level",
@@ -321,8 +315,6 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second) //wait for command to finish
-
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
 		t.Error(err)
@@ -341,7 +333,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	time.Sleep(3 * time.Second) //wait for command to finish
+	time.Sleep(20 * time.Second) //wait for command to finish
 
 	if testState != 9 {
 		t.Error("unexpectet command result", testState)
@@ -413,7 +405,6 @@ func TestWithClient(t *testing.T) {
 }
 
 func TestWithClientReconnect(t *testing.T) {
-	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -509,7 +500,7 @@ func TestWithClientReconnect(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -518,7 +509,7 @@ func TestWithClientReconnect(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -540,7 +531,7 @@ func TestWithClientReconnect(t *testing.T) {
 	}
 	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
-	time.Sleep(2 * time.Second) //wait for creation of devices
+	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{
 		"level":      9,
 		"title":      "level",
@@ -563,7 +554,7 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second) //wait for command to finish
+	time.Sleep(5 * time.Second) //wait for command to finish
 
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
@@ -583,7 +574,7 @@ func TestWithClientReconnect(t *testing.T) {
 		return
 	}
 
-	time.Sleep(3 * time.Second) //wait for command to finish
+	time.Sleep(20 * time.Second) //wait for command to finish
 
 	if testState != 9 {
 		t.Error("unexpectet command result", testState)
@@ -654,57 +645,7 @@ func TestWithClientReconnect(t *testing.T) {
 	}
 }
 
-func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.Envelope, err error) {
-	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}).Access()
-	if err != nil {
-		return result, err
-	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl)
-	device, err := iot.GetDeviceByLocalId(deviceUri, token)
-	if err != nil {
-		return result, err
-	}
-	dt, err := iot.GetDeviceType(device.DeviceTypeId, token)
-
-	found := false
-	for _, service := range dt.Services {
-		if service.LocalId == serviceUri {
-			found = true
-			result.ServiceId = service.Id
-			result.DeviceId = device.Id
-			value := model.ProtocolMsg{
-				Service:          service,
-				ServiceId:        service.Id,
-				ServiceUrl:       serviceUri,
-				DeviceUrl:        deviceUri,
-				DeviceInstanceId: device.Id,
-				OutputName:       "result",
-				TaskId:           "",
-				WorkerId:         "",
-			}
-
-			if msg != nil {
-				payload, err := json.Marshal(msg)
-				if err != nil {
-					return result, err
-				}
-				value.ProtocolParts = []model.ProtocolPart{{Value: string(payload), Name: "metrics"}}
-			}
-
-			result.Value = value
-
-		}
-	}
-
-	if !found {
-		err = errors.New("unable to find device for command creation")
-	}
-
-	return
-}
-
 func TestUnsubscribe(t *testing.T) {
-	time.Sleep(15 * time.Second)
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -790,7 +731,7 @@ func TestUnsubscribe(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte) error {
+	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -799,7 +740,7 @@ func TestUnsubscribe(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte) error {
+	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {

@@ -22,10 +22,11 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"log"
+	"time"
 )
 
 func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config Config) platform_connector_lib.AsyncCommandHandler {
-	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg) (err error) {
+	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
 		if config.Debug {
 			log.Println("DEBUG: receive command", commandRequest.DeviceInstanceId, commandRequest.ServiceId, commandRequest.ProtocolParts)
 		}
@@ -34,7 +35,7 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 			log.Println("ERROR: unable to save correlation", err)
 			return err
 		}
-		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId}
+		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix(), CompletionStrategy: commandRequest.CompletionStrategy}
 		b, err := json.Marshal(envelope)
 		if err != nil {
 			log.Println("ERROR: unable to marshal envelope", err)

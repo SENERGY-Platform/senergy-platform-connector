@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"time"
 )
 
 func (this *Client) startMqtt() error {
@@ -53,6 +54,11 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			log.Println("ERROR: unable to decode request envalope", err)
 			return
 		}
+		if time.Since(time.Unix(request.Time, 0)) > 40*time.Second {
+			log.Println("WARNING: received old command; do nothing")
+			return
+		}
+		log.Println("DEBUG: client handle command", request)
 		respMsg, err := handler(request.Payload)
 		if err != nil {
 			log.Println("ERROR: while processing command", err)
