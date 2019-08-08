@@ -19,9 +19,10 @@ package lib
 import "github.com/SENERGY-Platform/platform-connector-lib"
 
 type RequestEnvelope struct {
-	CorrelationId string                                   `json:"correlation_id"`
-	Payload       platform_connector_lib.CommandRequestMsg `json:"payload"`
-	Time          int64                                    `json:"timestamp"`
+	CorrelationId      string                                   `json:"correlation_id"`
+	Payload            platform_connector_lib.CommandRequestMsg `json:"payload"`
+	Time               int64                                    `json:"timestamp"`
+	CompletionStrategy string                                   `json:"completion_strategy"`
 }
 
 type ResponseEnvelope struct {

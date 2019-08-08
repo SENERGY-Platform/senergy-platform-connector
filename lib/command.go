@@ -35,7 +35,7 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 			log.Println("ERROR: unable to save correlation", err)
 			return err
 		}
-		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix()}
+		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix(), CompletionStrategy: commandRequest.CompletionStrategy}
 		b, err := json.Marshal(envelope)
 		if err != nil {
 			log.Println("ERROR: unable to marshal envelope", err)
