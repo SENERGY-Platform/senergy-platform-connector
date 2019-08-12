@@ -30,6 +30,8 @@ import (
 )
 
 func main() {
+	time.Sleep(5 * time.Second) //wait for routing tables in cluster
+
 	configLocation := flag.String("config", "config.json", "configuration file")
 	flag.Parse()
 
@@ -77,8 +79,6 @@ func main() {
 		connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
 		connector.IotCache.Debug = true
 	}
-
-	time.Sleep(5 * time.Second) //wait for routing tables in cluster
 
 	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
 	if err != nil {
