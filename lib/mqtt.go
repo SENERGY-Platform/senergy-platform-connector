@@ -25,6 +25,7 @@ import (
 
 type Mqtt struct {
 	client paho.Client
+	Debug  bool
 }
 
 func (this *Mqtt) Close() {
@@ -32,7 +33,7 @@ func (this *Mqtt) Close() {
 }
 
 func MqttStart(config Config) (mqtt *Mqtt, err error) {
-	mqtt = &Mqtt{}
+	mqtt = &Mqtt{Debug: config.MqttDebug}
 	options := paho.NewClientOptions().
 		SetPassword(config.AuthClientSecret).
 		SetUsername(config.AuthClientId).
@@ -54,6 +55,9 @@ func (this *Mqtt) Publish(topic, msg string) (err error) {
 	if !this.client.IsConnected() {
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
+	}
+	if this.Debug {
+		log.Println("DEBUG: publish ", topic, msg)
 	}
 	token := this.client.Publish(topic, 2, false, msg)
 	if token.Wait() && token.Error() != nil {

@@ -59,7 +59,8 @@ type ConfigStruct struct {
 
 	CheckHub bool
 
-	Debug bool
+	Debug     bool
+	MqttDebug bool
 
 	CorrelationExpiration int64
 
