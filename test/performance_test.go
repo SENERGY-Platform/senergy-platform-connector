@@ -100,7 +100,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 
 	time.Sleep(2 * time.Second)
 
-	deviceTypeId, serviceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	deviceTypeId, serviceTopic, _, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
 	if err != nil {
 		t.Error(err)
 		return
