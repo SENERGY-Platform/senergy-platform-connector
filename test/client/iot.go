@@ -17,8 +17,8 @@
 package client
 
 import (
-	"github.com/SENERGY-Platform/iot-device-repository/lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"hash/fnv"
 	"log"
@@ -39,7 +39,7 @@ func getHash(representations []DeviceRepresentation) string {
 }
 
 func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error) {
-	iotClient := iot.New(this.semanticRepoUrl, this.deviceRepoUrl, "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl)
 	hash := getHash(this.devices)
 	exists := false
 	deviceUris := []string{}
@@ -55,20 +55,20 @@ func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error
 	}
 	isNew = !exists
 	if exists {
-		oldHash, err := iotClient.GetHubHash(this.HubId, token)
+		oldHub, err := iotClient.GetHub(this.HubId, token)
 		if err != nil {
 			log.Println("ERROR: iotClient.GetHubHash()", err)
 			return isNew, err
 		}
-		if oldHash != hash {
-			_, err = iotClient.UpdateHub(this.HubId, model.Hub{Hash: hash, Name: this.hubName, Devices: deviceUris}, token)
+		if oldHub.Hash != hash {
+			_, err = iotClient.UpdateHub(this.HubId, model.Hub{Hash: hash, Name: this.hubName, DeviceLocalIds: deviceUris}, token)
 		}
 		if err != nil {
 			log.Println("ERROR: iotClient.UpdateHub()", err)
 		}
 		return isNew, err
 	} else {
-		result, err := iotClient.CreateHub(model.Hub{Hash: hash, Name: this.hubName, Devices: deviceUris}, token)
+		result, err := iotClient.CreateHub(model.Hub{Hash: hash, Name: this.hubName, DeviceLocalIds: deviceUris}, token)
 		if err != nil {
 			log.Println("ERROR: iotClient.CreateHub()", err)
 			return isNew, err
@@ -79,15 +79,15 @@ func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error
 }
 
 func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, err error) {
-	iotClient := iot.New(this.semanticRepoUrl, this.deviceRepoUrl, "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl)
 	for _, device := range this.devices {
-		_, err := iotClient.DeviceUrlToIotDevice(device.Uri, token)
+		_, err := iotClient.GetDeviceByLocalId(device.Uri, token)
 		if err != nil && err != security.ErrorNotFound {
 			log.Println("ERROR: iotClient.DeviceUrlToIotDevice()", err)
 			return false, err
 		}
 		if err == security.ErrorNotFound {
-			_, err = iotClient.CreateIotDevice(device, token)
+			_, err = this.createIotDevice(device, token)
 			if err != nil {
 				log.Println("ERROR: iotClient.CreateIotDevice()", err)
 				return false, err
@@ -96,4 +96,9 @@ func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, 
 		}
 	}
 	return newDevices, nil
+}
+
+func (this *Client) createIotDevice(representation DeviceRepresentation, token security.JwtToken) (device model.Device, err error) {
+	err = token.PostJSON(this.deviceManagerUrl+"/devices", model.Device{LocalId: representation.Uri, DeviceTypeId: representation.IotType, Name: representation.Name}, &device)
+	return
 }

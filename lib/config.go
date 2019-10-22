@@ -30,13 +30,12 @@ import (
 type ConfigStruct struct {
 	ZookeeperUrl       string //host1:2181,host2:2181/chroot
 	KafkaResponseTopic string
-	KafkaEventTopic    string //optional
 	KafkaGroupName     string
 	FatalKafkaError    bool // "true" || "false"; "" -> "true", else -> "false"
 	Protocol           string
 
-	IotRepoUrl    string
-	DeviceRepoUrl string
+	DeviceManagerUrl string
+	DeviceRepoUrl    string
 
 	AuthClientId             string //keycloak-client
 	AuthClientSecret         string //keycloak-secret

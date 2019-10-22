@@ -85,7 +85,6 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 		return times
 	}
 	cache.Debug = true
-	config.KafkaEventTopic = ""
 	config.Debug = true
 	config.MqttPublishAuthOnly = false
 	config.SyncKafka = syncProd
@@ -101,12 +100,17 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 
 	time.Sleep(2 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.IotRepoUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	deviceTypeId, serviceTopic, _, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
-			IotType: "iot#80550847-a151-4de4-806a-50503b2fdf62",
-			Tags:    []string{},
+			IotType: deviceTypeId,
 		},
 	})
 	if err != nil {
@@ -144,7 +148,7 @@ func test_n(n int, parallel bool, t *testing.T, syncProd bool, idempotent bool, 
 			all.Add(n)
 		}
 
-		consumer, err := kafka.NewConsumer(config.ZookeeperUrl, "stress-test-consumer", "iot_dc3c326c-8420-4af1-be0d-dcabfdacc90e", func(topic string, msg []byte, t time.Time) error {
+		consumer, err := kafka.NewConsumer(config.ZookeeperUrl, "stress-test-consumer", serviceTopic, func(topic string, msg []byte, t time.Time) error {
 			log.Println("consumed: ", topic)
 			first <- true
 			all.Done()
