@@ -39,7 +39,7 @@ func MqttStart(config Config) (mqtt *Mqtt, err error) {
 		SetUsername(config.AuthClientId).
 		SetAutoReconnect(true).
 		SetCleanSession(true).
-		//SetClientID("senergy_" + config.AuthClientId).
+		SetClientID("senergy_" + config.AuthClientId).
 		AddBroker(config.MqttBroker)
 
 	mqtt.client = paho.NewClient(options)
