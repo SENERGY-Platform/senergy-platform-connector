@@ -289,26 +289,6 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 		}
 	}()
 
-	amqpWait := sync.WaitGroup{}
-	amqpWait.Add(1)
-	wait.Add(1)
-	go func() {
-		defer wait.Done()
-		defer amqpWait.Done()
-		if globalError != nil {
-			return
-		}
-		closer, _, ip, err := Amqp(pool)
-		mux.Lock()
-		defer mux.Unlock()
-		config.AmqpUrl = "amqp://guest:guest@" + ip + ":5672"
-		closerList = append(closerList, closer)
-		if err != nil {
-			globalError = err
-			return
-		}
-	}()
-
 	wait.Wait()
 	if globalError != nil {
 		close(closerList)
@@ -347,14 +327,14 @@ func New(startConfig lib.Config) (config lib.Config, shutdown func(), err error)
 
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
 
-	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
+	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {
 		log.Println("ERROR: unable to start connectionlog:", err)
 		close(closerList)
 		return config, shutdown, err
 	}
 	closerList = append(closerList, func() {
-		logger.Stop()
+		logger.Close()
 	})
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice)

@@ -75,12 +75,11 @@ func main() {
 		connector.IotCache.Debug = true
 	}
 
-	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
+	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {
 		log.Fatal("ERROR: logger ", err)
 	}
-	defer logger.Stop()
-	logger.Debug = config.Debug
+	defer logger.Close()
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice)
 

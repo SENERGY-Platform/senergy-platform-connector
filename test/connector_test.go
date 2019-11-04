@@ -24,7 +24,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
-	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"os"
 	"reflect"
@@ -33,148 +32,6 @@ import (
 	"time"
 )
 
-func Test(t *testing.T) {
-	t.Skip("tests only container startup")
-	config, err := lib.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	config, shutdown, err := server.New(config)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if true {
-		defer shutdown()
-	}
-}
-
-func TestErrorSubscription(t *testing.T) {
-	config, err := lib.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	config, shutdown, err := server.New(config)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if true {
-		defer shutdown()
-	}
-
-	deviceTypeId, serviceTopic, _, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
-		{
-			Name:    "test1",
-			Uri:     "test1",
-			IotType: deviceTypeId,
-		},
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	defer c.Stop()
-
-	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
-	defer eventConsumer.Stop()
-
-	time.Sleep(5 * time.Second)
-
-	token := c.Mqtt().Subscribe("#", 1, func(i mqtt.Client, message mqtt.Message) {
-		t.Error("should never be called", string(message.Payload()))
-	})
-	if token.Wait() && token.Error() != nil {
-		t.Error(token.Error())
-		return
-	}
-
-	time.Sleep(1 * time.Second)
-
-	log.Println("DEBUG: send event")
-	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	time.Sleep(5 * time.Second)
-}
-
-func TestErrorPublish(t *testing.T) {
-	config, err := lib.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	config, shutdown, err := server.New(config)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if true {
-		defer shutdown()
-	}
-
-	deviceTypeId, serviceTopic, _, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
-		{
-			Name:    "test1",
-			Uri:     "test1",
-			IotType: deviceTypeId,
-		},
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	defer c.Stop()
-
-	//kafka consumer to ensure no timouts on webhook because topics had to be created
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", serviceTopic, func(topic string, msg []byte, t time.Time) error {
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
-	defer eventConsumer.Stop()
-	eventConsumer2, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "event", func(topic string, msg []byte, t time.Time) error {
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
-	defer eventConsumer2.Stop()
-
-	time.Sleep(5 * time.Second)
-
-	log.Println("DEBUG: send event")
-	err = c.SendEvent("foo", "bar", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
-	if err != nil {
-		return
-	}
-
-	t.Error("miss expected error")
-}
-
 func TestWithClient(t *testing.T) {
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
@@ -182,6 +39,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 	config.Debug = true
+	config.FatalKafkaError = false
 	config, shutdown, err := server.New(config)
 	if err != nil {
 		t.Error(err)

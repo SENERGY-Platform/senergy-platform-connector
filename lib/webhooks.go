@@ -63,7 +63,7 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger *connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
+func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		msg, err := ioutil.ReadAll(request.Body)
@@ -286,7 +286,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			//TODO: connector.EnsureTopics(token, 100, 1, 1)
 
 			if exists {
-				err = logger.LogGatewayConnect(msg.ClientId)
+				err = logger.LogHubConnect(msg.ClientId)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::login::LogGatewayConnect", err, msg)
 					sendError(writer, err.Error(), http.StatusInternalServerError)
@@ -316,7 +316,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if config.Debug {
 			log.Println("DEBUG: /disconnect", msg)
 		}
-		err = logger.LogGatewayDisconnect(msg.ClientId)
+		err = logger.LogHubDisconnect(msg.ClientId)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
 			return

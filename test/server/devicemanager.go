@@ -8,7 +8,7 @@ import (
 
 func DeviceManager(pool *dockertest.Pool, zk string, deviceRepoUrl string, semanticRepoUrl string, permsearchUrl string) (closer func(), hostPort string, ipAddress string, err error) {
 	log.Println("start device repo")
-	repo, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/device-manager", "test", []string{
+	repo, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/device-manager", "dev", []string{
 		"ZOOKEEPER_URL=" + zk,
 		"PERMISSIONS_URL=" + permsearchUrl,
 		"DEVICE_REPO_URL=" + deviceRepoUrl,

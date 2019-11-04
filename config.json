@@ -8,7 +8,6 @@
   "MemcachedUrl": "memcahed:11211",
   "MqttBroker": "mqtt:1883",
 
-  "AmqpUrl": "amqp://user:pw@rabbitmq:5672/",
   "DeviceLogTopic": "device_log",
   "GatewayLogTopic": "gateway_log",
 

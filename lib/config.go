@@ -48,7 +48,6 @@ type ConfigStruct struct {
 
 	WebhookPort string
 
-	AmqpUrl         string
 	GatewayLogTopic string
 	DeviceLogTopic  string
 
