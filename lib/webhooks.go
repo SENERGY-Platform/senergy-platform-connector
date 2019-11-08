@@ -28,17 +28,21 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"runtime/debug"
 	"time"
 )
 
-func sendError(writer http.ResponseWriter, msg string, additionalInfo ...int) {
-	log.Println("DEBUG: send error:", msg)
+func sendError(writer http.ResponseWriter, msg string, logging bool) {
+	if logging {
+		log.Println("DEBUG: send error:", msg)
+		debug.PrintStack()
+	}
 	//http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
 	//_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
 	_, err := fmt.Fprintf(writer, `{"result": "next"}`)
 	//_, err := fmt.Fprintf(writer, `{"result": "ok"}`)
 	if err != nil {
-		log.Println("ERROR: unable to send error msg:", err, msg, additionalInfo)
+		log.Println("ERROR: unable to send error msg:", err, msg)
 	}
 }
 
@@ -81,8 +85,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		msg := PublishWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish::jsondecoding", err)
-			sendError(writer, err.Error(), http.StatusUnauthorized)
+			sendError(writer, err.Error(), true)
 			return
 		}
 		if config.Debug {
@@ -91,31 +94,27 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if msg.Username != config.AuthClientId {
 			prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::parseTopic", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
+				sendError(writer, err.Error(), config.Debug)
 				return
 			}
 
 			token, err := connector.Security().GetCachedUserToken(msg.Username)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::GenerateUserToken", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
+				sendError(writer, err.Error(), true)
 				return
 			}
 
 			if config.CheckHub {
 				err := checkHub(connector, token, msg.ClientId, deviceUri)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::checkHub", err)
-					sendError(writer, err.Error())
+					sendError(writer, err.Error(), config.Debug)
 					return
 				}
 			}
 
 			payload, err := base64.StdEncoding.DecodeString(msg.Payload)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::publish::base64decoding", err)
-				sendError(writer, err.Error(), http.StatusBadRequest)
+				sendError(writer, err.Error(), true)
 				return
 			}
 
@@ -124,22 +123,19 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				event := platform_connector_lib.EventMsg{}
 				err = json.Unmarshal(payload, &event)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish::event::json", err)
-					sendError(writer, err.Error(), http.StatusBadRequest)
+					sendError(writer, err.Error(), true)
 					return
 				}
 				if !config.CheckHub {
 					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
-						log.Println("ERROR: InitWebhooks::publish::event::checkEvent", err)
-						sendError(writer, err.Error(), http.StatusInternalServerError)
+						sendError(writer, err.Error(), config.Debug)
 						return
 					}
 				}
 				if !config.MqttPublishAuthOnly {
 					err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
 					if err != nil {
-						log.Println("ERROR: InitWebhooks::publish::event::HandleDeviceRefEventWithAuthToken", err)
-						sendError(writer, err.Error(), http.StatusInternalServerError)
+						sendError(writer, err.Error(), true)
 						return
 					}
 				}
@@ -148,8 +144,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					msg := ResponseEnvelope{}
 					err = json.Unmarshal(payload, &msg)
 					if err != nil {
-						log.Println("ERROR: InitWebhooks::publish::response::json", err)
-						sendError(writer, err.Error(), http.StatusBadRequest)
+						sendError(writer, err.Error(), true)
 						return
 					}
 					request, err := correlation.Get(msg.CorrelationId)
@@ -161,14 +156,12 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					}
 					err = connector.HandleCommandResponse(request, msg.Payload)
 					if err != nil {
-						log.Println("ERROR: InitWebhooks::publish::response::HandleCommandResponse", err)
-						sendError(writer, err.Error(), http.StatusInternalServerError)
+						sendError(writer, err.Error(), true)
 						return
 					}
 				}
 			default:
-				log.Println("ERROR: InitWebhooks::publish prefix not allowed", prefix, msg.Username)
-				sendError(writer, "unexpected prefix", http.StatusUnauthorized)
+				sendError(writer, "unexpected prefix", config.Debug)
 				return
 			}
 
@@ -183,8 +176,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		msg := SubscribeWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::subscribe::jsondecoding", err)
-			sendError(writer, err.Error(), http.StatusUnauthorized)
+			sendError(writer, err.Error(), true)
 			return
 		}
 		if config.Debug {
@@ -195,51 +187,54 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if msg.Username != config.AuthClientId {
 			token, err := connector.Security().GenerateUserToken(msg.Username)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::subscribe::GenerateUserToken", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
+				sendError(writer, err.Error(), config.Debug)
 				return
 			}
 			for _, topic := range msg.Topics {
 				prefix, deviceUri, _, err := parseTopic(topic.Topic)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
-					//sendError(writer, err.Error(), http.StatusUnauthorized)
-					//return
+					if config.Debug {
+						log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
+					}
 					rejected = append(rejected, topic)
 					continue
 				}
 				if config.CheckHub {
 					err := checkHub(connector, token, msg.ClientId, deviceUri)
 					if err != nil {
-						log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
-						//sendError(writer, err.Error())
-						//return
+						if config.Debug {
+							log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
+						}
 						rejected = append(rejected, topic)
 						continue
 					}
 				}
 				if prefix != "command" {
-					log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
-					//sendError(writer, "expect username as topic prefix", http.StatusUnauthorized)
-					//return
+					if config.Debug {
+						log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
+					}
 					rejected = append(rejected, topic)
 					continue
 				}
 				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
 				if err != nil {
-					log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
+					if config.Debug {
+						log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
+					}
 					rejected = append(rejected, topic)
 					continue
 				}
 				err = logger.LogDeviceConnect(device.Id)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
+					if config.Debug {
+						log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
+					}
 				}
 				ok = append(ok, topic)
 			}
 			sendSubscriptionResult(writer, ok, rejected)
 		} else {
-			sendError(writer, "connector does not subscribe", http.StatusUnauthorized)
+			sendError(writer, "connector does not subscribe", true)
 		}
 	})
 
@@ -247,8 +242,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		msg := LoginWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::login::jsondecoding", err)
-			sendError(writer, err.Error(), http.StatusUnauthorized)
+			sendError(writer, err.Error(), true)
 			return
 		}
 		if config.Debug {
@@ -257,49 +251,40 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		//log.Println("DEBUG: /login", msg)
 		if msg.Username != config.AuthClientId {
 			if !msg.CleanSession {
-				log.Println("ERROR: InitWebhooks::login::CleanSession", msg)
-				sendError(writer, "expect clean session", http.StatusBadRequest)
+				sendError(writer, "expect clean session", config.Debug)
 			}
 			token, err := connector.Security().GetUserToken(msg.Username, msg.Password)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::login::GetOpenidPasswordToken", err)
-				sendError(writer, err.Error(), http.StatusUnauthorized)
+				sendError(writer, err.Error(), true)
 				return
 			}
 			if token == "" {
-				log.Println("ERROR: InitWebhooks::login::token missing", msg)
-				sendError(writer, "access denied", http.StatusUnauthorized)
+				sendError(writer, "access denied", config.Debug)
 				return
 			}
 			exists, err := connector.Iot().ExistsHub(msg.ClientId, token)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::login::ExistsHub", err)
-				sendError(writer, err.Error())
+				sendError(writer, err.Error(), true)
 				return
 			}
 			if config.CheckHub && !exists {
-				log.Println("ERROR: InitWebhooks::login::ExistsHub false")
-				sendError(writer, "client id is unknown as hub id")
+				sendError(writer, "client id is unknown as hub id", config.Debug)
 				return
 			}
-
-			//TODO: connector.EnsureTopics(token, 100, 1, 1)
 
 			if exists {
 				err = logger.LogHubConnect(msg.ClientId)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::login::LogGatewayConnect", err, msg)
-					sendError(writer, err.Error(), http.StatusInternalServerError)
+					sendError(writer, err.Error(), true)
 					return
 				}
 			}
 		} else if msg.Password != config.AuthClientSecret {
-			log.Println("ERROR: msg.Password != config.AuthClientSecret")
-			sendError(writer, "access denied")
+			sendError(writer, "access denied", config.Debug)
 			return
 		}
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-		if err != nil {
+		if err != nil && config.Debug {
 			log.Println("ERROR: InitWebhooks::login unable to fprint:", err)
 		}
 	})
@@ -350,8 +335,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		msg := UnsubscribeWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::unsubscribe::jsondecoding", err)
-			sendError(writer, err.Error(), http.StatusInternalServerError)
+			sendError(writer, err.Error(), true)
 			return
 		}
 		if config.Debug {
