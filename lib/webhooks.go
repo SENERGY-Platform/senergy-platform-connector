@@ -128,8 +128,15 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				}
 				if !config.CheckHub {
 					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
-						sendError(writer, err.Error(), config.Debug)
-						return
+						if err == ServiceNotFound {
+							if config.Debug {
+								log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
+							}
+							return
+						} else {
+							sendError(writer, err.Error(), config.Debug)
+							return
+						}
 					}
 				}
 				if !config.MqttPublishAuthOnly {
