@@ -40,10 +40,6 @@ func main() {
 		log.Fatal("ERROR: unable to load config ", err)
 	}
 
-	if config.KafkaEventTopic == "-" || config.KafkaEventTopic == "false" {
-		config.KafkaEventTopic = ""
-	}
-
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), lib.StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
@@ -58,9 +54,8 @@ func main() {
 		AuthClientSecret:         config.AuthClientSecret,
 		AuthClientId:             config.AuthClientId,
 		AuthEndpoint:             config.AuthEndpoint,
-		IotRepoUrl:               config.IotRepoUrl,
+		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
-		KafkaEventTopic:          config.KafkaEventTopic,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
 		IotCacheUrl:          lib.StringToList(config.IotCacheUrls),
@@ -80,12 +75,11 @@ func main() {
 		connector.IotCache.Debug = true
 	}
 
-	logger, err := connectionlog.New(config.AmqpUrl, "", config.GatewayLogTopic, config.DeviceLogTopic)
+	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {
 		log.Fatal("ERROR: logger ", err)
 	}
-	defer logger.Stop()
-	logger.Debug = config.Debug
+	defer logger.Close()
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice)
 

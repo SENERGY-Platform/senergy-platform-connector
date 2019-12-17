@@ -58,6 +58,7 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			log.Println("WARNING: received old command; do nothing")
 			return
 		}
+		log.Println("DEBUG: client handle command", request)
 		respMsg, err := handler(request.Payload)
 		if err != nil {
 			log.Println("ERROR: while processing command", err)

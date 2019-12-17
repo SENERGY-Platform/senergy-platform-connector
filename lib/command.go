@@ -28,22 +28,22 @@ import (
 func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
 		if config.Debug {
-			log.Println("DEBUG: receive command", commandRequest.DeviceInstanceId, commandRequest.ServiceId, commandRequest.ProtocolParts)
+			log.Println("DEBUG: receive command", commandRequest.Metadata.Device.Id, commandRequest.Metadata.Service.Id, commandRequest.Request.Input)
 		}
 		correlationId, err := correlationservice.Save(commandRequest)
 		if err != nil {
 			log.Println("ERROR: unable to save correlation", err)
 			return err
 		}
-		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix(), CompletionStrategy: commandRequest.CompletionStrategy}
+		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix(), CompletionStrategy: commandRequest.TaskInfo.CompletionStrategy}
 		b, err := json.Marshal(envelope)
 		if err != nil {
 			log.Println("ERROR: unable to marshal envelope", err)
 			return err
 		}
 		if config.Debug {
-			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, envelope)
+			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
 		}
-		return mqtt.Publish("command/"+commandRequest.DeviceUrl+"/"+commandRequest.ServiceUrl, string(b))
+		return mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
 	}
 }

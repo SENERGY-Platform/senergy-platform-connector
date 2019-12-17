@@ -33,11 +33,11 @@ func parseTopic(topic string) (prefix string, deviceUri string, serviceUri strin
 }
 
 func checkHub(connector *platform_connector_lib.Connector, token security.JwtToken, hubId string, deviceUri string) (err error) {
-	devices, err := connector.Iot().GetHubDevices(hubId, token)
+	hub, err := connector.Iot().GetHub(hubId, token)
 	if err != nil {
 		return err
 	}
-	for _, device := range devices {
+	for _, device := range hub.DeviceLocalIds {
 		if device == deviceUri {
 			return nil
 		}
@@ -45,21 +45,23 @@ func checkHub(connector *platform_connector_lib.Connector, token security.JwtTok
 	return errors.New("device is not assigned to hub")
 }
 
+var ServiceNotFound = errors.New("not found")
+
 func checkEvent(connector *platform_connector_lib.Connector, token security.JwtToken, deviceUri string, serviceUri string) (err error) {
-	device, err := connector.IotCache.WithToken(token).DeviceUrlToIotDevice(deviceUri)
+	device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 	if err != nil {
 		return err
 	}
-	dt, err := connector.IotCache.WithToken(token).GetDeviceType(device.DeviceType)
+	dt, err := connector.IotCache.WithToken(token).GetDeviceType(device.DeviceTypeId)
 	if err != nil {
 		return err
 	}
 	for _, service := range dt.Services {
-		if service.Url == serviceUri {
+		if service.LocalId == serviceUri {
 			return nil
 		}
 	}
-	return errors.New("not found")
+	return ServiceNotFound
 }
 
 func StringToList(str string) []string {
