@@ -420,9 +420,10 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					} else {
 						log.Println("ERROR: connection test:", err)
 					}
+				} else {
+					ioutil.ReadAll(resp.Body)
+					resp.Body.Close()
 				}
-				ioutil.ReadAll(resp.Body)
-				resp.Body.Close()
 			}
 		}()
 	}
