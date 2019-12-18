@@ -415,7 +415,11 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				}
 				resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
 				if err != nil {
-					log.Fatal("FATAL: connection test:", err)
+					if config.SelfCheckFatal {
+						log.Fatal("FATAL: connection test:", err)
+					} else {
+						log.Println("ERROR: connection test:", err)
+					}
 				}
 				ioutil.ReadAll(resp.Body)
 				resp.Body.Close()

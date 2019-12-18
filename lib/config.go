@@ -74,7 +74,8 @@ type ConfigStruct struct {
 
 	MqttPublishAuthOnly bool
 
-	SelfCheck bool
+	SelfCheck      bool
+	SelfCheckFatal bool
 }
 
 type Config = *ConfigStruct

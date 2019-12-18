@@ -37,5 +37,6 @@
   "SyncKafka": true,
   "SyncKafkaIdempotent": true,
 
-  "SelfCheck": true
+  "SelfCheck": true,
+  "SelfCheckFatal": true
 }
