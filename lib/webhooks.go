@@ -298,7 +298,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 
 	//https://vernemq.com/docs/plugindevelopment/sessionlifecycle.html
 	router.HandleFunc("/disconnect", func(writer http.ResponseWriter, request *http.Request) {
-		defer fmt.Fprintf(writer, "")
+		defer fmt.Fprintf(writer, "{}")
 		msg := DisconnectWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
