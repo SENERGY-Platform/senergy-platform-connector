@@ -405,21 +405,23 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 	}()
 
-	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
-		for t := range ticker.C {
-			log.Println("INFO: connectivity test: " + t.String())
-			client := http.Client{
-				Timeout: 5 * time.Second,
+	if config.SelfCheck {
+		go func() {
+			ticker := time.NewTicker(1 * time.Minute)
+			for t := range ticker.C {
+				log.Println("INFO: connectivity test: " + t.String())
+				client := http.Client{
+					Timeout: 5 * time.Second,
+				}
+				resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
+				if err != nil {
+					log.Fatal("FATAL: connection test:", err)
+				}
+				ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
 			}
-			resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
-			if err != nil {
-				log.Fatal("FATAL: connection test:", err)
-			}
-			ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-		}
-	}()
+		}()
+	}
 
 	return server
 }

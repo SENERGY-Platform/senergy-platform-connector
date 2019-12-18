@@ -35,5 +35,7 @@
   "TokenCacheExpiration": 3600,
 
   "SyncKafka": true,
-  "SyncKafkaIdempotent": true
+  "SyncKafkaIdempotent": true,
+
+  "SelfCheck": true
 }
