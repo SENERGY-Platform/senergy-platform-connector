@@ -18,6 +18,7 @@ package lib
 
 import (
 	"errors"
+	uuid "github.com/satori/go.uuid"
 	"log"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -39,7 +40,7 @@ func MqttStart(config Config) (mqtt *Mqtt, err error) {
 		SetUsername(config.AuthClientId).
 		SetAutoReconnect(true).
 		SetCleanSession(true).
-		SetClientID("senergy_" + config.AuthClientId).
+		SetClientID(config.AuthClientId + "_" + uuid.NewV4().String()).
 		AddBroker(config.MqttBroker)
 
 	mqtt.client = paho.NewClient(options)
