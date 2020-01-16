@@ -129,9 +129,8 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				if !config.CheckHub {
 					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
 						if err == ServiceNotFound {
-							if config.Debug {
-								log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
-							}
+							_, err = fmt.Fprint(writer, `{"result": "ok"}`) //ignore event but allow mqtt-publish
+							log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
 							return
 						} else {
 							sendError(writer, err.Error(), config.Debug)
