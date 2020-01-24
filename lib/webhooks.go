@@ -28,19 +28,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
-	"runtime/debug"
 	"time"
 )
 
 func sendError(writer http.ResponseWriter, msg string, logging bool) {
 	if logging {
 		log.Println("DEBUG: send error:", msg)
-		debug.PrintStack()
 	}
-	//http.Error(writer, fmt.Sprintf(`{"result": { "error": "%s" }}`, msg), statusCode)
-	//_, err := fmt.Fprintf(writer, `{"result": { "error": "%s" }}`, msg)
-	_, err := fmt.Fprintf(writer, `{"result": "next"}`)
-	//_, err := fmt.Fprintf(writer, `{"result": "ok"}`)
+	err := json.NewEncoder(writer).Encode(map[string]map[string]string{"result": {"error": msg}})
 	if err != nil {
 		log.Println("ERROR: unable to send error msg:", err, msg)
 	}
