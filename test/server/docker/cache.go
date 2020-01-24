@@ -1,17 +1,23 @@
-package server
+package docker
 
 import (
+	"context"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/ory/dockertest"
 	"log"
 )
 
-func Memcached(pool *dockertest.Pool) (closer func(), hostPort string, ipAddress string, err error) {
+func Memcached(pool *dockertest.Pool, ctx context.Context) (hostPort string, ipAddress string, err error) {
 	log.Println("start memcached")
 	mem, err := pool.Run("memcached", "1.5.12-alpine", []string{})
 	if err != nil {
-		return func() {}, "", "", err
+		return "", "", err
 	}
+	go func() {
+		<-ctx.Done()
+		log.Println("DEBUG: remove container " + mem.Container.Name)
+		mem.Close()
+	}()
 	hostPort = mem.GetPort("11211/tcp")
 	err = pool.Retry(func() error {
 		log.Println("try memcache connection...")
@@ -24,5 +30,5 @@ func Memcached(pool *dockertest.Pool) (closer func(), hostPort string, ipAddress
 		}
 		return err
 	})
-	return func() { mem.Close() }, hostPort, mem.Container.NetworkSettings.IPAddress, err
+	return hostPort, mem.Container.NetworkSettings.IPAddress, err
 }

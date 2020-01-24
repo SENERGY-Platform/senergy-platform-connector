@@ -17,6 +17,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib"
@@ -33,6 +34,10 @@ import (
 )
 
 func TestWithClient(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer time.Sleep(10 * time.Second) //wait for container shutdown
+	defer cancel()
+
 	config, err := lib.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -40,16 +45,13 @@ func TestWithClient(t *testing.T) {
 	}
 	config.Debug = true
 	config.FatalKafkaError = false
-	config, shutdown, err := server.New(config)
+	config, err = server.New(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if true {
-		defer shutdown()
-	}
 
-	deviceTypeId, getServiceTopic, setServiceTopic, err := server.CreateDeviceType(config, config.DeviceManagerUrl)
+	deviceTypeId, getServiceTopic, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl)
 	if err != nil {
 		t.Error(err)
 		return

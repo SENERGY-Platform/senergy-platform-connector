@@ -45,7 +45,7 @@ func checkHub(connector *platform_connector_lib.Connector, token security.JwtTok
 	return errors.New("device is not assigned to hub")
 }
 
-var ServiceNotFound = errors.New("not found")
+var ServiceNotFound = errors.New("service not found")
 
 func checkEvent(connector *platform_connector_lib.Connector, token security.JwtToken, deviceUri string, serviceUri string) (err error) {
 	device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
