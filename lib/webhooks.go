@@ -258,6 +258,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if msg.Username != config.AuthClientId {
 			if !msg.CleanSession {
 				sendError(writer, "expect clean session", config.Debug)
+				return
 			}
 			token, err := connector.Security().GetUserToken(msg.Username, msg.Password)
 			if err != nil {
