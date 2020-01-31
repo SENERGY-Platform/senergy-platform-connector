@@ -402,6 +402,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 
 	if config.SelfCheck {
 		go func() {
+			defer log.Fatal("ERROR: self check terminated")
 			ticker := time.NewTicker(1 * time.Minute)
 			for t := range ticker.C {
 				log.Println("INFO: connectivity test: " + t.String())
