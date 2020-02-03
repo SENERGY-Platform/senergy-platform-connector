@@ -28,6 +28,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"runtime"
 	"time"
 )
 
@@ -382,6 +383,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
+		runtime.SetBlockProfileRate(int(time.Second.Nanoseconds())) //one sample per second
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 		router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
 		router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
