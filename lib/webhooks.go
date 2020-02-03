@@ -18,6 +18,7 @@ package lib
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -28,6 +29,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"runtime"
 	"time"
 )
@@ -407,24 +409,44 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			defer log.Fatal("ERROR: self check terminated")
 			ticker := time.NewTicker(1 * time.Minute)
 			for t := range ticker.C {
-				log.Println("INFO: connectivity test: " + t.String())
-				client := http.Client{
-					Timeout: 5 * time.Second,
-				}
-				resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
-				if err != nil {
-					if config.SelfCheckFatal {
-						log.Fatal("FATAL: connection test:", err)
-					} else {
-						log.Println("ERROR: connection test:", err)
-					}
-				} else {
-					ioutil.ReadAll(resp.Body)
-					resp.Body.Close()
-				}
+				go selfCheck(config, t)
 			}
 		}()
 	}
 
 	return server
+}
+
+func selfCheck(config Config, t time.Time) {
+	//ensure exit in deadlock
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	go func() {
+		<-ctx.Done()
+		if ctx.Err() != context.Canceled {
+			go func() {
+				log.Fatal("FATAL: connectivity test by context:", ctx.Err())
+			}()
+			//ensure os.Exit if logging is blocked
+			time.Sleep(200 * time.Millisecond)
+			os.Exit(1)
+		}
+	}()
+
+	log.Println("INFO: connectivity test start:", t.String())
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
+	if err != nil {
+		if config.SelfCheckFatal {
+			log.Fatal("FATAL: connectivity test:", err)
+		} else {
+			log.Println("ERROR: connectivity test:", err)
+		}
+	} else {
+		log.Println("INFO: connectivity test ok:", t.String())
+		ioutil.ReadAll(resp.Body)
+	}
+	resp.Body.Close()
 }
