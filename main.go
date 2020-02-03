@@ -83,6 +83,10 @@ func main() {
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice)
 
+	if config.StartupDelay != 0 {
+		time.Sleep(time.Duration(config.StartupDelay) * time.Second)
+	}
+
 	mqtt, err := lib.MqttStart(config)
 	if err != nil {
 		log.Fatal("ERROR: unable to start mqtt connection ", err)
