@@ -68,8 +68,9 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println("INFO: /health received")
 		msg, err := ioutil.ReadAll(request.Body)
-		log.Println("INFO: /health", err, string(msg))
+		log.Println("INFO: /health body =", err, string(msg))
 		writer.WriteHeader(http.StatusOK)
 	})
 
@@ -439,7 +440,17 @@ func selfCheck(config Config, t time.Time) {
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
-	resp, err := client.Post("http://localhost:"+config.WebhookPort+"/health", "application/json", bytes.NewBuffer([]byte("local connection test: "+t.String())))
+	req, err := http.NewRequest("POST", "http://localhost:"+config.WebhookPort+"/health", bytes.NewBuffer([]byte("local connection test: "+t.String())))
+	if err != nil {
+		if config.SelfCheckFatal {
+			log.Fatal("FATAL: connectivity test:", err)
+		} else {
+			log.Println("ERROR: connectivity test:", err)
+		}
+	}
+	ctx2, _ := context.WithTimeout(context.Background(), 6*time.Second)
+	req = req.WithContext(ctx2)
+	resp, err := client.Do(req)
 	if err != nil {
 		if config.SelfCheckFatal {
 			log.Fatal("FATAL: connectivity test:", err)
