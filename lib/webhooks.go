@@ -386,6 +386,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 		runtime.SetBlockProfileRate(int(time.Second.Nanoseconds())) //one sample per second
+		runtime.SetMutexProfileFraction(1)
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 		router.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
 		router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
