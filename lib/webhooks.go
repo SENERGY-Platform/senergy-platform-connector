@@ -428,6 +428,7 @@ func selfCheck(config Config, t time.Time) {
 		<-ctx.Done()
 		if ctx.Err() != context.Canceled {
 			go func() {
+				os.Stdout.WriteString("DEBUG: seld-check try os.Stdout.WriteString before FATAL")
 				log.Fatal("FATAL: connectivity test by context:", ctx.Err())
 			}()
 			//ensure os.Exit if logging is blocked
@@ -436,6 +437,7 @@ func selfCheck(config Config, t time.Time) {
 		}
 	}()
 
+	os.Stdout.WriteString("DEBUG: seld-check try os.Stdout.WriteString")
 	log.Println("INFO: connectivity test start:", t.String())
 	client := http.Client{
 		Timeout: 5 * time.Second,
