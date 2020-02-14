@@ -36,7 +36,6 @@ func (v VoidWriter) Write(p []byte) (n int, err error) {
 }
 
 func main() {
-	log.SetOutput(VoidWriter{})
 	time.Sleep(5 * time.Second) //wait for routing tables in cluster
 
 	configLocation := flag.String("config", "config.json", "configuration file")
@@ -45,6 +44,20 @@ func main() {
 	config, err := lib.LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatal("ERROR: unable to load config ", err)
+	}
+
+	switch config.Log {
+	case "void":
+		log.SetOutput(VoidWriter{})
+	case "":
+		break
+	default:
+		f, err := os.OpenFile(config.Log, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
 	}
 
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), lib.StringToList(config.MemcachedUrl)...)
@@ -112,5 +125,4 @@ func main() {
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	sig := <-shutdown
 	log.Println("received shutdown signal", sig)
-
 }

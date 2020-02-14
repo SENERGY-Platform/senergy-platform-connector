@@ -76,6 +76,8 @@ type ConfigStruct struct {
 	SelfCheck      bool
 	SelfCheckFatal bool
 	StartupDelay   int64
+
+	Log string
 }
 
 type Config = *ConfigStruct

@@ -38,5 +38,7 @@
   "SyncKafkaIdempotent": true,
 
   "SelfCheck": true,
-  "SelfCheckFatal": true
+  "SelfCheckFatal": true,
+
+  "Log": "connector.log"
 }
