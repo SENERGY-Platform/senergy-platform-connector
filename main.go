@@ -91,7 +91,7 @@ func main() {
 	})
 
 	if config.Debug {
-		connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
+		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))
 		connector.IotCache.Debug = true
 	}
 
