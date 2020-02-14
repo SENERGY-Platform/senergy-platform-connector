@@ -29,7 +29,14 @@ import (
 	"time"
 )
 
+type VoidWriter struct{}
+
+func (v VoidWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
 func main() {
+	log.SetOutput(VoidWriter{})
 	time.Sleep(5 * time.Second) //wait for routing tables in cluster
 
 	configLocation := flag.String("config", "config.json", "configuration file")
