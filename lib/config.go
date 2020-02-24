@@ -73,11 +73,10 @@ type ConfigStruct struct {
 
 	MqttPublishAuthOnly bool
 
-	SelfCheck      bool
-	SelfCheckFatal bool
-	StartupDelay   int64
+	StartupDelay int64
 
-	Log string
+	Log            string
+	WebhookTimeout int64
 }
 
 type Config = *ConfigStruct

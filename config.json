@@ -37,8 +37,7 @@
   "SyncKafka": true,
   "SyncKafkaIdempotent": true,
 
-  "SelfCheck": true,
-  "SelfCheckFatal": true,
+  "Log": "connector.log",
 
-  "Log": "connector.log"
+  "WebhookTimeout": 10
 }

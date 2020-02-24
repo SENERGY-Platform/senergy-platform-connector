@@ -17,8 +17,6 @@
 package lib
 
 import (
-	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -395,7 +393,28 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	}
 
-	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: router, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
+	var handler http.Handler
+
+	if config.WebhookTimeout > 0 {
+		handler = &HttpTimeoutHandler{
+			Timeout:        time.Duration(config.WebhookTimeout) * time.Second,
+			RequestHandler: router,
+			TimeoutHandler: func() {
+				f, err := os.OpenFile("timeouts.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+				if err != nil {
+					os.Exit(1)
+					return
+				}
+				fmt.Fprintln(f, time.Now().String())
+				f.Sync()
+				os.Exit(1)
+			},
+		}
+	} else {
+		handler = router
+	}
+
+	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: handler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
 	server.RegisterOnShutdown(func() {
 		log.Println("DEBUG: server shutdown")
 	})
@@ -407,61 +426,5 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 	}()
 
-	if config.SelfCheck {
-		go func() {
-			defer log.Fatal("ERROR: self check terminated")
-			ticker := time.NewTicker(1 * time.Minute)
-			for t := range ticker.C {
-				go selfCheck(config, t)
-			}
-		}()
-	}
-
 	return server
-}
-
-func selfCheck(config Config, t time.Time) {
-	//ensure exit in deadlock
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		if ctx.Err() != context.Canceled {
-			go func() {
-				os.Stdout.WriteString("DEBUG: seld-check try os.Stdout.WriteString before FATAL")
-				log.Fatal("FATAL: connectivity test by context:", ctx.Err())
-			}()
-			//ensure os.Exit if logging is blocked
-			time.Sleep(200 * time.Millisecond)
-			os.Exit(1)
-		}
-	}()
-
-	os.Stdout.WriteString("DEBUG: seld-check try os.Stdout.WriteString")
-	log.Println("INFO: connectivity test start:", t.String())
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
-	req, err := http.NewRequest("POST", "http://localhost:"+config.WebhookPort+"/health", bytes.NewBuffer([]byte("local connection test: "+t.String())))
-	if err != nil {
-		if config.SelfCheckFatal {
-			log.Fatal("FATAL: connectivity test:", err)
-		} else {
-			log.Println("ERROR: connectivity test:", err)
-		}
-	}
-	ctx2, _ := context.WithTimeout(context.Background(), 6*time.Second)
-	req = req.WithContext(ctx2)
-	resp, err := client.Do(req)
-	if err != nil {
-		if config.SelfCheckFatal {
-			log.Fatal("FATAL: connectivity test:", err)
-		} else {
-			log.Println("ERROR: connectivity test:", err)
-		}
-	} else {
-		log.Println("INFO: connectivity test ok:", t.String())
-		ioutil.ReadAll(resp.Body)
-	}
-	resp.Body.Close()
 }
