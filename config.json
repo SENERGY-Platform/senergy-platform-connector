@@ -39,5 +39,9 @@
 
   "Log": "connector.log",
 
-  "WebhookTimeout": 10
+  "WebhookTimeout": 10,
+
+  "Validate": true,
+  "ValidateAllowUnknownField": true,
+  "ValidateAllowMissingField": true
 }

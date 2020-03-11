@@ -45,6 +45,10 @@ func TestWithClient(t *testing.T) {
 	}
 	config.Debug = true
 	config.FatalKafkaError = false
+	config.Validate = true
+	config.ValidateAllowUnknownField = true
+	config.ValidateAllowMissingField = true
+
 	config, err = server.New(ctx, config)
 	if err != nil {
 		t.Error(err)
@@ -66,6 +70,13 @@ func TestWithClient(t *testing.T) {
 			IotType: deviceTypeId,
 		},
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	//will later be used for faulty event
+	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -154,6 +165,13 @@ func TestWithClient(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
+		return
+	}
+
+	//expect error
+	err = cerr.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": "nope", "error_to_expect": "wrong structure and type"}`})
+	if err == nil {
+		t.Error("expected error")
 		return
 	}
 

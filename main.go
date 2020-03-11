@@ -92,6 +92,10 @@ func main() {
 		SyncKafka:           config.SyncKafka,
 		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
 		Debug:               config.Debug,
+
+		Validate:                  config.Validate,
+		ValidateAllowMissingField: config.ValidateAllowMissingField,
+		ValidateAllowUnknownField: config.ValidateAllowUnknownField,
 	})
 
 	if config.Debug {

@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
@@ -135,8 +136,15 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		SyncKafka:           config.SyncKafka,
 		SyncKafkaIdempotent: config.SyncKafkaIdempotent,
 		Debug:               config.Debug,
+
+		Validate:                  config.Validate,
+		ValidateAllowMissingField: config.ValidateAllowMissingField,
+		ValidateAllowUnknownField: config.ValidateAllowUnknownField,
 	})
 	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
+
+	temp, _ := json.Marshal(connector.Config)
+	log.Println("USE CONFIG: ", string(temp))
 
 	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {

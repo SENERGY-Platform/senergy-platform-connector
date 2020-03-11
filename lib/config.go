@@ -77,6 +77,10 @@ type ConfigStruct struct {
 
 	Log            string
 	WebhookTimeout int64
+
+	Validate                  bool
+	ValidateAllowUnknownField bool
+	ValidateAllowMissingField bool
 }
 
 type Config = *ConfigStruct
