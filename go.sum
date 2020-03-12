@@ -25,6 +25,8 @@ github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200127081843-bf77729
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200127081843-bf77729b5971/go.mod h1:QfOIJFBotBg9zPWaW/08rrLT5S2+gt7NAZrrCZM8goc=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200311082946-8d488299bcab h1:ajd/9UgCDN9J0KlZnXjvvfVXenxs3zvF8YEruQgHf7s=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200311082946-8d488299bcab/go.mod h1:QfOIJFBotBg9zPWaW/08rrLT5S2+gt7NAZrrCZM8goc=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200312114332-3744f408d183 h1:2pNw1c9n9InkIiiLvF999BJovjiA68MmCcKdBRDjyOs=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200312114332-3744f408d183/go.mod h1:QfOIJFBotBg9zPWaW/08rrLT5S2+gt7NAZrrCZM8goc=
 github.com/Shopify/sarama v1.22.0 h1:rtiODsvY4jW6nUV6n3K+0gx/8WlAwVt+Ixt6RIvpYyo=
 github.com/Shopify/sarama v1.22.0/go.mod h1:lm3THZ8reqBDBQKQyb5HB3sY1lKp3grEbQ81aWSgPp4=
 github.com/Shopify/toxiproxy v2.1.4+incompatible h1:TKdv8HiTLgE5wdJuEML90aBgNWsokNbMijUGhmcoBJc=
