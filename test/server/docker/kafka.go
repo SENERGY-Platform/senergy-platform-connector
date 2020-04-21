@@ -36,7 +36,9 @@ func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err
 	log.Println("start kafka with env ", env)
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{Repository: "bitnami/kafka", Tag: "latest", Env: env, PortBindings: map[docker.Port][]docker.PortBinding{
 		"9092/tcp": {{HostIP: "", HostPort: strconv.Itoa(kafkaport)}},
-	}})
+	}}, func(config *docker.HostConfig) {
+		config.Tmpfs = map[string]string{"/bitnami/kafka": "rw"}
+	})
 	if err != nil {
 		return err
 	}
@@ -68,7 +70,9 @@ func Zookeeper(pool *dockertest.Pool, ctx context.Context) (hostPort string, ipA
 	log.Println("start zookeeper on ", zkport)
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{Repository: "wurstmeister/zookeeper", Tag: "latest", Env: env, PortBindings: map[docker.Port][]docker.PortBinding{
 		"2181/tcp": {{HostIP: "", HostPort: strconv.Itoa(zkport)}},
-	}})
+	}}, func(config *docker.HostConfig) {
+		config.Tmpfs = map[string]string{"/opt/zookeeper-3.4.13/data": "rw"}
+	})
 	if err != nil {
 		return "", "", err
 	}
