@@ -219,7 +219,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					rejected = append(rejected, topic)
 					continue
 				}
-				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
+				device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 				if err != nil {
 					if config.Debug {
 						log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
