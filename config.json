@@ -37,7 +37,7 @@
   "SyncKafka": true,
   "SyncKafkaIdempotent": true,
 
-  "Log": "connector.log",
+  "Log": "stdout",
 
   "WebhookTimeout": 10,
 
