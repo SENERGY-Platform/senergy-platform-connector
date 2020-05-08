@@ -115,7 +115,14 @@ func main() {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)
 	}
 
-	mqtt, err := lib.MqttStart(config)
+	var mqtt *lib.Mqtt
+	for i := 0; i < 10; i++ {
+		mqtt, err = lib.MqttStart(config)
+		if err == nil {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
 	if err != nil {
 		log.Fatal("ERROR: unable to start mqtt connection ", err)
 	}
