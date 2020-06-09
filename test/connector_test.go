@@ -48,6 +48,9 @@ func TestWithClient(t *testing.T) {
 	config.Validate = true
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
+	config.Log = "stdout"
+	config.SyncKafka = true
+	config.SyncKafkaIdempotent = true
 
 	config, err = server.New(ctx, config)
 	if err != nil {

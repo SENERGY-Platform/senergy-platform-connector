@@ -109,6 +109,22 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		return config, err
 	}
 
+	switch config.Log {
+	case "":
+		break
+	case "stdout":
+		log.SetOutput(os.Stdout)
+	case "stderr":
+		log.SetOutput(os.Stderr)
+	default:
+		f, err := os.OpenFile(config.Log, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
+	}
+
 	correlationservice := correlation.New(10, lib.StringToList(config.MemcachedUrl)...)
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		FatalKafkaError:          config.FatalKafkaError,
@@ -124,11 +140,13 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		AuthEndpoint:             config.AuthEndpoint,
 		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
+		SemanticRepositoryUrl:    config.SemanticRepoUrl,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
-		DeviceExpiration:     int32(config.DeviceExpiration),
-		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
-		IotCacheUrl:          strings.Split(config.IotCacheUrls, ","),
+		DeviceExpiration:         int32(config.DeviceExpiration),
+		DeviceTypeExpiration:     int32(config.DeviceTypeExpiration),
+		CharacteristicExpiration: int32(config.CharacteristicExpiration),
+		IotCacheUrl:              strings.Split(config.IotCacheUrls, ","),
 
 		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
 		TokenCacheExpiration: int32(config.TokenCacheExpiration),
@@ -141,7 +159,10 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		ValidateAllowMissingField: config.ValidateAllowMissingField,
 		ValidateAllowUnknownField: config.ValidateAllowUnknownField,
 	})
-	connector.SetKafkaLogger(log.New(os.Stdout, "[CONNECTOR-KAFKA] ", 0))
+	if config.Debug {
+		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))
+		connector.IotCache.Debug = true
+	}
 
 	temp, _ := json.Marshal(connector.Config)
 	log.Println("USE CONFIG: ", string(temp))

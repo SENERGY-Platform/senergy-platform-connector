@@ -3,7 +3,7 @@ module github.com/SENERGY-Platform/senergy-platform-connector
 go 1.13
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200430101809-f24f693b2ced
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20200609064842-3c2f54917916
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/julienschmidt/httprouter v1.3.0

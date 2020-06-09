@@ -15,7 +15,7 @@ func createTestCommandMsg(config lib.Config, deviceUri string, serviceUri string
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl)
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, config.SemanticRepoUrl)
 	device, err := iot.GetDeviceByLocalId(deviceUri, token)
 	if err != nil {
 		return result, err
@@ -59,7 +59,7 @@ func createOptimisticTestCommandMsg(config lib.Config, deviceUri string, service
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl)
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, config.SemanticRepoUrl)
 	device, err := iot.GetDeviceByLocalId(deviceUri, token)
 	if err != nil {
 		return result, err
