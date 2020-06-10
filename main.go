@@ -80,11 +80,13 @@ func main() {
 		AuthEndpoint:             config.AuthEndpoint,
 		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
+		SemanticRepositoryUrl:    config.SemanticRepoUrl,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
-		IotCacheUrl:          lib.StringToList(config.IotCacheUrls),
-		DeviceExpiration:     int32(config.DeviceExpiration),
-		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
+		IotCacheUrl:              lib.StringToList(config.IotCacheUrls),
+		DeviceExpiration:         int32(config.DeviceExpiration),
+		DeviceTypeExpiration:     int32(config.DeviceTypeExpiration),
+		CharacteristicExpiration: int32(config.CharacteristicExpiration),
 
 		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),
 		TokenCacheExpiration: int32(config.TokenCacheExpiration),

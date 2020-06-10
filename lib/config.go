@@ -35,6 +35,7 @@ type ConfigStruct struct {
 
 	DeviceManagerUrl string
 	DeviceRepoUrl    string
+	SemanticRepoUrl  string
 
 	AuthClientId             string //keycloak-client
 	AuthClientSecret         string //keycloak-secret
@@ -61,9 +62,10 @@ type ConfigStruct struct {
 
 	CorrelationExpiration int64
 
-	IotCacheUrls         string
-	DeviceExpiration     int64
-	DeviceTypeExpiration int64
+	IotCacheUrls             string
+	DeviceExpiration         int64
+	DeviceTypeExpiration     int64
+	CharacteristicExpiration int64
 
 	TokenCacheUrls       string
 	TokenCacheExpiration int64

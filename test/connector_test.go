@@ -48,6 +48,9 @@ func TestWithClient(t *testing.T) {
 	config.Validate = true
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
+	config.Log = "stdout"
+	config.SyncKafka = true
+	config.SyncKafkaIdempotent = true
 
 	config, err = server.New(ctx, config)
 	if err != nil {
@@ -55,13 +58,25 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	deviceTypeId, getServiceTopic, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl)
+	testCharacteristicName := "test2"
+
+	_, err = createCharacteristic("test1", config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	characteristicId, err := createCharacteristic(testCharacteristicName, config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	deviceTypeId, getServiceTopic, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	time.Sleep(10 * time.Second)
+	//time.Sleep(10 * time.Second)
 
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
@@ -269,6 +284,11 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
+	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
+		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		return
+	}
+
 	var respResult interface{}
 	err = json.Unmarshal(consumedResponses[1], &respResult)
 	if err != nil {
@@ -298,7 +318,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", string(consumedResponses[1]), "\n\n\n", string(b))
+		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
 		return
 	}
 }
