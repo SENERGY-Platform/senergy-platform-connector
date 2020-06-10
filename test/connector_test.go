@@ -76,7 +76,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	time.Sleep(10 * time.Second)
+	//time.Sleep(10 * time.Second)
 
 	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
@@ -284,6 +284,11 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
+	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
+		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		return
+	}
+
 	var respResult interface{}
 	err = json.Unmarshal(consumedResponses[1], &respResult)
 	if err != nil {
@@ -295,7 +300,6 @@ func TestWithClient(t *testing.T) {
 		"level":      9,
 		"title":      "level",
 		"updateTime": 42,
-		"level_unit": testCharacteristicName,
 	})
 	if err != nil {
 		t.Error("unable to create expected response", err)
