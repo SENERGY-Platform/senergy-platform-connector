@@ -58,7 +58,19 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	deviceTypeId, getServiceTopic, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl)
+	testCharacteristicName := "test2"
+
+	_, err = createCharacteristic("test1", config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	characteristicId, err := createCharacteristic(testCharacteristicName, config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	deviceTypeId, getServiceTopic, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
 	if err != nil {
 		t.Error(err)
 		return
@@ -283,6 +295,7 @@ func TestWithClient(t *testing.T) {
 		"level":      9,
 		"title":      "level",
 		"updateTime": 42,
+		"level_unit": testCharacteristicName,
 	})
 	if err != nil {
 		t.Error("unable to create expected response", err)
@@ -301,7 +314,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", string(consumedResponses[1]), "\n\n\n", string(b))
+		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
 		return
 	}
 }
