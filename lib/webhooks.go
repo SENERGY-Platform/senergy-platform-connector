@@ -259,7 +259,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			}
 			token, err := connector.Security().GetUserToken(msg.Username, msg.Password)
 			if err != nil {
-				sendError(writer, err.Error(), true)
+				sendError(writer, err.Error(), config.Debug)
 				return
 			}
 			if token == "" {
