@@ -22,6 +22,7 @@ import (
 	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -289,12 +290,13 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	var respResult interface{}
+	var respResult model.ProtocolMsg
 	err = json.Unmarshal(consumedResponses[1], &respResult)
 	if err != nil {
 		t.Error("unable to unbarshal response msg", string(consumedResponses[1]))
 		return
 	}
+	respResult.Trace = nil
 
 	expectedResponse, err := createTestCommandMsg(config, "test1", "sepl_get", map[string]interface{}{
 		"level":      9,
@@ -311,7 +313,7 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var expectedProtocolMsg interface{}
+	var expectedProtocolMsg model.ProtocolMsg
 	err = json.Unmarshal(b, &expectedProtocolMsg)
 	if err != nil {
 		t.Error(err)

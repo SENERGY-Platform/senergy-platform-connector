@@ -60,7 +60,7 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 
 	pool, err := dockertest.NewPool("")
 	if err != nil {
-		log.Println("Could not connect to docker: %s", err)
+		log.Println("Could not connect to docker: ", err)
 		return config, err
 	}
 
@@ -145,9 +145,9 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		SemanticRepositoryUrl:    config.SemanticRepoUrl,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
-		IotCacheUrl:          lib.StringToList(config.IotCacheUrls),
-		DeviceExpiration:     int32(config.DeviceExpiration),
-		DeviceTypeExpiration: int32(config.DeviceTypeExpiration),
+		IotCacheUrl:              lib.StringToList(config.IotCacheUrls),
+		DeviceExpiration:         int32(config.DeviceExpiration),
+		DeviceTypeExpiration:     int32(config.DeviceTypeExpiration),
 		CharacteristicExpiration: int32(config.CharacteristicExpiration),
 
 		TokenCacheUrl:        lib.StringToList(config.TokenCacheUrls),

@@ -27,6 +27,11 @@ import (
 
 func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
+		commandRequest.Trace = append(commandRequest.Trace, model.Trace{
+			Timestamp: time.Now().UnixNano(),
+			TimeUnit:  "unix_nano",
+			Location:  "github.com/SENERGY-Platform/senergy-platform-connector GetCommandHandler()",
+		})
 		if config.Debug {
 			log.Println("DEBUG: receive command", commandRequest.Metadata.Device.Id, commandRequest.Metadata.Service.Id, commandRequest.Request.Input)
 		}
