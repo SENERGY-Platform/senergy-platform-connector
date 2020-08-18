@@ -157,6 +157,7 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 						_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
 						return
 					}
+					request.Trace = append(request.Trace, msg.Trace...) // merge traces
 					err = connector.HandleCommandResponse(request, msg.Payload)
 					if err != nil {
 						sendError(writer, err.Error(), true)

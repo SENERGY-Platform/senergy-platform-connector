@@ -16,7 +16,10 @@
 
 package lib
 
-import "github.com/SENERGY-Platform/platform-connector-lib"
+import (
+	"github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
+)
 
 type RequestEnvelope struct {
 	CorrelationId      string                                   `json:"correlation_id"`
@@ -28,6 +31,7 @@ type RequestEnvelope struct {
 type ResponseEnvelope struct {
 	CorrelationId string                                    `json:"correlation_id"`
 	Payload       platform_connector_lib.CommandResponseMsg `json:"payload"`
+	Trace         []model.Trace                             `json:"trace,omitempty"`
 }
 
 type PublishWebhookMsg struct {
