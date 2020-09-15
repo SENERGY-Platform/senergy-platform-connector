@@ -387,11 +387,15 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			TimeoutHandler: func() {
 				f, err := os.OpenFile("timeouts.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 				if err != nil {
+					go log.Println("ERROR:", err)
+					time.Sleep(1 * time.Second)
 					os.Exit(1)
 					return
 				}
+				go log.Println("ERROR: webhook response timeout")
 				fmt.Fprintln(f, time.Now().String())
 				f.Sync()
+				time.Sleep(1 * time.Second)
 				os.Exit(1)
 			},
 		}
