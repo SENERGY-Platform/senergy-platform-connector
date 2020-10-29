@@ -22,6 +22,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/fog"
 	"log"
 	"os"
 	"os/signal"
@@ -111,7 +112,12 @@ func main() {
 	}
 	defer logger.Close()
 
-	go lib.InitWebhooks(config, connector, logger, correlationservice)
+	var fogHandler *fog.Handler
+	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
+		fogHandler = fog.NewHandler(connector.GetProducer(), config.FogHandlerTopicPrefix)
+	}
+
+	go lib.InitWebhooks(config, connector, logger, correlationservice, fogHandler)
 
 	if config.StartupDelay != 0 {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)

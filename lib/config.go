@@ -83,6 +83,8 @@ type ConfigStruct struct {
 	Validate                  bool
 	ValidateAllowUnknownField bool
 	ValidateAllowMissingField bool
+
+	FogHandlerTopicPrefix string
 }
 
 type Config = *ConfigStruct

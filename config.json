@@ -45,5 +45,7 @@
 
   "Validate": true,
   "ValidateAllowUnknownField": true,
-  "ValidateAllowMissingField": true
+  "ValidateAllowMissingField": true,
+
+  "FogHandlerTopicPrefix": "fog/"
 }

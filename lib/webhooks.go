@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/fog"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -61,7 +62,7 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, correlation *correlation.CorrelationService) *http.Server {
+func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, correlation *correlation.CorrelationService, fogHandler *fog.Handler) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
@@ -87,6 +88,24 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("DEBUG: /publish", msg)
 		}
 		if msg.Username != config.AuthClientId {
+
+			handlerResult, err := fogHandler.Publish(msg.Username, msg.Topic, msg.Payload)
+			if err != nil {
+				sendError(writer, err.Error(), config.Debug)
+				return
+			}
+			if handlerResult == fog.Accepted {
+				_, err = fmt.Fprint(writer, `{"result": "ok"}`)
+				if err != nil {
+					log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+				}
+				return
+			}
+			if handlerResult == fog.Rejected {
+				sendError(writer, err.Error(), config.Debug)
+				return
+			}
+
 			prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
 			if err != nil {
 				sendError(writer, err.Error(), config.Debug)
@@ -195,6 +214,16 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 			for _, topic := range msg.Topics {
+				handlerResult, err := fogHandler.Subscribe(msg.Username, topic.Topic)
+				if err != nil {
+					log.Println("ERROR: fogHandler.Subscribe", err)
+					rejected = append(rejected, topic)
+					return
+				}
+				if handlerResult == fog.Rejected {
+					rejected = append(rejected, topic)
+				}
+
 				prefix, deviceUri, _, err := parseTopic(topic.Topic)
 				if err != nil {
 					if config.Debug {
