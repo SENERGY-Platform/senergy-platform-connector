@@ -221,47 +221,51 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				if handlerResult == fog.Rejected {
 					rejected = append(rejected, topic)
 				}
-
-				prefix, deviceUri, _, err := parseTopic(topic.Topic)
-				if err != nil {
-					if config.Debug {
-						log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
-					}
-					rejected = append(rejected, topic)
-					continue
+				if handlerResult == fog.Accepted {
+					ok = append(ok, topic)
 				}
-				if config.CheckHub {
-					err := checkHub(connector, token, msg.ClientId, deviceUri)
+				if handlerResult == fog.Unhandled {
+					prefix, deviceUri, _, err := parseTopic(topic.Topic)
 					if err != nil {
 						if config.Debug {
-							log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
+							log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
 						}
 						rejected = append(rejected, topic)
 						continue
 					}
-				}
-				if prefix != "command" {
-					if config.Debug {
-						log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
+					if config.CheckHub {
+						err := checkHub(connector, token, msg.ClientId, deviceUri)
+						if err != nil {
+							if config.Debug {
+								log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
+							}
+							rejected = append(rejected, topic)
+							continue
+						}
 					}
-					rejected = append(rejected, topic)
-					continue
-				}
-				device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
-				if err != nil {
-					if config.Debug {
-						log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
+					if prefix != "command" {
+						if config.Debug {
+							log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
+						}
+						rejected = append(rejected, topic)
+						continue
 					}
-					rejected = append(rejected, topic)
-					continue
-				}
-				err = logger.LogDeviceConnect(device.Id)
-				if err != nil {
-					if config.Debug {
-						log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
+					device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
+					if err != nil {
+						if config.Debug {
+							log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
+						}
+						rejected = append(rejected, topic)
+						continue
 					}
+					err = logger.LogDeviceConnect(device.Id)
+					if err != nil {
+						if config.Debug {
+							log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
+						}
+					}
+					ok = append(ok, topic)
 				}
-				ok = append(ok, topic)
 			}
 			sendSubscriptionResult(writer, ok, rejected)
 		} else {
