@@ -65,9 +65,9 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			return
 		}
 		response := lib.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
-		err = this.publish("response/"+deviceUri+"/"+serviceUri, response)
+		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response)
 		if err != nil {
-			log.Println("ERROR: unable to publish response", err)
+			log.Println("ERROR: unable to Publish response", err)
 		}
 	})
 	if token.Wait() && token.Error() != nil {
@@ -91,10 +91,10 @@ func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error)
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
-	return this.publish("event/"+deviceUri+"/"+serviceUri, msg)
+	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg)
 }
 
-func (this *Client) publish(topic string, msg interface{}) (err error) {
+func (this *Client) Publish(topic string, msg interface{}) (err error) {
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return err

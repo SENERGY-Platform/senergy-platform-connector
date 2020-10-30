@@ -21,6 +21,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/fog"
 	"log"
@@ -114,7 +115,11 @@ func main() {
 
 	var fogHandler *fog.Handler
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
-		fogHandler = fog.NewHandler(connector.GetProducer(), config.FogHandlerTopicPrefix)
+		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent)
+		if err != nil {
+			log.Fatal("ERROR: logger ", err)
+		}
+		fogHandler = fog.NewHandler(producer, config.FogHandlerTopicPrefix)
 	}
 
 	go lib.InitWebhooks(config, connector, logger, correlationservice, fogHandler)

@@ -157,7 +157,24 @@ func TestWithClient(t *testing.T) {
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer eventConsumer.Stop()
+
+	consumedAnalytics := [][]byte{}
+	analyticConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
+		consumedAnalytics = append(consumedAnalytics, msg)
+		return nil
+	}, func(err error, consumer *kafka.Consumer) {
+		t.Error(err)
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defer analyticConsumer.Stop()
 
 	consumedRespEvents := [][]byte{}
 	respEventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
@@ -166,6 +183,10 @@ func TestWithClient(t *testing.T) {
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer respEventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
@@ -175,7 +196,17 @@ func TestWithClient(t *testing.T) {
 	}, func(err error, consumer *kafka.Consumer) {
 		t.Error(err)
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer responseConsumer.Stop()
+
+	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
 
@@ -243,6 +274,11 @@ func TestWithClient(t *testing.T) {
 
 	if testState != 9 {
 		t.Error("unexpected command result", testState)
+		return
+	}
+
+	if len(consumedAnalytics) != 1 {
+		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
 		return
 	}
 
