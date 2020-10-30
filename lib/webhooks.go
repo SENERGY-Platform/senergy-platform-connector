@@ -88,8 +88,12 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			log.Println("DEBUG: /publish", msg)
 		}
 		if msg.Username != config.AuthClientId {
-
-			handlerResult, err := fogHandler.Publish(msg.Username, msg.Topic, msg.Payload)
+			payload, err := base64.StdEncoding.DecodeString(msg.Payload)
+			if err != nil {
+				sendError(writer, err.Error(), true)
+				return
+			}
+			handlerResult, err := fogHandler.Publish(msg.Username, msg.Topic, string(payload))
 			if err != nil {
 				sendError(writer, err.Error(), config.Debug)
 				return
@@ -124,12 +128,6 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 					sendError(writer, err.Error(), config.Debug)
 					return
 				}
-			}
-
-			payload, err := base64.StdEncoding.DecodeString(msg.Payload)
-			if err != nil {
-				sendError(writer, err.Error(), true)
-				return
 			}
 
 			switch prefix {
