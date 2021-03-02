@@ -85,6 +85,9 @@ type ConfigStruct struct {
 	ValidateAllowMissingField bool
 
 	FogHandlerTopicPrefix string
+
+	KafkaPartitionNum      int
+	KafkaReplicationFactor int
 }
 
 type Config = *ConfigStruct

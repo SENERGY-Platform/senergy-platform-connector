@@ -222,7 +222,16 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true)
+	partitionsNum := 1
+	replFactor := 1
+	if config.KafkaPartitionNum != 0 {
+		partitionsNum = config.KafkaPartitionNum
+	}
+	if config.KafkaReplicationFactor != 0 {
+		replFactor = config.KafkaReplicationFactor
+	}
+
+	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true, partitionsNum, replFactor)
 	if err != nil {
 		t.Error(err)
 		return

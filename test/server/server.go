@@ -169,7 +169,16 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		connector.IotCache.Debug = true
 	}
 
-	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic)
+	partitionsNum := 1
+	replFactor := 1
+	if config.KafkaPartitionNum != 0 {
+		partitionsNum = config.KafkaPartitionNum
+	}
+	if config.KafkaReplicationFactor != 0 {
+		replFactor = config.KafkaReplicationFactor
+	}
+
+	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -183,7 +192,7 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 
 	var fogHandler *fog.Handler
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
-		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent)
+		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
 		if err != nil {
 			log.Fatal("ERROR: logger ", err)
 		}

@@ -47,5 +47,8 @@
   "ValidateAllowUnknownField": true,
   "ValidateAllowMissingField": true,
 
-  "FogHandlerTopicPrefix": "fog/"
+  "FogHandlerTopicPrefix": "fog/",
+
+  "KafkaPartitionNum": 1,
+  "KafkaReplicationFactor": 2
 }
