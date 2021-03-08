@@ -21,11 +21,12 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
 	"time"
 )
 
-func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config Config) platform_connector_lib.AsyncCommandHandler {
+func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
 		commandRequest.Trace = append(commandRequest.Trace, model.Trace{
 			Timestamp: time.Now().UnixNano(),

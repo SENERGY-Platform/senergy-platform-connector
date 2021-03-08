@@ -18,7 +18,6 @@ package lib
 
 import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/model"
 )
 
 type RequestEnvelope struct {
@@ -26,12 +25,6 @@ type RequestEnvelope struct {
 	Payload            platform_connector_lib.CommandRequestMsg `json:"payload"`
 	Time               int64                                    `json:"timestamp"`
 	CompletionStrategy string                                   `json:"completion_strategy"`
-}
-
-type ResponseEnvelope struct {
-	CorrelationId string                                    `json:"correlation_id"`
-	Payload       platform_connector_lib.CommandResponseMsg `json:"payload"`
-	Trace         []model.Trace                             `json:"trace,omitempty"`
 }
 
 type PublishWebhookMsg struct {

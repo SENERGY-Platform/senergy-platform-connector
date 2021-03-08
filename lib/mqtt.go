@@ -18,6 +18,7 @@ package lib
 
 import (
 	"errors"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	uuid "github.com/satori/go.uuid"
 	"log"
 
@@ -33,7 +34,7 @@ func (this *Mqtt) Close() {
 	this.client.Disconnect(0)
 }
 
-func MqttStart(config Config) (mqtt *Mqtt, err error) {
+func MqttStart(config configuration.Config) (mqtt *Mqtt, err error) {
 	mqtt = &Mqtt{Debug: config.MqttDebug}
 	options := paho.NewClientOptions().
 		SetPassword(config.AuthClientSecret).

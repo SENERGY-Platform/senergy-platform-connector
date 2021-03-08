@@ -23,7 +23,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	"log"
@@ -39,7 +39,7 @@ func TestWithClient(t *testing.T) {
 	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
-	config, err := lib.LoadConfig("../config.json")
+	config, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return

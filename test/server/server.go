@@ -23,7 +23,12 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/command"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/docker"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
@@ -36,7 +41,7 @@ import (
 	"time"
 )
 
-func New(basectx context.Context, startConfig lib.Config) (config lib.Config, err error) {
+func New(basectx context.Context, startConfig configuration.Config) (config configuration.Config, err error) {
 	config = startConfig
 
 	ctx, cancel := context.WithCancel(basectx)
@@ -190,16 +195,20 @@ func New(basectx context.Context, startConfig lib.Config) (config lib.Config, er
 		logger.Close()
 	}()
 
-	var fogHandler *fog.Handler
+	handlers := []handler.Handler{
+		event.New(config, connector),
+		response.New(config, connector, correlationservice),
+		command.New(config, connector, logger),
+	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
 		if err != nil {
 			log.Fatal("ERROR: logger ", err)
 		}
-		fogHandler = fog.NewHandler(producer, config.FogHandlerTopicPrefix)
+		handlers = append(handlers, fog.NewHandler(producer, config.FogHandlerTopicPrefix))
 	}
 
-	go lib.InitWebhooks(config, connector, logger, correlationservice, fogHandler)
+	go lib.InitWebhooks(config, connector, logger, handlers)
 
 	if config.StartupDelay != 0 {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)

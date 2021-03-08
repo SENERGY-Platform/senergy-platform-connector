@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package lib
+package handler
 
-import "strings"
+type Result int
 
-func StringToList(str string) []string {
-	temp := strings.Split(str, ",")
-	result := []string{}
-	for _, e := range temp {
-		trimmed := strings.TrimSpace(e)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-	return result
+const (
+	Unhandled Result = iota
+	Accepted
+	Rejected
+	Error
+)
+
+type Handler interface {
+	Subscribe(clientId string, user string, topic string) (result Result, err error)
+	Publish(clientId string, user string, topic string, payload []byte) (result Result, err error)
 }

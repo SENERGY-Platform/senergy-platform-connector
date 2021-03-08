@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package lib
+package response
 
-import "strings"
+import (
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
+)
 
-func StringToList(str string) []string {
-	temp := strings.Split(str, ",")
-	result := []string{}
-	for _, e := range temp {
-		trimmed := strings.TrimSpace(e)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-	return result
+type ResponseEnvelope struct {
+	CorrelationId string                                    `json:"correlation_id"`
+	Payload       platform_connector_lib.CommandResponseMsg `json:"payload"`
+	Trace         []model.Trace                             `json:"trace,omitempty"`
 }

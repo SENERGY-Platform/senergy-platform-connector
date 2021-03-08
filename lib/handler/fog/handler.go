@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"strings"
 )
 
@@ -37,17 +38,17 @@ type Handler struct {
 	fogAnalyticsTopicPrefix string
 }
 
-type Result int
+type Result = handler.Result
 
 const (
-	Unhandled Result = iota
-	Accepted
-	Rejected
-	Error
+	Unhandled Result = handler.Unhandled
+	Accepted         = handler.Accepted
+	Rejected         = handler.Rejected
+	Error            = handler.Error
 )
 
 //the user param may be used in the future to check auth
-func (this *Handler) Subscribe(user string, topic string) (result Result, err error) {
+func (this *Handler) Subscribe(clientId string, user string, topic string) (result Result, err error) {
 	if this == nil {
 		return Unhandled, nil
 	}
@@ -58,7 +59,7 @@ func (this *Handler) Subscribe(user string, topic string) (result Result, err er
 }
 
 //the user param may be used in the future to check auth
-func (this *Handler) Publish(user string, topic string, payload string) (result Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte) (result Result, err error) {
 	if this == nil {
 		return Unhandled, nil
 	}
@@ -73,7 +74,7 @@ func (this *Handler) Publish(user string, topic string, payload string) (result 
 	if err != nil {
 		return Error, fmt.Errorf("unsupported message format: %w", err)
 	}
-	err = this.producer.ProduceWithKey(target, payload, key)
+	err = this.producer.ProduceWithKey(target, string(payload), key)
 	if err != nil {
 		return Error, err
 	}
@@ -84,8 +85,8 @@ type KeyWrapper struct {
 	Key string `json:"operator_id"`
 }
 
-func (this *Handler) getKey(payload string) (string, error) {
+func (this *Handler) getKey(payload []byte) (string, error) {
 	wrapper := KeyWrapper{}
-	err := json.Unmarshal([]byte(payload), &wrapper)
+	err := json.Unmarshal(payload, &wrapper)
 	return wrapper.Key, err
 }

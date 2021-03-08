@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/julienschmidt/httprouter"
 	uuid "github.com/satori/go.uuid"
 	"log"
@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-func Mock(config lib.Config, ctx context.Context) (err error) {
+func Mock(config configuration.Config, ctx context.Context) (err error) {
 	router, err := getRouter(&Controller{
 		mux:              sync.Mutex{},
 		devices:          map[string]model.Device{},

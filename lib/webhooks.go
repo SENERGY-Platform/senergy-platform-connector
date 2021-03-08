@@ -19,15 +19,18 @@ package lib
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
-	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/fog"
+	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -62,7 +65,7 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, correlation *correlation.CorrelationService, fogHandler *fog.Handler) *http.Server {
+func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
@@ -87,110 +90,43 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if config.Debug {
 			log.Println("DEBUG: /publish", msg)
 		}
-		if msg.Username != config.AuthClientId {
+		if msg.Username == config.AuthClientId {
+			_, err = fmt.Fprint(writer, `{"result": "ok"}`)
+			if err != nil {
+				log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+			}
+			return
+		} else {
 			payload, err := base64.StdEncoding.DecodeString(msg.Payload)
 			if err != nil {
 				sendError(writer, err.Error(), true)
 				return
 			}
-			handlerResult, err := fogHandler.Publish(msg.Username, msg.Topic, string(payload))
-			if err != nil {
-				sendError(writer, err.Error(), config.Debug)
-				return
-			}
-			if handlerResult == fog.Accepted {
-				_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
-				}
-				return
-			}
-			if handlerResult == fog.Rejected {
-				sendError(writer, err.Error(), config.Debug)
-				return
-			}
 
-			prefix, deviceUri, serviceUri, err := parseTopic(msg.Topic)
-			if err != nil {
-				sendError(writer, err.Error(), config.Debug)
-				return
-			}
-
-			token, err := connector.Security().GetCachedUserToken(msg.Username)
-			if err != nil {
-				sendError(writer, err.Error(), true)
-				return
-			}
-
-			if config.CheckHub {
-				err := checkHub(connector, token, msg.ClientId, deviceUri)
-				if err != nil {
+			for _, h := range handlers {
+				handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload)
+				switch handlerResult {
+				case handler.Accepted:
+					_, err = fmt.Fprint(writer, `{"result": "ok"}`)
+					if err != nil {
+						log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+					}
+					return
+				case handler.Rejected, handler.Error:
 					sendError(writer, err.Error(), config.Debug)
 					return
+				case handler.Unhandled:
+					continue
+				default:
+					log.Println("WARNING: unknown handler result", handlerResult)
+					continue
 				}
 			}
-
-			switch prefix {
-			case "event":
-				event := platform_connector_lib.EventMsg{}
-				err = json.Unmarshal(payload, &event)
-				if err != nil {
-					sendError(writer, err.Error(), true)
-					return
-				}
-				if !config.CheckHub {
-					if err := checkEvent(connector, token, deviceUri, serviceUri); err != nil {
-						if err == ServiceNotFound {
-							_, err = fmt.Fprint(writer, `{"result": "ok"}`) //ignore event but allow mqtt-publish
-							if config.Debug {
-								log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
-							}
-							return
-						} else {
-							sendError(writer, err.Error(), config.Debug)
-							return
-						}
-					}
-				}
-				if !config.MqttPublishAuthOnly {
-					err = connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
-					if err != nil {
-						sendError(writer, err.Error(), true)
-						return
-					}
-				}
-			case "response":
-				if !config.MqttPublishAuthOnly {
-					msg := ResponseEnvelope{}
-					err = json.Unmarshal(payload, &msg)
-					if err != nil {
-						sendError(writer, err.Error(), true)
-						return
-					}
-					request, err := correlation.Get(msg.CorrelationId)
-					if err != nil {
-						log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
-						//sendError(writer, err.Error(), http.StatusBadRequest)
-						_, _ = fmt.Fprint(writer, `{"result": "ok"}`) //potentially old message; may be ignored; but dont cut connection
-						return
-					}
-					request.Trace = append(request.Trace, msg.Trace...) // merge traces
-					err = connector.HandleCommandResponse(request, msg.Payload)
-					if err != nil {
-						sendError(writer, err.Error(), true)
-						return
-					}
-				}
-			default:
-				sendError(writer, "unexpected prefix", config.Debug)
-				return
-			}
-
+			log.Println("WARNING: no matching topic handler found", msg.Topic)
+			sendError(writer, "no matching topic handler found", config.Debug)
+			return
 		}
-		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
-		}
+
 	})
 
 	router.HandleFunc("/subscribe", func(writer http.ResponseWriter, request *http.Request) {
@@ -205,72 +141,27 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 		ok := []WebhookmsgTopic{}
 		rejected := []WebhookmsgTopic{}
-		if msg.Username != config.AuthClientId {
-			token, err := connector.Security().GenerateUserToken(msg.Username)
-			if err != nil {
-				sendError(writer, err.Error(), config.Debug)
-				return
-			}
+		if msg.Username == config.AuthClientId {
+			fmt.Fprint(writer, `{"result": "ok"}`) //debug access
+			return
+		} else {
 			for _, topic := range msg.Topics {
-				handlerResult, err := fogHandler.Subscribe(msg.Username, topic.Topic)
-				if err != nil {
-					log.Println("ERROR: fogHandler.Subscribe", err)
+				handlerResult, err := handleTopicSubscribe(msg.ClientId, msg.Username, topic.Topic, handlers)
+				switch handlerResult {
+				case handler.Accepted:
+					ok = append(ok, topic)
+				case handler.Unhandled, handler.Rejected:
 					rejected = append(rejected, topic)
+				case handler.Error:
+					sendError(writer, err.Error(), config.Debug)
 					return
-				}
-				if handlerResult == fog.Rejected {
+				default:
+					log.Println("WARNING: unknown handler result", handlerResult)
 					rejected = append(rejected, topic)
-				}
-				if handlerResult == fog.Accepted {
-					ok = append(ok, topic)
-				}
-				if handlerResult == fog.Unhandled {
-					prefix, deviceUri, _, err := parseTopic(topic.Topic)
-					if err != nil {
-						if config.Debug {
-							log.Println("ERROR: InitWebhooks::subscribe::parseTopic", err)
-						}
-						rejected = append(rejected, topic)
-						continue
-					}
-					if config.CheckHub {
-						err := checkHub(connector, token, msg.ClientId, deviceUri)
-						if err != nil {
-							if config.Debug {
-								log.Println("ERROR: InitWebhooks::subscribe::checkHub", err)
-							}
-							rejected = append(rejected, topic)
-							continue
-						}
-					}
-					if prefix != "command" {
-						if config.Debug {
-							log.Println("ERROR: InitWebhooks::subscribe prefix != 'cmd'", prefix)
-						}
-						rejected = append(rejected, topic)
-						continue
-					}
-					device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
-					if err != nil {
-						if config.Debug {
-							log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
-						}
-						rejected = append(rejected, topic)
-						continue
-					}
-					err = logger.LogDeviceConnect(device.Id)
-					if err != nil {
-						if config.Debug {
-							log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
-						}
-					}
-					ok = append(ok, topic)
 				}
 			}
 			sendSubscriptionResult(writer, ok, rejected)
-		} else {
-			fmt.Fprint(writer, `{"result": "ok"}`) //debug access
-			//sendError(writer, "connector does not subscribe", true)
+			return
 		}
 	})
 
@@ -338,11 +229,6 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		if config.Debug {
 			log.Println("DEBUG: /disconnect", msg)
 		}
-		err = logger.LogHubDisconnect(msg.ClientId)
-		if err != nil {
-			log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
-			return
-		}
 		token, err := connector.Security().Access()
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
@@ -350,9 +236,17 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 		hub, err := connector.Iot().GetHub(msg.ClientId, token)
 		if err != nil {
+			if err == security.ErrorNotFound {
+				return
+			}
 			if config.Debug {
 				log.Println("DEBUG: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
 			}
+			return
+		}
+		err = logger.LogHubDisconnect(msg.ClientId)
+		if err != nil {
+			log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
 			return
 		}
 		for _, localId := range hub.DeviceLocalIds {
@@ -387,13 +281,15 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 				return
 			}
 			for _, topic := range msg.Topics {
-				prefix, deviceUri, _, err := parseTopic(topic)
+				if !strings.HasPrefix(topic, "command") {
+					return
+				}
+				prefix, deviceUri, _, err := handler.ParseTopic(topic)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::parseTopic", err)
 					return
 				}
 				if prefix != "command" {
-					log.Println("WARNING: InitWebhooks::unsubscribe prefix != 'command'", prefix)
 					return
 				}
 				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
@@ -410,10 +306,10 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 		}
 	})
 
-	var handler http.Handler
+	var httpHandler http.Handler
 
 	if config.WebhookTimeout > 0 {
-		handler = &HttpTimeoutHandler{
+		httpHandler = &HttpTimeoutHandler{
 			Timeout:        time.Duration(config.WebhookTimeout) * time.Second,
 			RequestHandler: router,
 			TimeoutHandler: func() {
@@ -432,10 +328,10 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 			},
 		}
 	} else {
-		handler = router
+		httpHandler = router
 	}
 
-	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: handler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
+	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: httpHandler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
 	server.RegisterOnShutdown(func() {
 		log.Println("DEBUG: server shutdown")
 	})
@@ -448,4 +344,24 @@ func InitWebhooks(config Config, connector *platform_connector_lib.Connector, lo
 	}()
 
 	return server
+}
+
+func handleTopicSubscribe(clientId string, username string, topic string, handlers []handler.Handler) (handler.Result, error) {
+	for _, h := range handlers {
+		handlerResult, err := h.Subscribe(clientId, username, topic)
+		if err != nil {
+			return handler.Error, err
+		}
+		switch handlerResult {
+		case handler.Accepted, handler.Rejected, handler.Error:
+			return handlerResult, err
+		case handler.Unhandled:
+			continue
+		default:
+			log.Println("WARNING: unknown handler result", handlerResult)
+			continue
+		}
+	}
+	log.Println("WARNING: no matching topic handler found", topic)
+	return handler.Rejected, errors.New("no matching topic handler found")
 }

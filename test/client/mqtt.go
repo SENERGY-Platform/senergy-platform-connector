@@ -21,6 +21,7 @@ import (
 	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"time"
@@ -64,7 +65,7 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			log.Println("ERROR: while processing command", err)
 			return
 		}
-		response := lib.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
+		response := response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
 		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response)
 		if err != nil {
 			log.Println("ERROR: unable to Publish response", err)
