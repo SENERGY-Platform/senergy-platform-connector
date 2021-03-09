@@ -149,7 +149,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			return
 		} else {
 			for _, topic := range msg.Topics {
-				handlerResult, err := handleTopicSubscribe(msg.ClientId, msg.Username, topic.Topic, handlers)
+				handlerResult, err := handleTopicSubscribe(msg.ClientId, msg.Username, prepareTopic(topic.Topic), handlers)
 				if err != nil && config.Debug {
 					log.Println("DEBUG:", err)
 				}
@@ -350,6 +350,19 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	}()
 
 	return server
+}
+
+func prepareTopic(topic string) string {
+	if strings.HasPrefix(topic, "$share/") {
+		parts := strings.Split(topic, "/")
+		if len(parts) < 3 {
+			return topic
+		} else {
+			return strings.Join(parts[2:], "/")
+		}
+	} else {
+		return topic
+	}
 }
 
 func handleTopicSubscribe(clientId string, username string, topic string, handlers []handler.Handler) (handler.Result, error) {
