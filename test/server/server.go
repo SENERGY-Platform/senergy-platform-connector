@@ -28,6 +28,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/command"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/docker"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
@@ -174,14 +175,9 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		connector.IotCache.Debug = true
 	}
 
+	//the test starts only one kafka broker -> replication factor may not be greater then broker count
 	partitionsNum := 1
 	replFactor := 1
-	if config.KafkaPartitionNum != 0 {
-		partitionsNum = config.KafkaPartitionNum
-	}
-	if config.KafkaReplicationFactor != 0 {
-		replFactor = config.KafkaReplicationFactor
-	}
 
 	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
 	if err != nil {
@@ -199,6 +195,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		event.New(config, connector),
 		response.New(config, connector, correlationservice),
 		command.New(config, connector, logger),
+		process.New(connector),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)

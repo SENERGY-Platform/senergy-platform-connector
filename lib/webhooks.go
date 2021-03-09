@@ -105,6 +105,9 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 
 			for _, h := range handlers {
 				handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload)
+				if err != nil && config.Debug {
+					log.Println("DEBUG:", err)
+				}
 				switch handlerResult {
 				case handler.Accepted:
 					_, err = fmt.Fprint(writer, `{"result": "ok"}`)
@@ -147,6 +150,9 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		} else {
 			for _, topic := range msg.Topics {
 				handlerResult, err := handleTopicSubscribe(msg.ClientId, msg.Username, topic.Topic, handlers)
+				if err != nil && config.Debug {
+					log.Println("DEBUG:", err)
+				}
 				switch handlerResult {
 				case handler.Accepted:
 					ok = append(ok, topic)

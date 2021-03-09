@@ -28,6 +28,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/command"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"log"
 	"os"
@@ -131,6 +132,7 @@ func main() {
 		event.New(config, connector),
 		response.New(config, connector, correlationservice),
 		command.New(config, connector, logger),
+		process.New(connector),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
