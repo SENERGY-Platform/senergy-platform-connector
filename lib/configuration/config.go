@@ -88,6 +88,8 @@ type ConfigStruct struct {
 
 	KafkaPartitionNum      int
 	KafkaReplicationFactor int
+
+	ForceCleanSession bool
 }
 
 type Config = *ConfigStruct

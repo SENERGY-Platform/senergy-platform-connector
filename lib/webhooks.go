@@ -183,7 +183,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		}
 		//log.Println("DEBUG: /login", msg)
 		if msg.Username != config.AuthClientId {
-			if !msg.CleanSession {
+			if !msg.CleanSession && config.ForceCleanSession {
 				sendError(writer, "expect clean session", config.Debug)
 				return
 			}

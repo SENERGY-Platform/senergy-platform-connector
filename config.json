@@ -50,5 +50,7 @@
   "FogHandlerTopicPrefix": "fog/",
 
   "KafkaPartitionNum": 1,
-  "KafkaReplicationFactor": 2
+  "KafkaReplicationFactor": 2,
+
+  "ForceCleanSession": false
 }
