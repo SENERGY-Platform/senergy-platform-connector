@@ -281,7 +281,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		//defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 		defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 		if msg.Username != config.AuthClientId {
-			token, err := connector.Security().GenerateUserToken(msg.Username)
+			token, err := connector.Security().GetCachedUserToken(msg.Username)
 			if err != nil {
 				log.Println("ERROR: InitWebhooks::unsubscribe::GenerateUserToken", err)
 				return

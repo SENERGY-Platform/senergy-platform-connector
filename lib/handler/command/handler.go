@@ -52,7 +52,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is command:", topic)
 		return handler.Unhandled, nil
 	}
-	token, err := this.connector.Security().GenerateUserToken(user)
+	token, err := this.connector.Security().GetCachedUserToken(user)
 	if err != nil {
 		return handler.Error, err
 	}
