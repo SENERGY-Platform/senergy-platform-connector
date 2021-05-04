@@ -27,6 +27,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/command"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/export"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
@@ -196,6 +197,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		response.New(config, connector, correlationservice),
 		command.New(config, connector, logger),
 		process.New(connector),
+		export.New(connector.Security()),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
