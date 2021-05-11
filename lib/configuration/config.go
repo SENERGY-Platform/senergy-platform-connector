@@ -27,7 +27,7 @@ import (
 )
 
 type ConfigStruct struct {
-	ZookeeperUrl       string //host1:2181,host2:2181/chroot
+	KafkaUrl           string
 	KafkaResponseTopic string
 	KafkaGroupName     string
 	FatalKafkaError    bool // "true" || "false"; "" -> "true", else -> "false"

@@ -151,7 +151,7 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", getServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	eventConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", getServiceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -164,7 +164,7 @@ func TestWithClient(t *testing.T) {
 	defer eventConsumer.Stop()
 
 	consumedAnalytics := [][]byte{}
-	analyticConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
+	analyticConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
 		consumedAnalytics = append(consumedAnalytics, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -177,7 +177,7 @@ func TestWithClient(t *testing.T) {
 	defer analyticConsumer.Stop()
 
 	consumedRespEvents := [][]byte{}
-	respEventConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	respEventConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -190,7 +190,7 @@ func TestWithClient(t *testing.T) {
 	defer respEventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.ZookeeperUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
+	responseConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -231,7 +231,7 @@ func TestWithClient(t *testing.T) {
 		replFactor = config.KafkaReplicationFactor
 	}
 
-	producer, err := kafka.PrepareProducer(config.ZookeeperUrl, true, true, partitionsNum, replFactor)
+	producer, err := kafka.PrepareProducer(config.KafkaUrl, true, true, partitionsNum, replFactor)
 	if err != nil {
 		t.Error(err)
 		return

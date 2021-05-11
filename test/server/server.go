@@ -80,9 +80,9 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		cancel()
 		return config, err
 	}
-	config.ZookeeperUrl = zk + ":2181"
+	zookeeperUrl := zk + ":2181"
 
-	err = docker.Kafka(pool, ctx, config.ZookeeperUrl)
+	config.KafkaUrl, err = docker.Kafka(pool, ctx, zookeeperUrl)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -141,7 +141,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		FatalKafkaError:          config.FatalKafkaError,
 		Protocol:                 config.Protocol,
 		KafkaGroupName:           config.KafkaGroupName,
-		ZookeeperUrl:             config.ZookeeperUrl,
+		KafkaUrl:                 config.KafkaUrl,
 		AuthExpirationTimeBuffer: config.AuthExpirationTimeBuffer,
 		JwtExpiration:            config.JwtExpiration,
 		JwtPrivateKey:            config.JwtPrivateKey,
@@ -180,7 +180,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 	partitionsNum := 1
 	replFactor := 1
 
-	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
+	logger, err := connectionlog.New(config.KafkaUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -200,7 +200,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		export.New(connector.Security()),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
-		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
+		producer, err := kafka.PrepareProducer(config.KafkaUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
 		if err != nil {
 			log.Fatal("ERROR: logger ", err)
 		}

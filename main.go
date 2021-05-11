@@ -79,7 +79,7 @@ func main() {
 		FatalKafkaError:          config.FatalKafkaError,
 		Protocol:                 config.Protocol,
 		KafkaGroupName:           config.KafkaGroupName,
-		ZookeeperUrl:             config.ZookeeperUrl,
+		KafkaUrl:                 config.KafkaUrl,
 		AuthExpirationTimeBuffer: config.AuthExpirationTimeBuffer,
 		JwtExpiration:            config.JwtExpiration,
 		JwtPrivateKey:            config.JwtPrivateKey,
@@ -123,7 +123,7 @@ func main() {
 		replFactor = config.KafkaReplicationFactor
 	}
 
-	logger, err := connectionlog.New(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
+	logger, err := connectionlog.New(config.KafkaUrl, config.SyncKafka, config.SyncKafkaIdempotent, config.DeviceLogTopic, config.GatewayLogTopic, partitionsNum, replFactor)
 	if err != nil {
 		log.Fatal("ERROR: logger ", err)
 	}
@@ -137,7 +137,7 @@ func main() {
 		export.New(connector.Security()),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
-		producer, err := kafka.PrepareProducer(config.ZookeeperUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
+		producer, err := kafka.PrepareProducer(config.KafkaUrl, config.SyncKafka, config.SyncKafkaIdempotent, partitionsNum, replFactor)
 		if err != nil {
 			log.Fatal("ERROR: logger ", err)
 		}

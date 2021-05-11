@@ -12,10 +12,10 @@ import (
 	"time"
 )
 
-func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err error) {
+func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (kafkaUrl string, err error) {
 	kafkaport, err := getFreePort()
 	if err != nil {
-		return err
+		return kafkaUrl, err
 	}
 	networks, _ := pool.Client.ListNetworks()
 	hostIp := ""
@@ -24,11 +24,13 @@ func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err
 			hostIp = network.IPAM.Config[0].Gateway
 		}
 	}
+	kafkaUrl = hostIp + ":" + strconv.Itoa(kafkaport)
 	log.Println("host ip: ", hostIp)
+	log.Println("kafkaUrl url: ", kafkaUrl)
 	env := []string{
 		"ALLOW_PLAINTEXT_LISTENER=yes",
 		"KAFKA_LISTENERS=OUTSIDE://:9092",
-		"KAFKA_ADVERTISED_LISTENERS=OUTSIDE://" + hostIp + ":" + strconv.Itoa(kafkaport),
+		"KAFKA_ADVERTISED_LISTENERS=OUTSIDE://" + kafkaUrl,
 		"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=OUTSIDE:PLAINTEXT",
 		"KAFKA_INTER_BROKER_LISTENER_NAME=OUTSIDE",
 		"KAFKA_ZOOKEEPER_CONNECT=" + zookeeperUrl,
@@ -36,11 +38,9 @@ func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err
 	log.Println("start kafka with env ", env)
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{Repository: "bitnami/kafka", Tag: "latest", Env: env, PortBindings: map[docker.Port][]docker.PortBinding{
 		"9092/tcp": {{HostIP: "", HostPort: strconv.Itoa(kafkaport)}},
-	}}, func(config *docker.HostConfig) {
-		config.Tmpfs = map[string]string{"/bitnami/kafka": "rw"}
-	})
+	}})
 	if err != nil {
-		return err
+		return kafkaUrl, err
 	}
 	go func() {
 		<-ctx.Done()
@@ -49,7 +49,7 @@ func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err
 	}()
 	err = pool.Retry(func() error {
 		log.Println("try kafka connection...")
-		conn, err := kafka.Dial("tcp", hostIp+":"+strconv.Itoa(kafkaport))
+		conn, err := kafka.Dial("tcp", kafkaUrl)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -58,7 +58,7 @@ func Kafka(pool *dockertest.Pool, ctx context.Context, zookeeperUrl string) (err
 		return nil
 	})
 	time.Sleep(5 * time.Second)
-	return err
+	return kafkaUrl, err
 }
 
 func Zookeeper(pool *dockertest.Pool, ctx context.Context) (hostPort string, ipAddress string, err error) {
