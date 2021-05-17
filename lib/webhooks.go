@@ -75,6 +75,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if p := recover(); p != nil {
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			}
+		}()
 		if config.Debug {
 			now := time.Now()
 			defer func(start time.Time) {
@@ -133,6 +139,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/subscribe", func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if p := recover(); p != nil {
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			}
+		}()
 		msg := SubscribeWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
@@ -172,6 +184,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if p := recover(); p != nil {
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			}
+		}()
 		msg := LoginWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
@@ -225,7 +243,14 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 
 	//https://vernemq.com/docs/plugindevelopment/sessionlifecycle.html
 	router.HandleFunc("/disconnect", func(writer http.ResponseWriter, request *http.Request) {
-		defer fmt.Fprintf(writer, "{}")
+		defer func() {
+			if p := recover(); p != nil {
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			} else {
+				fmt.Fprintf(writer, "{}")
+			}
+		}()
 		msg := DisconnectWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
@@ -269,6 +294,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/unsubscribe", func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if p := recover(); p != nil {
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			}
+		}()
 		msg := UnsubscribeWebhookMsg{}
 		err := json.NewDecoder(request.Body).Decode(&msg)
 		if err != nil {
