@@ -107,6 +107,13 @@ func main() {
 		Validate:                  config.Validate,
 		ValidateAllowMissingField: config.ValidateAllowMissingField,
 		ValidateAllowUnknownField: config.ValidateAllowUnknownField,
+
+		PublishToPostgres: config.PublishToPostgres,
+		PostgresHost:      config.PostgresHost,
+		PostgresPort:      config.PostgresPort,
+		PostgresUser:      config.PostgresUser,
+		PostgresPw:        config.PostgresPw,
+		PostgresDb:        config.PostgresDb,
 	})
 
 	if config.Debug {

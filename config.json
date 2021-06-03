@@ -52,5 +52,12 @@
   "KafkaPartitionNum": 1,
   "KafkaReplicationFactor": 2,
 
-  "ForceCleanSession": false
+  "ForceCleanSession": false,
+
+  "PublishToPostgres": false,
+  "PostgresHost": "localhost",
+  "PostgresPort": 5432,
+  "PostgresUser": "postgres",
+  "PostgresPw": "postgrespw",
+  "PostgresDb": "postgres"
 }

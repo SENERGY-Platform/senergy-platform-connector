@@ -40,6 +40,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -49,12 +50,6 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 	ctx, cancel := context.WithCancel(basectx)
 
 	err = auth.Mock(config, ctx)
-	if err != nil {
-		cancel()
-		return config, err
-	}
-
-	err = iot.Mock(config, ctx)
 	if err != nil {
 		cancel()
 		return config, err
@@ -90,6 +85,12 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		return config, err
 	}
 
+	err = iot.Mock(config, ctx)
+	if err != nil {
+		cancel()
+		return config, err
+	}
+
 	_, memcacheIp, err := docker.Memcached(pool, ctx)
 	if err != nil {
 		log.Println("ERROR:", err)
@@ -110,6 +111,36 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 	}
 	hostIp := network.IPAM.Config[0].Gateway
 	config.MqttBroker, err = docker.Vernemqtt(pool, ctx, hostIp+":"+config.WebhookPort)
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+
+	config.PostgresHost, config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb, err = docker.Timescale(pool, ctx)
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+
+	hostIp = "127.0.0.1"
+	networks, _ := pool.Client.ListNetworks()
+	for _, network := range networks {
+		if network.Name == "bridge" {
+			hostIp = network.IPAM.Config[0].Gateway
+			break
+		}
+	}
+
+	//transform local-address to address in docker container
+	deviceManagerUrlStruct := strings.Split(config.DeviceManagerUrl, ":")
+	deviceManagerUrl := "http://" + hostIp + ":" + deviceManagerUrlStruct[len(deviceManagerUrlStruct)-1]
+	log.Println("DEBUG: semantic url transformation:", config.DeviceManagerUrl, "-->", deviceManagerUrl)
+
+	err = docker.Tableworker(pool, ctx, config.PostgresHost, config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb, config.KafkaUrl, deviceManagerUrl)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -169,6 +200,13 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		Validate:                  config.Validate,
 		ValidateAllowMissingField: config.ValidateAllowMissingField,
 		ValidateAllowUnknownField: config.ValidateAllowUnknownField,
+
+		PublishToPostgres: config.PublishToPostgres,
+		PostgresHost:      config.PostgresHost,
+		PostgresPort:      config.PostgresPort,
+		PostgresUser:      config.PostgresUser,
+		PostgresPw:        config.PostgresPw,
+		PostgresDb:        config.PostgresDb,
 	})
 
 	if config.Debug {

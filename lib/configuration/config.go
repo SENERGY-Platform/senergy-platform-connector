@@ -90,6 +90,13 @@ type ConfigStruct struct {
 	KafkaReplicationFactor int
 
 	ForceCleanSession bool
+
+	PublishToPostgres bool
+	PostgresHost      string
+	PostgresPort      int
+	PostgresUser      string
+	PostgresPw        string
+	PostgresDb        string
 }
 
 type Config = *ConfigStruct
