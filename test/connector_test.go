@@ -54,8 +54,6 @@ func TestWithClient(t *testing.T) {
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
-	config.SyncKafka = true
-	config.SyncKafkaIdempotent = true
 	config.PublishToPostgres = true
 
 	config, err = server.New(ctx, config)
@@ -169,7 +167,7 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	eventConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", getServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", getServiceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -179,10 +177,9 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	defer eventConsumer.Stop()
 
 	consumedAnalytics := [][]byte{}
-	analyticConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
 		consumedAnalytics = append(consumedAnalytics, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -192,10 +189,9 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	defer analyticConsumer.Stop()
 
 	consumedRespEvents := [][]byte{}
-	respEventConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -205,10 +201,9 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	defer respEventConsumer.Stop()
 
 	consumedResponses := [][]byte{}
-	responseConsumer, err := kafka.NewConsumer(config.KafkaUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	}, func(err error, consumer *kafka.Consumer) {
@@ -218,7 +213,6 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	defer responseConsumer.Stop()
 
 	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"})
 	if err != nil {
@@ -249,7 +243,7 @@ func TestWithClient(t *testing.T) {
 		replFactor = config.KafkaReplicationFactor
 	}
 
-	producer, err := kafka.PrepareProducer(config.KafkaUrl, true, true, partitionsNum, replFactor)
+	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
 	if err != nil {
 		t.Error(err)
 		return

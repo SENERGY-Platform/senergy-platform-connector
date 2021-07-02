@@ -19,7 +19,7 @@ import (
 )
 
 func Mock(config configuration.Config, ctx context.Context) (err error) {
-	kafkaProducer, err := kafka.PrepareProducer(config.KafkaUrl, false, false, 1, 1)
+	kafkaProducer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,6 @@ func Mock(config configuration.Config, ctx context.Context) (err error) {
 	}
 	server.Listener, err = net.Listen("tcp", ":")
 	if err != nil {
-		kafkaProducer.Close()
 		return err
 	}
 	server.Start()
@@ -52,7 +51,6 @@ func Mock(config configuration.Config, ctx context.Context) (err error) {
 	go func() {
 		<-ctx.Done()
 		server.Close()
-		kafkaProducer.Close()
 	}()
 	return nil
 }

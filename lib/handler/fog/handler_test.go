@@ -17,14 +17,24 @@
 package fog
 
 import (
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"log"
 	"reflect"
 	"testing"
 )
 
+type MockProducerProvider struct {
+	Producer kafka.ProducerInterface
+}
+
+func (this MockProducerProvider) GetProducer(qos platform_connector_lib.Qos) (producer kafka.ProducerInterface, err error) {
+	return this.Producer, nil
+}
+
 func TestHandlerPublish(t *testing.T) {
 	km := &KafkaMock{Published: []KafkaMockMessage{}}
-	handler := NewHandler(km, "fog/")
+	handler := NewHandler(MockProducerProvider{km}, "fog/")
 
 	t.Run(testFogPublish(
 		"fog/analytics/foo",
@@ -118,7 +128,7 @@ func testFogSubscribe(topic string, handler *Handler, expectedResult Result) (st
 func testFogPublish(topic string, payload string, handler *Handler, km *KafkaMock, expectedResult Result, expectedProduced []KafkaMockMessage) (string, func(t *testing.T)) {
 	return topic, func(t *testing.T) {
 		startCount := len(km.Published)
-		result, err := handler.Publish("", "", topic, []byte(payload))
+		result, err := handler.Publish("", "", topic, []byte(payload), 2)
 		if err != nil {
 			if expectedResult != Error {
 				t.Error(result, err)

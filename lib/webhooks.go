@@ -110,7 +110,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			}
 
 			for _, h := range handlers {
-				handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload)
+				handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload, msg.Qos)
 				if err != nil && config.Debug {
 					log.Println("DEBUG:", err)
 				}

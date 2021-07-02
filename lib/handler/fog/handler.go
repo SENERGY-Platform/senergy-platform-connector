@@ -19,21 +19,26 @@ package fog
 import (
 	"encoding/json"
 	"fmt"
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"strings"
 )
 
-func NewHandler(producer kafka.ProducerInterface, fogTopicPrefix string) *Handler {
+type ProducerProvider interface {
+	GetProducer(qos platform_connector_lib.Qos) (producer kafka.ProducerInterface, err error)
+}
+
+func NewHandler(producerProvider ProducerProvider, fogTopicPrefix string) *Handler {
 	return &Handler{
-		producer:                producer,
+		producerProvider:        producerProvider,
 		fogTopicPrefix:          fogTopicPrefix,
 		fogAnalyticsTopicPrefix: fogTopicPrefix + "analytics/",
 	}
 }
 
 type Handler struct {
-	producer                kafka.ProducerInterface
+	producerProvider        ProducerProvider
 	fogTopicPrefix          string
 	fogAnalyticsTopicPrefix string
 }
@@ -59,7 +64,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 }
 
 //the user param may be used in the future to check auth
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte) (result Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result Result, err error) {
 	if this == nil {
 		return Unhandled, nil
 	}
@@ -74,7 +79,11 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if err != nil {
 		return Error, fmt.Errorf("unsupported message format: %w", err)
 	}
-	err = this.producer.ProduceWithKey(target, string(payload), key)
+	producer, err := this.producerProvider.GetProducer(platform_connector_lib.Qos(qos))
+	if err != nil {
+		return Error, err
+	}
+	err = producer.ProduceWithKey(target, string(payload), key)
 	if err != nil {
 		return Error, err
 	}
