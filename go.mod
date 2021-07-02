@@ -1,9 +1,9 @@
 module github.com/SENERGY-Platform/senergy-platform-connector
 
-go 1.15
+go 1.16
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210702110816-f71a186f6196
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210702112952-767486e88a7e
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/julienschmidt/httprouter v1.3.0
