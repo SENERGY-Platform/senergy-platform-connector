@@ -42,12 +42,17 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		return config, err
 	}
 
-	whPort, err := getFreePort()
+	config.WebhookPort, err = GetFreePort()
 	if err != nil {
 		log.Println("unable to find free port", err)
 		return config, err
 	}
-	config.WebhookPort = strconv.Itoa(whPort)
+
+	config.HttpCommandConsumerPort, err = GetFreePort()
+	if err != nil {
+		log.Println("unable to find free port", err)
+		return config, err
+	}
 
 	pool, err := dockertest.NewPool("")
 	if err != nil {
@@ -158,6 +163,11 @@ func getFreePort() (int, error) {
 	}
 	defer listener.Close()
 	return listener.Addr().(*net.TCPAddr).Port, nil
+}
+
+func GetFreePort() (string, error) {
+	temp, err := getFreePort()
+	return strconv.Itoa(temp), err
 }
 
 type VoidWriter struct{}

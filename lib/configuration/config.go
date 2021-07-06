@@ -94,6 +94,8 @@ type ConfigStruct struct {
 	PostgresUser      string
 	PostgresPw        string
 	PostgresDb        string
+
+	HttpCommandConsumerPort string
 }
 
 type Config = *ConfigStruct

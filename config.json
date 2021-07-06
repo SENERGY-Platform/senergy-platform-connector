@@ -1,5 +1,6 @@
 {
   "WebhookPort": "8080",
+  "HttpCommandConsumerPort": "8081",
   "Protocol": "connector",
 
   "DeviceManagerUrl":"http://iot:8080",

@@ -81,6 +81,8 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		PostgresUser:      config.PostgresUser,
 		PostgresPw:        config.PostgresPw,
 		PostgresDb:        config.PostgresDb,
+
+		HttpCommandConsumerPort: config.HttpCommandConsumerPort,
 	})
 
 	if config.Debug {
