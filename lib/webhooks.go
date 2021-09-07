@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
+	"github.com/SENERGY-Platform/platform-connector-lib/iot/options"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
@@ -270,7 +271,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
 			return
 		}
-		hub, err := connector.Iot().GetHub(msg.ClientId, token)
+		hub, err := connector.Iot().GetHub(msg.ClientId, token, options.Silent)
 		if err != nil {
 			if err == security.ErrorNotFound {
 				return
