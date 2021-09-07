@@ -30,6 +30,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -77,6 +78,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if p := recover(); p != nil {
+				debug.PrintStack()
 				sendError(writer, fmt.Sprint(p), true)
 				return
 			}
@@ -141,6 +143,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router.HandleFunc("/subscribe", func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if p := recover(); p != nil {
+				debug.PrintStack()
 				sendError(writer, fmt.Sprint(p), true)
 				return
 			}
@@ -186,6 +189,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if p := recover(); p != nil {
+				debug.PrintStack()
 				sendError(writer, fmt.Sprint(p), true)
 				return
 			}
@@ -245,6 +249,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router.HandleFunc("/disconnect", func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if p := recover(); p != nil {
+				debug.PrintStack()
 				sendError(writer, fmt.Sprint(p), true)
 				return
 			} else {
@@ -296,6 +301,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router.HandleFunc("/unsubscribe", func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if p := recover(); p != nil {
+				debug.PrintStack()
 				sendError(writer, fmt.Sprint(p), true)
 				return
 			}
