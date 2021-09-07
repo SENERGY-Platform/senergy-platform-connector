@@ -17,12 +17,14 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/httpcommand"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/psql"
@@ -30,15 +32,15 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	_ "github.com/lib/pq"
-	"log"
-	"os"
+	"io"
+	"net/http"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
 )
 
-func TestWithClient(t *testing.T) {
+func TestHttpCommand(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
@@ -118,14 +120,6 @@ func TestWithClient(t *testing.T) {
 
 	defer c.Stop()
 
-	/*
-		use zway switch multilevel, with services:
-		exact: {"level": 0} -> nil
-		sepl_get: nil -> {"level": 0, "title": "STRING", "updateTime": 0}
-
-		on protocol "zway-connector" with message-segments: "metrics"
-	*/
-
 	var testState float64 = 0
 	mux := sync.Mutex{}
 
@@ -178,18 +172,6 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	consumedAnalytics := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
-		consumedAnalytics = append(consumedAnalytics, msg)
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
 	consumedRespEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
@@ -203,18 +185,15 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedResponses := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
-		consumedResponses = append(consumedResponses, msg)
-		return nil
-	}, func(err error, consumer *kafka.Consumer) {
-		t.Error(err)
-	})
+	responsePort, err := server.GetFreePort()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"})
+	err = httpcommand.StartConsumer(ctx, responsePort, func(msg []byte) error {
+		consumedResponses = append(consumedResponses, msg)
+		return nil
+	})
 	if err != nil {
 		t.Error(err)
 		return
@@ -234,22 +213,6 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	partitionsNum := 1
-	replFactor := 1
-	if config.KafkaPartitionNum != 0 {
-		partitionsNum = config.KafkaPartitionNum
-	}
-	if config.KafkaReplicationFactor != 0 {
-		replFactor = config.KafkaReplicationFactor
-	}
-
-	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
-
 	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{
 		"level":      9,
@@ -260,6 +223,7 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	testCommand.Metadata.ResponseTo = "http://localhost:" + responsePort + "/commands" // commands path because reuse of the httpcommand package as response receiver
 
 	testCommandMsg, err := json.Marshal(testCommand)
 	if err != nil {
@@ -267,9 +231,14 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	err = producer.Produce(config.Protocol, string(testCommandMsg))
+	resp, err := http.Post("http://localhost:"+config.HttpCommandConsumerPort+"/commands", "application/json", bytes.NewReader(testCommandMsg))
 	if err != nil {
 		t.Error(err)
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := io.ReadAll(resp.Body)
+		t.Error(resp.StatusCode, string(temp))
 		return
 	}
 
@@ -278,6 +247,7 @@ func TestWithClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	testCommand.Metadata.ResponseTo = "http://localhost:" + responsePort + "/commands" // commands path because reuse of the httpcommand package as response receiver
 
 	testCommandMsg, err = json.Marshal(testCommand)
 	if err != nil {
@@ -285,9 +255,14 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	err = producer.Produce(config.Protocol, string(testCommandMsg))
+	resp, err = http.Post("http://localhost:"+config.HttpCommandConsumerPort+"/commands", "application/json", bytes.NewReader(testCommandMsg))
 	if err != nil {
 		t.Error(err)
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := io.ReadAll(resp.Body)
+		t.Error(resp.StatusCode, string(temp))
 		return
 	}
 
@@ -295,11 +270,6 @@ func TestWithClient(t *testing.T) {
 
 	if testState != 9 {
 		t.Error("unexpected command result", testState)
-		return
-	}
-
-	if len(consumedAnalytics) != 1 {
-		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
 		return
 	}
 
@@ -364,6 +334,7 @@ func TestWithClient(t *testing.T) {
 		t.Error("unable to create expected response", err)
 		return
 	}
+	expectedResponse.Metadata.ResponseTo = "http://localhost:" + responsePort + "/commands"
 	expectedResponse.Request.Input, expectedResponse.Response.Output = expectedResponse.Response.Output, expectedResponse.Request.Input
 	b, err := json.Marshal(expectedResponse)
 	if err != nil {
@@ -390,32 +361,32 @@ func TestWithClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	query := "SELECT * FROM \"device:" + shortDeviceId + "_service:" + shortServiceId1 + "\";"
-	resp, err := db.Query(query)
+	sqlresp, err := db.Query(query)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !resp.Next() {
+	if !sqlresp.Next() {
 		t.Fatal("Event not written to Postgres!")
 	}
 	var row testMessagePostgres
-	err = resp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
+	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if row.metrics_updateTime != 0 || row.metrics_title != "event" || row.metrics_level_unit != "test2" || row.metrics_level != 42 {
 		t.Fatal("Invalid values written to postgres")
 	}
-	if !resp.Next() {
+	if !sqlresp.Next() {
 		t.Fatal("Event not written to Postgres!")
 	}
-	err = resp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
+	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if row.metrics_updateTime != 42 || row.metrics_title != "level" || row.metrics_level_unit != "test2" || row.metrics_level != 9 {
 		t.Fatal("Invalid values written to postgres")
 	}
-	if resp.Next() {
+	if sqlresp.Next() {
 		t.Fatal("Too many events written to Postgres!")
 	}
 
@@ -423,27 +394,19 @@ func TestWithClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err = db.Query("SELECT count(*) FROM \"device:" + shortDeviceId + "_service:" + shortServiceId2 + "\";")
+	sqlresp, err = db.Query("SELECT count(*) FROM \"device:" + shortDeviceId + "_service:" + shortServiceId2 + "\";")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !resp.Next() {
+	if !sqlresp.Next() {
 		t.Fatal("Response not written to Postgres!")
 	}
 	var count int
-	err = resp.Scan(&count)
+	err = sqlresp.Scan(&count)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if count != 1 {
 		t.Fatal("Too many responses written to Postgres!")
 	}
-}
-
-type testMessagePostgres struct {
-	time               time.Time
-	metrics_title      string
-	metrics_updateTime int
-	metrics_level      int
-	metrics_level_unit string
 }

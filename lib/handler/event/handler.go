@@ -41,7 +41,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	return handler.Unhandled, nil
 }
 
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte) (result handler.Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result handler.Result, err error) {
 	if !strings.HasPrefix(topic, "event") {
 		return handler.Unhandled, nil
 	}
@@ -84,7 +84,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		}
 	}
 	if !this.config.MqttPublishAuthOnly {
-		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event)
+		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if err != nil {
 			return handler.Error, err
 		}

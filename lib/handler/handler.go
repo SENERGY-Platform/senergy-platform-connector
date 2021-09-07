@@ -27,5 +27,5 @@ const (
 
 type Handler interface {
 	Subscribe(clientId string, user string, topic string) (result Result, err error)
-	Publish(clientId string, user string, topic string, payload []byte) (result Result, err error)
+	Publish(clientId string, user string, topic string, payload []byte, qos int) (result Result, err error)
 }

@@ -70,9 +70,6 @@ type ConfigStruct struct {
 	TokenCacheUrls       string
 	TokenCacheExpiration int64
 
-	SyncKafka           bool
-	SyncKafkaIdempotent bool
-
 	MqttPublishAuthOnly bool
 
 	StartupDelay int64
@@ -90,6 +87,15 @@ type ConfigStruct struct {
 	KafkaReplicationFactor int
 
 	ForceCleanSession bool
+
+	PublishToPostgres bool
+	PostgresHost      string
+	PostgresPort      int
+	PostgresUser      string
+	PostgresPw        string
+	PostgresDb        string
+
+	HttpCommandConsumerPort string
 }
 
 type Config = *ConfigStruct

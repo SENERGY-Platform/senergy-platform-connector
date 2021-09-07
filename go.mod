@@ -1,12 +1,13 @@
 module github.com/SENERGY-Platform/senergy-platform-connector
 
-go 1.15
+go 1.16
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210511072731-52dd22017fbd
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210706075932-6765ba18c907
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/lib/pq v1.4.0
 	github.com/ory/dockertest v3.3.4+incompatible
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.15

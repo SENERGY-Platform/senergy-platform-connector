@@ -1,5 +1,6 @@
 {
   "WebhookPort": "8080",
+  "HttpCommandConsumerPort": "8081",
   "Protocol": "connector",
 
   "DeviceManagerUrl":"http://iot:8080",
@@ -52,5 +53,12 @@
   "KafkaPartitionNum": 1,
   "KafkaReplicationFactor": 2,
 
-  "ForceCleanSession": false
+  "ForceCleanSession": false,
+
+  "PublishToPostgres": false,
+  "PostgresHost": "localhost",
+  "PostgresPort": 5432,
+  "PostgresUser": "postgres",
+  "PostgresPw": "postgrespw",
+  "PostgresDb": "postgres"
 }

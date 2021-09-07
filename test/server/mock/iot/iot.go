@@ -2,19 +2,27 @@ package iot
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/julienschmidt/httprouter"
 	uuid "github.com/satori/go.uuid"
 	"log"
+	"net"
+	"net/http"
 	"net/http/httptest"
 	"runtime/debug"
 	"sync"
 )
 
 func Mock(config configuration.Config, ctx context.Context) (err error) {
+	kafkaProducer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1)
+	if err != nil {
+		return err
+	}
 	router, err := getRouter(&Controller{
 		mux:              sync.Mutex{},
 		devices:          map[string]model.Device{},
@@ -23,12 +31,20 @@ func Mock(config configuration.Config, ctx context.Context) (err error) {
 		deviceTypes:      map[string]model.DeviceType{},
 		hubs:             map[string]model.Hub{},
 		protocols:        map[string]model.Protocol{},
+		kafkaProducer:    kafkaProducer,
 	})
 	if err != nil {
 		return err
 	}
 
-	server := httptest.NewServer(NewLogger(router, "DEBUG"))
+	server := &httptest.Server{
+		Config: &http.Server{Handler: NewLogger(router, "DEBUG")},
+	}
+	server.Listener, err = net.Listen("tcp", ":")
+	if err != nil {
+		return err
+	}
+	server.Start()
 	config.DeviceManagerUrl = server.URL
 	config.DeviceRepoUrl = server.URL
 	config.SemanticRepoUrl = server.URL
@@ -64,6 +80,21 @@ type Controller struct {
 	deviceTypes      map[string]model.DeviceType
 	hubs             map[string]model.Hub
 	protocols        map[string]model.Protocol
+	kafkaProducer    kafka.ProducerInterface
+}
+
+type command string
+
+const (
+	putCommand    command = "PUT"
+	deleteCommand command = "DELETE"
+)
+
+type deviceCommand struct {
+	Command command      `json:"command"`
+	Id      string       `json:"id"`
+	Owner   string       `json:"owner"`
+	Device  model.Device `json:"device"`
 }
 
 func (this *Controller) ReadDevice(id string) (result interface{}, err error, code int) {
@@ -84,6 +115,19 @@ func (this *Controller) PublishDeviceCreate(device model.Device) (result interfa
 	device.Id = uuid.NewV4().String()
 	this.devices[device.Id] = device
 	this.devicesByLocalId[device.LocalId] = device.Id
+	msg, err := json.Marshal(&deviceCommand{
+		Command: putCommand,
+		Id:      device.Id,
+		Owner:   "someone",
+		Device:  device,
+	})
+	if err != nil {
+		return nil, err, http.StatusInternalServerError
+	}
+	err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
+	if err != nil {
+		return nil, err, http.StatusInternalServerError
+	}
 	return device, nil, 200
 }
 
@@ -92,6 +136,19 @@ func (this *Controller) PublishDeviceUpdate(id string, device model.Device) (res
 	defer this.mux.Unlock()
 	this.devices[id] = device
 	this.devicesByLocalId[id] = device.LocalId
+	msg, err := json.Marshal(&deviceCommand{
+		Command: putCommand,
+		Id:      device.Id,
+		Owner:   "someone",
+		Device:  device,
+	})
+	if err != nil {
+		return nil, err, http.StatusInternalServerError
+	}
+	err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
+	if err != nil {
+		return nil, err, http.StatusInternalServerError
+	}
 	return device, nil, 200
 }
 
@@ -100,6 +157,18 @@ func (this *Controller) PublishDeviceDelete(id string) (err error, code int) {
 	defer this.mux.Unlock()
 	delete(this.devices, id)
 	delete(this.devicesByLocalId, id)
+	msg, err := json.Marshal(&deviceCommand{
+		Command: deleteCommand,
+		Id:      id,
+		Owner:   "someone",
+	})
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	err = this.kafkaProducer.ProduceWithKey("devices", string(msg), id)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
 	return nil, 200
 }
 

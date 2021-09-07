@@ -44,7 +44,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	return handler.Unhandled, nil
 }
 
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte) (result handler.Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result handler.Result, err error) {
 	if !strings.HasPrefix(topic, "response") {
 		return handler.Unhandled, nil
 	}
@@ -81,7 +81,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 			return handler.Accepted, nil //potentially old message; may be ignored; but dont cut connection
 		}
 		request.Trace = append(request.Trace, msg.Trace...) // merge traces
-		err = this.connector.HandleCommandResponse(request, msg.Payload)
+		err = this.connector.HandleCommandResponse(request, msg.Payload, platform_connector_lib.Qos(qos))
 		if err != nil {
 			return handler.Error, err
 		}

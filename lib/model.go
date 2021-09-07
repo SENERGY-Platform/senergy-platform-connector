@@ -32,6 +32,7 @@ type PublishWebhookMsg struct {
 	ClientId string `json:"client_id"`
 	Topic    string `json:"topic"`
 	Payload  string `json:"payload"`
+	Qos      int    `json:"qos"`
 }
 
 type WebhookmsgTopic struct {
