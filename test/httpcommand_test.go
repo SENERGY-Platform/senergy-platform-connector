@@ -369,21 +369,21 @@ func TestHttpCommand(t *testing.T) {
 		t.Fatal("Event not written to Postgres!")
 	}
 	var row testMessagePostgres
-	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
+	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title, &row.metrics_missing)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if row.metrics_updateTime != 0 || row.metrics_title != "event" || row.metrics_level_unit != "test2" || row.metrics_level != 42 {
+	if row.metrics_updateTime != 0 || row.metrics_title != "event" || row.metrics_level_unit != "test2" || row.metrics_level != 42 || row.metrics_missing != nil {
 		t.Fatal("Invalid values written to postgres")
 	}
 	if !sqlresp.Next() {
 		t.Fatal("Event not written to Postgres!")
 	}
-	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title)
+	err = sqlresp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title, &row.metrics_missing)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if row.metrics_updateTime != 42 || row.metrics_title != "level" || row.metrics_level_unit != "test2" || row.metrics_level != 9 {
+	if row.metrics_updateTime != 42 || row.metrics_title != "level" || row.metrics_level_unit != "test2" || row.metrics_level != 9 || row.metrics_missing != nil {
 		t.Fatal("Invalid values written to postgres")
 	}
 	if sqlresp.Next() {

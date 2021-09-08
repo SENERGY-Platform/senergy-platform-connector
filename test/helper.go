@@ -150,6 +150,10 @@ func createDeviceType(conf configuration.Config, managerUrl string, characterist
 									Name: "title",
 									Type: model.String,
 								},
+								{
+									Name: "missing",
+									Type: model.String,
+								},
 							},
 						},
 					},
