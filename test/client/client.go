@@ -19,6 +19,7 @@ package client
 import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -78,6 +79,7 @@ func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoU
 		clientId:         Id,
 		clientSecret:     Secret,
 		devices:          devices,
+		subscriptions:    map[string]paho.MessageHandler{},
 	}
 	err = client.startMqtt()
 	return
@@ -98,6 +100,9 @@ type Client struct {
 	clientSecret string
 	devices      []DeviceRepresentation
 	hubName      string
+
+	subscriptionsMux sync.Mutex
+	subscriptions    map[string]paho.MessageHandler
 }
 
 func (this *Client) Stop() {

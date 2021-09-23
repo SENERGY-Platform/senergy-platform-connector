@@ -34,7 +34,13 @@ func (this *Client) startMqtt() error {
 		SetClientID(this.HubId).
 		SetAutoReconnect(true).
 		SetCleanSession(true).
-		AddBroker(this.mqttUrl)
+		AddBroker(this.mqttUrl).
+		SetOnConnectHandler(func(client paho.Client) {
+			err := this.loadOldSubscriptions()
+			if err != nil {
+				log.Fatal("FATAL: ", err)
+			}
+		})
 	this.mqtt = paho.NewClient(options)
 	if token := this.mqtt.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())
@@ -59,7 +65,7 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			log.Println("WARNING: received old command; do nothing")
 			return
 		}
-		log.Println("DEBUG: client handle command", request)
+		//log.Println("DEBUG: client handle command", request)
 		respMsg, err := handler(request.Payload)
 		if err != nil {
 			log.Println("ERROR: while processing command", err)
@@ -110,4 +116,47 @@ func (this *Client) Publish(topic string, msg interface{}) (err error) {
 		return token.Error()
 	}
 	return err
+}
+
+type Subscription struct {
+	Topic   string
+	Handler paho.MessageHandler
+}
+
+func (this *Client) registerSubscription(topic string, handler paho.MessageHandler) {
+	this.subscriptionsMux.Lock()
+	defer this.subscriptionsMux.Unlock()
+	this.subscriptions[topic] = handler
+}
+
+func (this *Client) unregisterSubscriptions(topic string) {
+	this.subscriptionsMux.Lock()
+	defer this.subscriptionsMux.Unlock()
+	delete(this.subscriptions, topic)
+}
+
+func (this *Client) getSubscriptions() (result []Subscription) {
+	this.subscriptionsMux.Lock()
+	defer this.subscriptionsMux.Unlock()
+	for topic, handler := range this.subscriptions {
+		result = append(result, Subscription{Topic: topic, Handler: handler})
+	}
+	return
+}
+
+func (this *Client) loadOldSubscriptions() error {
+	if !this.mqtt.IsConnected() {
+		log.Println("WARNING: mqtt client not connected")
+		return errors.New("mqtt client not connected")
+	}
+	subs := this.getSubscriptions()
+	for _, sub := range subs {
+		log.Println("resubscribe to", sub.Topic)
+		token := this.mqtt.Subscribe(sub.Topic, 2, sub.Handler)
+		if token.Wait() && token.Error() != nil {
+			log.Println("Error on Subscribe: ", sub.Topic, token.Error())
+			return token.Error()
+		}
+	}
+	return nil
 }
