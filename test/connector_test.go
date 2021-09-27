@@ -214,7 +214,7 @@ func TestWithClient(t *testing.T) {
 		return
 	}
 
-	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"})
+	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"}, 2)
 	if err != nil {
 		t.Error(err)
 		return

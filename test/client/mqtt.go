@@ -72,7 +72,42 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 			return
 		}
 		response := response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
-		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response)
+		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response, 2)
+		if err != nil {
+			log.Println("ERROR: unable to Publish response", err)
+		}
+	})
+	if token.Wait() && token.Error() != nil {
+		log.Println("Error on Client.Subscribe(): ", token.Error())
+		return token.Error()
+	}
+	return nil
+}
+
+func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qos byte, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
+	if !this.mqtt.IsConnected() {
+		log.Println("WARNING: mqtt client not connected")
+		return errors.New("mqtt client not connected")
+	}
+	token := this.mqtt.Subscribe("command/"+deviceUri+"/"+serviceUri, qos, func(client paho.Client, message paho.Message) {
+		request := lib.RequestEnvelope{}
+		err := json.Unmarshal(message.Payload(), &request)
+		if err != nil {
+			log.Println("ERROR: unable to decode request envalope", err)
+			return
+		}
+		if time.Since(time.Unix(request.Time, 0)) > 40*time.Second {
+			log.Println("WARNING: received old command; do nothing")
+			return
+		}
+		//log.Println("DEBUG: client handle command", request)
+		respMsg, err := handler(request.Payload)
+		if err != nil {
+			log.Println("ERROR: while processing command", err)
+			return
+		}
+		response := response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
+		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response, qos)
 		if err != nil {
 			log.Println("ERROR: unable to Publish response", err)
 		}
@@ -98,10 +133,14 @@ func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error)
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
-	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg)
+	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, 2)
 }
 
-func (this *Client) Publish(topic string, msg interface{}) (err error) {
+func (this *Client) SendEventWithQos(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg, qos byte) (err error) {
+	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, qos)
+}
+
+func (this *Client) Publish(topic string, msg interface{}, qos byte) (err error) {
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return err
