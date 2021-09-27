@@ -3,7 +3,7 @@ module github.com/SENERGY-Platform/senergy-platform-connector
 go 1.17
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210908095512-308546a2ad37
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20210927124459-439a24d083bc
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/eclipse/paho.mqtt.golang v1.1.1
