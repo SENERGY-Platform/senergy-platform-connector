@@ -149,7 +149,7 @@ func (this *Client) Publish(topic string, msg interface{}, qos byte) (err error)
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	token := this.mqtt.Publish(topic, 2, false, string(payload))
+	token := this.mqtt.Publish(topic, qos, false, string(payload))
 	if token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Publish(): ", token.Error())
 		return token.Error()
