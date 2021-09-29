@@ -29,7 +29,9 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
+	"github.com/Shopify/sarama"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -40,6 +42,12 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 			cancel()
 		}
 	}()
+
+	asyncFlushFrequency, err := time.ParseDuration(config.AsyncFlushFrequency)
+	if err != nil {
+		return err
+	}
+
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
@@ -83,6 +91,10 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		PostgresDb:        config.PostgresDb,
 
 		HttpCommandConsumerPort: config.HttpCommandConsumerPort,
+
+		SyncCompression:     getKafkaCompression(config.SyncCompression),
+		AsyncCompression:    getKafkaCompression(config.AsyncCompression),
+		AsyncFlushFrequency: asyncFlushFrequency,
 	})
 
 	if config.Debug {
@@ -145,4 +157,21 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 	return nil
+}
+
+func getKafkaCompression(compression string) sarama.CompressionCodec {
+	switch strings.ToLower(compression) {
+	case "":
+		return sarama.CompressionNone
+	case "-":
+		return sarama.CompressionNone
+	case "none":
+		return sarama.CompressionNone
+	case "gzip":
+		return sarama.CompressionGZIP
+	case "snappy":
+		return sarama.CompressionSnappy
+	}
+	log.Println("WARNING: unknown compression", compression, "fallback to none")
+	return sarama.CompressionNone
 }

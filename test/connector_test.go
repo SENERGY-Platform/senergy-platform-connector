@@ -221,7 +221,6 @@ func TestWithClient(t *testing.T) {
 	}
 
 	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
-
 	if err != nil {
 		t.Error(err)
 		return

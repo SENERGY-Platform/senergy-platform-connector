@@ -51,7 +51,7 @@
   "FogHandlerTopicPrefix": "fog/",
 
   "KafkaPartitionNum": 1,
-  "KafkaReplicationFactor": 2,
+  "KafkaReplicationFactor": 1,
 
   "ForceCleanSession": false,
 
@@ -60,5 +60,9 @@
   "PostgresPort": 5432,
   "PostgresUser": "postgres",
   "PostgresPw": "postgrespw",
-  "PostgresDb": "postgres"
+  "PostgresDb": "postgres",
+
+  "AsyncFlushFrequency": "500ms",
+  "AsyncCompression": "gzip",
+  "SyncCompression": "none"
 }

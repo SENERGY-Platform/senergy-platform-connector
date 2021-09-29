@@ -23,6 +23,7 @@ func Mock(config configuration.Config, ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	//kafkaProducer.Log(log.New(os.Stdout, "[KAFKA-IOT-MOCK] ", 0))
 	router, err := getRouter(&Controller{
 		mux:              sync.Mutex{},
 		devices:          map[string]model.Device{},

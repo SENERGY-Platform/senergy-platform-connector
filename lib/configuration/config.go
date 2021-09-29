@@ -96,6 +96,10 @@ type ConfigStruct struct {
 	PostgresDb        string
 
 	HttpCommandConsumerPort string
+
+	AsyncFlushFrequency string
+	AsyncCompression    string
+	SyncCompression     string
 }
 
 type Config = *ConfigStruct
