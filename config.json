@@ -62,6 +62,7 @@
   "PostgresPw": "postgrespw",
   "PostgresDb": "postgres",
 
+  "AsyncFlushMessages": 200,
   "AsyncFlushFrequency": "500ms",
   "AsyncCompression": "gzip",
   "SyncCompression": "none"

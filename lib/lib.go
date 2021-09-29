@@ -95,6 +95,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		SyncCompression:     getKafkaCompression(config.SyncCompression),
 		AsyncCompression:    getKafkaCompression(config.AsyncCompression),
 		AsyncFlushFrequency: asyncFlushFrequency,
+		AsyncFlushMessages:  int(config.AsyncFlushMessages),
 	})
 
 	if config.Debug {
