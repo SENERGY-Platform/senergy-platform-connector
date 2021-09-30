@@ -97,6 +97,7 @@ type ConfigStruct struct {
 
 	HttpCommandConsumerPort string
 
+	AsyncPgThreadMax    int64
 	AsyncFlushMessages  int64
 	AsyncFlushFrequency string
 	AsyncCompression    string
