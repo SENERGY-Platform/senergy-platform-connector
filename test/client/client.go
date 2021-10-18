@@ -40,6 +40,7 @@ func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl 
 		clientId:         Id,
 		clientSecret:     Secret,
 		devices:          devices,
+		subscriptions:    map[string]Subscription{},
 	}
 	token, err := client.login()
 	if err != nil {
@@ -79,7 +80,7 @@ func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoU
 		clientId:         Id,
 		clientSecret:     Secret,
 		devices:          devices,
-		subscriptions:    map[string]paho.MessageHandler{},
+		subscriptions:    map[string]Subscription{},
 	}
 	err = client.startMqtt()
 	return
@@ -102,7 +103,7 @@ type Client struct {
 	hubName      string
 
 	subscriptionsMux sync.Mutex
-	subscriptions    map[string]paho.MessageHandler
+	subscriptions    map[string]Subscription
 }
 
 func (this *Client) Stop() {

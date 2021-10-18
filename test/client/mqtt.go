@@ -35,7 +35,11 @@ func (this *Client) startMqtt() error {
 		SetAutoReconnect(true).
 		SetCleanSession(true).
 		AddBroker(this.mqttUrl).
+		SetConnectionLostHandler(func(client paho.Client, err error) {
+			log.Println("mqtt connection lost:", err)
+		}).
 		SetOnConnectHandler(func(client paho.Client) {
+			log.Println("mqtt (re)connected")
 			err := this.loadOldSubscriptions()
 			if err != nil {
 				log.Fatal("FATAL: ", err)
@@ -50,38 +54,7 @@ func (this *Client) startMqtt() error {
 }
 
 func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
-	if !this.mqtt.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
-		return errors.New("mqtt client not connected")
-	}
-	token := this.mqtt.Subscribe("command/"+deviceUri+"/"+serviceUri, 1, func(client paho.Client, message paho.Message) {
-		request := lib.RequestEnvelope{}
-		err := json.Unmarshal(message.Payload(), &request)
-		if err != nil {
-			log.Println("ERROR: unable to decode request envalope", err)
-			return
-		}
-		if time.Since(time.Unix(request.Time, 0)) > 40*time.Second {
-			log.Println("WARNING: received old command; do nothing")
-			return
-		}
-		//log.Println("DEBUG: client handle command", request)
-		respMsg, err := handler(request.Payload)
-		if err != nil {
-			log.Println("ERROR: while processing command", err)
-			return
-		}
-		response := response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
-		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response, 2)
-		if err != nil {
-			log.Println("ERROR: unable to Publish response", err)
-		}
-	})
-	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Subscribe(): ", token.Error())
-		return token.Error()
-	}
-	return nil
+	return this.ListenCommandWithQos(deviceUri, serviceUri, 2, handler)
 }
 
 func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qos byte, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
@@ -89,7 +62,8 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	token := this.mqtt.Subscribe("command/"+deviceUri+"/"+serviceUri, qos, func(client paho.Client, message paho.Message) {
+	topic := "command/" + deviceUri + "/" + serviceUri
+	callback := func(client paho.Client, message paho.Message) {
 		request := lib.RequestEnvelope{}
 		err := json.Unmarshal(message.Payload(), &request)
 		if err != nil {
@@ -112,11 +86,13 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 				log.Println("ERROR: unable to Publish response", err)
 			}
 		}()
-	})
+	}
+	token := this.mqtt.Subscribe(topic, qos, callback)
 	if token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Subscribe(): ", token.Error())
 		return token.Error()
 	}
+	this.registerSubscription(topic, qos, callback)
 	return nil
 }
 
@@ -161,12 +137,17 @@ func (this *Client) Publish(topic string, msg interface{}, qos byte) (err error)
 type Subscription struct {
 	Topic   string
 	Handler paho.MessageHandler
+	Qos     byte
 }
 
-func (this *Client) registerSubscription(topic string, handler paho.MessageHandler) {
+func (this *Client) registerSubscription(topic string, qos byte, handler paho.MessageHandler) {
 	this.subscriptionsMux.Lock()
 	defer this.subscriptionsMux.Unlock()
-	this.subscriptions[topic] = handler
+	this.subscriptions[topic] = Subscription{
+		Topic:   topic,
+		Handler: handler,
+		Qos:     qos,
+	}
 }
 
 func (this *Client) unregisterSubscriptions(topic string) {
@@ -178,8 +159,8 @@ func (this *Client) unregisterSubscriptions(topic string) {
 func (this *Client) getSubscriptions() (result []Subscription) {
 	this.subscriptionsMux.Lock()
 	defer this.subscriptionsMux.Unlock()
-	for topic, handler := range this.subscriptions {
-		result = append(result, Subscription{Topic: topic, Handler: handler})
+	for _, sub := range this.subscriptions {
+		result = append(result, sub)
 	}
 	return
 }
@@ -192,7 +173,7 @@ func (this *Client) loadOldSubscriptions() error {
 	subs := this.getSubscriptions()
 	for _, sub := range subs {
 		log.Println("resubscribe to", sub.Topic)
-		token := this.mqtt.Subscribe(sub.Topic, 2, sub.Handler)
+		token := this.mqtt.Subscribe(sub.Topic, sub.Qos, sub.Handler)
 		if token.Wait() && token.Error() != nil {
 			log.Println("Error on Subscribe: ", sub.Topic, token.Error())
 			return token.Error()
