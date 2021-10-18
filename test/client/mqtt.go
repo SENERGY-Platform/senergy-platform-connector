@@ -106,11 +106,12 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 			log.Println("ERROR: while processing command", err)
 			return
 		}
-		response := response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}
-		err = this.Publish("response/"+deviceUri+"/"+serviceUri, response, qos)
-		if err != nil {
-			log.Println("ERROR: unable to Publish response", err)
-		}
+		go func() {
+			err = this.Publish("response/"+deviceUri+"/"+serviceUri, response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}, qos)
+			if err != nil {
+				log.Println("ERROR: unable to Publish response", err)
+			}
+		}()
 	})
 	if token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Subscribe(): ", token.Error())
