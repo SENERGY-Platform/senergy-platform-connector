@@ -97,6 +97,10 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		AsyncFlushFrequency: asyncFlushFrequency,
 		AsyncFlushMessages:  int(config.AsyncFlushMessages),
 		AsyncPgThreadMax:    int(config.AsyncPgThreadMax),
+
+		KafkaConsumerMinBytes: int(config.KafkaConsumerMinBytes),
+		KafkaConsumerMaxBytes: int(config.KafkaConsumerMaxBytes),
+		KafkaConsumerMaxWait:  config.KafkaConsumerMaxWait,
 	})
 
 	if config.Debug {

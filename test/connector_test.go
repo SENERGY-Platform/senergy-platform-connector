@@ -167,10 +167,17 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedEvents := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", getServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
+		KafkaUrl: config.KafkaUrl,
+		GroupId:  "test_client",
+		Topic:    getServiceTopic,
+		MinBytes: 1000,
+		MaxBytes: 1000000,
+		MaxWait:  100 * time.Millisecond,
+	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
-	}, func(err error, consumer *kafka.Consumer) {
+	}, func(err error) {
 		t.Error(err)
 	})
 	if err != nil {
@@ -179,10 +186,17 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedAnalytics := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "analytics-foo", func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
+		KafkaUrl: config.KafkaUrl,
+		GroupId:  "test_client",
+		Topic:    "analytics-foo",
+		MinBytes: 1000,
+		MaxBytes: 1000000,
+		MaxWait:  100 * time.Millisecond,
+	}, func(topic string, msg []byte, t time.Time) error {
 		consumedAnalytics = append(consumedAnalytics, msg)
 		return nil
-	}, func(err error, consumer *kafka.Consumer) {
+	}, func(err error) {
 		t.Error(err)
 	})
 	if err != nil {
@@ -191,10 +205,17 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedRespEvents := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", setServiceTopic, func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
+		KafkaUrl: config.KafkaUrl,
+		GroupId:  "test_client",
+		Topic:    setServiceTopic,
+		MinBytes: 1000,
+		MaxBytes: 1000000,
+		MaxWait:  100 * time.Millisecond,
+	}, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
-	}, func(err error, consumer *kafka.Consumer) {
+	}, func(err error) {
 		t.Error(err)
 	})
 	if err != nil {
@@ -203,10 +224,17 @@ func TestWithClient(t *testing.T) {
 	}
 
 	consumedResponses := [][]byte{}
-	err = kafka.NewConsumer(ctx, config.KafkaUrl, "test_client", "response", func(topic string, msg []byte, t time.Time) error {
+	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
+		KafkaUrl: config.KafkaUrl,
+		GroupId:  "test_client",
+		Topic:    "response",
+		MinBytes: 1000,
+		MaxBytes: 1000000,
+		MaxWait:  100 * time.Millisecond,
+	}, func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
-	}, func(err error, consumer *kafka.Consumer) {
+	}, func(err error) {
 		t.Error(err)
 	})
 	if err != nil {

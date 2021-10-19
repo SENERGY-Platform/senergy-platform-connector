@@ -66,5 +66,9 @@
   "AsyncFlushMessages": 200,
   "AsyncFlushFrequency": "500ms",
   "AsyncCompression": "snappy",
-  "SyncCompression": "snappy"
+  "SyncCompression": "snappy",
+
+  "KafkaConsumerMaxWait": "100ms",
+  "KafkaConsumerMinBytes": 1000,
+  "KafkaConsumerMaxBytes": 1000000
 }

@@ -102,6 +102,10 @@ type ConfigStruct struct {
 	AsyncFlushFrequency string
 	AsyncCompression    string
 	SyncCompression     string
+
+	KafkaConsumerMaxWait  string
+	KafkaConsumerMinBytes int64
+	KafkaConsumerMaxBytes int64
 }
 
 type Config = *ConfigStruct
