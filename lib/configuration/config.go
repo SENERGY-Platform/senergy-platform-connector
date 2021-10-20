@@ -106,6 +106,11 @@ type ConfigStruct struct {
 	KafkaConsumerMaxWait  string
 	KafkaConsumerMinBytes int64
 	KafkaConsumerMaxBytes int64
+
+	IotCacheMaxIdleConns    int64
+	CorrelationMaxIdleConns int64
+	IotCacheTimeout         string
+	CorrelationTimeout      string
 }
 
 type Config = *ConfigStruct

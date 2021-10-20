@@ -11,7 +11,7 @@ import (
 )
 
 func createTestCommandMsg(config configuration.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.ProtocolMsg, err error) {
-	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}).Access()
+	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0).Access()
 	if err != nil {
 		return result, err
 	}
@@ -55,7 +55,7 @@ func createTestCommandMsg(config configuration.Config, deviceUri string, service
 }
 
 func createOptimisticTestCommandMsg(config configuration.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.ProtocolMsg, err error) {
-	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}).Access()
+	token, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0).Access()
 	if err != nil {
 		return result, err
 	}

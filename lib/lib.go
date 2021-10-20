@@ -48,7 +48,13 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
-	correlationservice := correlation.New(int32(config.CorrelationExpiration), StringToList(config.MemcachedUrl)...)
+	correlationTimeout := 200 * time.Millisecond
+	if timeout, err := time.ParseDuration(config.CorrelationTimeout); err != nil {
+		log.Println("WARNING: invalid CorrelationTimeout; use default 200ms")
+	} else {
+		correlationTimeout = timeout
+	}
+	correlationservice := correlation.New(int32(config.CorrelationExpiration), int(config.CorrelationMaxIdleConns), correlationTimeout, StringToList(config.MemcachedUrl)...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		PartitionsNum:            config.KafkaPartitionNum,
@@ -101,6 +107,9 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		KafkaConsumerMinBytes: int(config.KafkaConsumerMinBytes),
 		KafkaConsumerMaxBytes: int(config.KafkaConsumerMaxBytes),
 		KafkaConsumerMaxWait:  config.KafkaConsumerMaxWait,
+
+		IotCacheTimeout:      config.IotCacheTimeout,
+		IotCacheMaxIdleConns: int(config.IotCacheMaxIdleConns),
 	})
 
 	if config.Debug {
