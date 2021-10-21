@@ -164,7 +164,11 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
-	connector.SetAsyncCommandHandler(GetCommandHandler(correlationservice, mqtt, config))
+	if config.CommandWorkerCount > 1 {
+		connector.SetAsyncCommandHandler(GetQueuedCommandHandler(ctx, correlationservice, mqtt, config))
+	} else {
+		connector.SetAsyncCommandHandler(GetCommandHandler(correlationservice, mqtt, config))
+	}
 
 	err = connector.StartConsumer(ctx)
 	if err != nil {

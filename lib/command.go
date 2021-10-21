@@ -17,7 +17,10 @@
 package lib
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
@@ -25,6 +28,44 @@ import (
 	"log"
 	"time"
 )
+
+type commandQueueValue struct {
+	commandRequest model.ProtocolMsg
+	requestMsg     platform_connector_lib.CommandRequestMsg
+	t              time.Time
+}
+
+func GetQueuedCommandHandler(ctx context.Context, correlationservice *correlation.CorrelationService, mqtt *Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
+	queue := make(chan commandQueueValue, config.CommandWorkerCount)
+	handler := GetCommandHandler(correlationservice, mqtt, config)
+	for i := int64(0); i < config.CommandWorkerCount; i++ {
+		go func() {
+			for msg := range queue {
+				err := handler(msg.commandRequest, msg.requestMsg, msg.t)
+				if err != nil {
+					log.Println("ERROR: ", err)
+				}
+			}
+		}()
+	}
+	go func() {
+		<-ctx.Done()
+		close(queue)
+	}()
+	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				err = errors.New(fmt.Sprint(r))
+			}
+		}()
+		queue <- commandQueueValue{
+			commandRequest: commandRequest,
+			requestMsg:     requestMsg,
+			t:              t,
+		}
+		return err
+	}
+}
 
 func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {

@@ -75,5 +75,7 @@
   "IotCacheMaxIdleConns": 100,
   "CorrelationMaxIdleConns": 100,
   "IotCacheTimeout": "200ms",
-  "CorrelationTimeout": "200ms"
+  "CorrelationTimeout": "200ms",
+
+  "CommandWorkerCount": 20
 }

@@ -111,6 +111,8 @@ type ConfigStruct struct {
 	CorrelationMaxIdleConns int64
 	IotCacheTimeout         string
 	CorrelationTimeout      string
+
+	CommandWorkerCount int64
 }
 
 type Config = *ConfigStruct
