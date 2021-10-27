@@ -113,6 +113,8 @@ type ConfigStruct struct {
 	CorrelationTimeout      string
 
 	CommandWorkerCount int64
+
+	StatisticsInterval string
 }
 
 type Config = *ConfigStruct

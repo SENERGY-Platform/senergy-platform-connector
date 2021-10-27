@@ -102,7 +102,9 @@ func TestWithPProf(t *testing.T) {
 
 	defer c.Stop()
 
-	for i := 0; i < 100000; i++ {
+	size := 100000
+	//size := 10000
+	for i := 0; i < size; i++ {
 		err = c.SendEventWithQos("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`}, 0)
 		if err != nil {
 			t.Error(err)

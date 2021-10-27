@@ -110,7 +110,11 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 
 		IotCacheTimeout:      config.IotCacheTimeout,
 		IotCacheMaxIdleConns: int(config.IotCacheMaxIdleConns),
+
+		StatisticsInterval: config.StatisticsInterval,
 	})
+
+	connector.StatisticsLogger(ctx)
 
 	if config.Debug {
 		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))
