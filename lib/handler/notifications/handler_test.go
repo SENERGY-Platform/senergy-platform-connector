@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package export
+package notifications
 
 import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"

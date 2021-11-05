@@ -27,6 +27,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/export"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/notifications"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/Shopify/sarama"
@@ -144,6 +145,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		command.New(config, connector, logger),
 		process.New(connector),
 		export.New(connector.Security()),
+		notifications.New(connector.Security()),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))
