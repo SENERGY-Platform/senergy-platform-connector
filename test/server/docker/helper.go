@@ -2,8 +2,8 @@ package docker
 
 import (
 	"context"
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
 	"log"
 	"net"
 	"os"
@@ -24,7 +24,7 @@ func getFreePort() (int, error) {
 }
 
 func Dockerlog(pool *dockertest.Pool, ctx context.Context, repo *dockertest.Resource, name string) {
-	out := &LogWriter{logger: log.New(os.Stdout, "["+name+"]", 0)}
+	out := &LogWriter{Logger: log.New(os.Stdout, "["+name+"]", 0)}
 	err := pool.Client.Logs(docker.LogsOptions{
 		Stdout:       true,
 		Stderr:       true,
@@ -40,10 +40,10 @@ func Dockerlog(pool *dockertest.Pool, ctx context.Context, repo *dockertest.Reso
 }
 
 type LogWriter struct {
-	logger *log.Logger
+	Logger *log.Logger
 }
 
 func (this *LogWriter) Write(p []byte) (n int, err error) {
-	this.logger.Print(string(p))
+	this.Logger.Print(string(p))
 	return len(p), nil
 }

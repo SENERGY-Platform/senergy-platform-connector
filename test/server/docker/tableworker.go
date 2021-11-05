@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	_ "github.com/lib/pq"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"log"
 	"strconv"
 )

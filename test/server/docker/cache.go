@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"log"
 )
 

@@ -219,22 +219,16 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				sendError(writer, "access denied", config.Debug)
 				return
 			}
-			exists, err := connector.Iot().ExistsHub(msg.ClientId, token)
-			if err != nil {
-				sendError(writer, err.Error(), true)
-				return
-			}
-			if config.CheckHub && !exists {
-				sendError(writer, "client id is unknown as hub id", config.Debug)
-				return
-			}
-
-			if exists {
-				err = logger.LogHubConnect(msg.ClientId)
+			if config.CheckHub {
+				exists, err := connector.Iot().ExistsHub(msg.ClientId, token)
 				if err != nil {
 					sendError(writer, err.Error(), true)
 					return
 				}
+				if !exists {
+					sendError(writer, "client id is unknown as hub id", config.Debug)
+				}
+				return
 			}
 		} else if msg.Password != config.AuthClientSecret {
 			sendError(writer, "access denied", config.Debug)
@@ -243,6 +237,47 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 		if err != nil && config.Debug {
 			log.Println("ERROR: InitWebhooks::login unable to fprint:", err)
+		}
+	})
+
+	router.HandleFunc("/online", func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if p := recover(); p != nil {
+				debug.PrintStack()
+				sendError(writer, fmt.Sprint(p), true)
+				return
+			} else {
+				fmt.Fprint(writer, `{}`)
+			}
+		}()
+		msg := OnlineWebhookMsg{}
+		err := json.NewDecoder(request.Body).Decode(&msg)
+		if err != nil {
+			sendError(writer, err.Error(), true)
+			return
+		}
+		if config.Debug {
+			log.Println("DEBUG: /online", msg)
+		}
+
+		token, err := connector.Security().Access()
+		if err != nil {
+			log.Println("WARNING: /online", err)
+			return
+		}
+
+		exists, err := connector.Iot().ExistsHub(msg.ClientId, token)
+		if err != nil {
+			log.Println("WARNING: /online", err)
+			return
+		}
+
+		if exists {
+			err = logger.LogHubConnect(msg.ClientId)
+			if err != nil {
+				log.Println("WARNING: /online", err)
+				return
+			}
 		}
 	})
 
@@ -326,7 +361,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			}
 			for _, topic := range msg.Topics {
 				if !strings.HasPrefix(topic, "command") {
-					return
+					continue
 				}
 				prefix, deviceUri, _, err := handler.ParseTopic(topic)
 				if err != nil {
@@ -334,17 +369,17 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 					return
 				}
 				if prefix != "command" {
-					return
+					continue
 				}
 				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::DeviceUrlToIotDevice", err)
-					return
+					continue
 				}
 				err = logger.LogDeviceDisconnect(device.Id)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::CheckEndpointAuth", err)
-					return
+					continue
 				}
 			}
 		}

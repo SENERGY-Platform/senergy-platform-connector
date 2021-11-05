@@ -58,6 +58,10 @@ type LoginWebhookMsg struct {
 	CleanSession bool   `json:"clean_session"`
 }
 
+type OnlineWebhookMsg struct {
+	ClientId string `json:"client_id"`
+}
+
 type DisconnectWebhookMsg struct {
 	ClientId string `json:"client_id"`
 }

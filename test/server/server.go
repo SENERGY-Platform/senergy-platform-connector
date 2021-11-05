@@ -23,7 +23,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/docker"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"log"
 	"net"
 	"runtime/debug"
