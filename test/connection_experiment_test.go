@@ -39,6 +39,113 @@ import (
 	"time"
 )
 
+func TestConnectionExperiment3(t *testing.T) {
+	t.Skip("only experiment")
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	defer cancel()
+
+	topic := "test/topic"
+
+	router := http.NewServeMux()
+	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println("INFO: /health received")
+		msg, err := ioutil.ReadAll(request.Body)
+		log.Println("INFO: /health body =", err, string(msg))
+		writer.WriteHeader(http.StatusOK)
+	})
+
+	router.HandleFunc("/publish", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprint(writer, `{"result": "ok"}`)
+	})
+
+	router.HandleFunc("/subscribe", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprint(writer, `{"result": "ok"}`)
+	})
+
+	router.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprint(writer, `{"result": "ok"}`)
+	})
+
+	router.HandleFunc("/wakeup", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprintf(writer, "{}")
+	})
+
+	router.HandleFunc("/reg", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprintf(writer, "{}")
+	})
+
+	//https://vernemq.com/docs/plugindevelopment/sessionlifecycle.html
+	router.HandleFunc("/disconnect", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprintf(writer, "{}")
+	})
+
+	router.HandleFunc("/gone", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		fmt.Fprintf(writer, "{}")
+	})
+
+	router.HandleFunc("/unsubscribe", func(writer http.ResponseWriter, request *http.Request) {
+		log.Println(request.URL)
+		defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok"})
+	})
+
+	var err error
+	var brokerUrl string
+
+	brokerUrl, _, err = experimentSetup(ctx, wg, router)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	time.Sleep(2 * time.Second)
+	log.Println("start")
+
+	c1 := paho.NewClient(paho.NewClientOptions().
+		SetClientID("test").
+		SetAutoReconnect(false).
+		SetCleanSession(false).
+		AddBroker(brokerUrl))
+	if token := c1.Connect(); token.Wait() && token.Error() != nil {
+		log.Println("Error on Client.Connect(): ", token.Error())
+		t.Error(err)
+		return
+	}
+
+	token := c1.Subscribe(topic, 2, func(client paho.Client, message paho.Message) {})
+	if token.Wait() && token.Error() != nil {
+		log.Println(token.Error())
+		return
+	}
+
+	time.Sleep(5 * time.Second)
+	c1.Disconnect(0)
+	time.Sleep(5 * time.Second)
+
+	c2 := paho.NewClient(paho.NewClientOptions().
+		SetClientID("test").
+		SetAutoReconnect(false).
+		SetCleanSession(false).
+		AddBroker(brokerUrl))
+	if token := c2.Connect(); token.Wait() && token.Error() != nil {
+		log.Println("Error on Client.Connect(): ", token.Error())
+		t.Error(err)
+		return
+	}
+
+	c2.Disconnect(0)
+
+	time.Sleep(2 * time.Second)
+}
+
 func TestConnectionExperiment2(t *testing.T) {
 	t.Skip("only experiment")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -426,6 +533,8 @@ func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sy
 		"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
 		"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
 		"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
+		"DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD=off",
+		"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL=off",
 		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__HOOK=auth_on_subscribe",
 		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__ENDPOINT=http://" + connecorUrl + "/subscribe",
 		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__HOOK=auth_on_publish",
