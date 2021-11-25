@@ -119,6 +119,7 @@ type ConfigStruct struct {
 	DeviceTypeTopic string
 
 	NotificationUrl string
+	PermQueryUrl    string
 }
 
 type Config = *ConfigStruct

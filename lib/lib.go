@@ -117,6 +117,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		DeviceTypeTopic: config.DeviceTypeTopic,
 
 		NotificationUrl: config.NotificationUrl,
+		PermQueryUrl:    config.PermQueryUrl,
 	})
 
 	connector.StatisticsLogger(ctx)

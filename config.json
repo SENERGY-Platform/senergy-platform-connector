@@ -83,5 +83,6 @@
 
   "DeviceTypeTopic": "device-types",
 
-  "NotificationUrl": ""
+  "NotificationUrl": "",
+  "PermQueryUrl": ""
 }
