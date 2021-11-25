@@ -113,6 +113,8 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		IotCacheMaxIdleConns: int(config.IotCacheMaxIdleConns),
 
 		StatisticsInterval: config.StatisticsInterval,
+
+		DeviceTypeTopic: config.DeviceTypeTopic,
 	})
 
 	connector.StatisticsLogger(ctx)

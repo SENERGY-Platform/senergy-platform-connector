@@ -79,5 +79,7 @@
 
   "CommandWorkerCount": 20,
 
-  "StatisticsInterval": ""
+  "StatisticsInterval": "",
+
+  "DeviceTypeTopic": "device-types"
 }
