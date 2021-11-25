@@ -117,6 +117,8 @@ type ConfigStruct struct {
 	StatisticsInterval string
 
 	DeviceTypeTopic string
+
+	NotificationUrl string
 }
 
 type Config = *ConfigStruct

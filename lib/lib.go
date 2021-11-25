@@ -115,6 +115,8 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		StatisticsInterval: config.StatisticsInterval,
 
 		DeviceTypeTopic: config.DeviceTypeTopic,
+
+		NotificationUrl: config.NotificationUrl,
 	})
 
 	connector.StatisticsLogger(ctx)

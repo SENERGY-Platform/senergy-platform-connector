@@ -81,5 +81,7 @@
 
   "StatisticsInterval": "",
 
-  "DeviceTypeTopic": "device-types"
+  "DeviceTypeTopic": "device-types",
+
+  "NotificationUrl": ""
 }
