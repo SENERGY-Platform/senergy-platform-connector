@@ -18,6 +18,7 @@ package configuration
 
 import (
 	"encoding/json"
+	"github.com/segmentio/kafka-go"
 	"log"
 	"os"
 	"reflect"
@@ -120,6 +121,8 @@ type ConfigStruct struct {
 
 	NotificationUrl string
 	PermQueryUrl    string
+
+	KafkaTopicConfigs map[string][]kafka.ConfigEntry
 }
 
 type Config = *ConfigStruct

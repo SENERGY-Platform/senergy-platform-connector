@@ -1,88 +1,187 @@
 {
-  "WebhookPort": "8080",
-  "HttpCommandConsumerPort": "8081",
-  "Protocol": "connector",
+    "WebhookPort": "8080",
+    "HttpCommandConsumerPort": "8081",
+    "Protocol": "connector",
 
-  "DeviceManagerUrl":"http://iot:8080",
-  "DeviceRepoUrl": "http://device-repo:8080",
-  "SemanticRepoUrl": "http://semantic-repo:8080",
+    "DeviceManagerUrl":"http://iot:8080",
+    "DeviceRepoUrl": "http://device-repo:8080",
+    "SemanticRepoUrl": "http://semantic-repo:8080",
 
-  "MemcachedUrl": "memcahed:11211",
-  "MqttBroker": "mqtt:1883",
+    "MemcachedUrl": "memcahed:11211",
+    "MqttBroker": "mqtt:1883",
 
-  "DeviceLogTopic": "device_log",
-  "GatewayLogTopic": "gateway_log",
+    "DeviceLogTopic": "device_log",
+    "GatewayLogTopic": "gateway_log",
 
-  "KafkaUrl":"kafka:9092",
-  "KafkaGroupName": "senergyconnector",
+    "KafkaUrl":"kafka:9092",
+    "KafkaGroupName": "senergyconnector",
 
-  "KafkaResponseTopic":"response",
-  "KafkaEventTopic":"event",
-  "FatalKafkaError":true,
+    "KafkaResponseTopic":"response",
+    "KafkaEventTopic":"event",
+    "FatalKafkaError":true,
 
-  "AuthEndpoint":     "http://keycloak:8080",
-  "AuthClientId":     "",
-  "AuthClientSecret": "",
-  "AuthExpirationTimeBuffer": 1,
+    "AuthEndpoint":     "http://keycloak:8080",
+    "AuthClientId":     "",
+    "AuthClientSecret": "",
+    "AuthExpirationTimeBuffer": 1,
 
-  "CheckHub": false,
+    "CheckHub": false,
 
-  "CorrelationExpiration": 60,
+    "CorrelationExpiration": 60,
 
-  "IotCacheUrls":  "memcahed:11211",
-  "DeviceExpiration" : 60,
-  "DeviceTypeExpiration": 60,
-  "CharacteristicExpiration": 60,
+    "IotCacheUrls":  "memcahed:11211",
+    "DeviceExpiration" : 60,
+    "DeviceTypeExpiration": 60,
+    "CharacteristicExpiration": 60,
 
-  "TokenCacheUrls": "memcahed:11211",
-  "TokenCacheExpiration": 3600,
+    "TokenCacheUrls": "memcahed:11211",
+    "TokenCacheExpiration": 3600,
 
-  "SyncKafka": true,
-  "SyncKafkaIdempotent": true,
+    "SyncKafka": true,
+    "SyncKafkaIdempotent": true,
 
-  "Log": "stdout",
+    "Log": "stdout",
 
-  "WebhookTimeout": 10,
+    "WebhookTimeout": 10,
 
-  "Validate": true,
-  "ValidateAllowUnknownField": true,
-  "ValidateAllowMissingField": true,
+    "Validate": true,
+    "ValidateAllowUnknownField": true,
+    "ValidateAllowMissingField": true,
 
-  "FogHandlerTopicPrefix": "fog/",
+    "FogHandlerTopicPrefix": "fog/",
 
-  "KafkaPartitionNum": 1,
-  "KafkaReplicationFactor": 1,
+    "KafkaPartitionNum": 1,
+    "KafkaReplicationFactor": 1,
 
-  "ForceCleanSession": false,
+    "ForceCleanSession": false,
 
-  "PublishToPostgres": false,
-  "PostgresHost": "localhost",
-  "PostgresPort": 5432,
-  "PostgresUser": "postgres",
-  "PostgresPw": "postgrespw",
-  "PostgresDb": "postgres",
+    "PublishToPostgres": false,
+    "PostgresHost": "localhost",
+    "PostgresPort": 5432,
+    "PostgresUser": "postgres",
+    "PostgresPw": "postgrespw",
+    "PostgresDb": "postgres",
 
-  "AsyncPgThreadMax": 1000,
-  "AsyncFlushMessages": 200,
-  "AsyncFlushFrequency": "500ms",
-  "AsyncCompression": "snappy",
-  "SyncCompression": "snappy",
+    "AsyncPgThreadMax": 1000,
+    "AsyncFlushMessages": 200,
+    "AsyncFlushFrequency": "500ms",
+    "AsyncCompression": "snappy",
+    "SyncCompression": "snappy",
 
-  "KafkaConsumerMaxWait": "100ms",
-  "KafkaConsumerMinBytes": 1000,
-  "KafkaConsumerMaxBytes": 1000000,
+    "KafkaConsumerMaxWait": "100ms",
+    "KafkaConsumerMinBytes": 1000,
+    "KafkaConsumerMaxBytes": 1000000,
 
-  "IotCacheMaxIdleConns": 100,
-  "CorrelationMaxIdleConns": 100,
-  "IotCacheTimeout": "200ms",
-  "CorrelationTimeout": "200ms",
+    "IotCacheMaxIdleConns": 100,
+    "CorrelationMaxIdleConns": 100,
+    "IotCacheTimeout": "200ms",
+    "CorrelationTimeout": "200ms",
 
-  "CommandWorkerCount": 20,
+    "CommandWorkerCount": 20,
 
-  "StatisticsInterval": "",
+    "StatisticsInterval": "",
 
-  "DeviceTypeTopic": "device-types",
+    "DeviceTypeTopic": "device-types",
 
-  "NotificationUrl": "",
-  "PermQueryUrl": ""
+    "NotificationUrl": "",
+    "PermQueryUrl": "",
+
+    "KafkaTopicConfigs": {
+        "device-types": [
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "retention.bytes",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "cleanup.policy",
+                "ConfigValue": "compact"
+            },
+            {
+                "ConfigName":  "delete.retention.ms",
+                "ConfigValue": "86400000"
+            },
+            {
+                "ConfigName":  "segment.ms",
+                "ConfigValue": "604800000"
+            },
+            {
+                "ConfigName":  "min.cleanable.dirty.ratio",
+                "ConfigValue": "0.1"
+            }
+        ],
+        "response": [
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "86400000"
+            }
+        ],
+        "connector": [
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "86400000"
+            }
+        ],
+        "urn_infai_ses_service_": [
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "31536000000"
+            }
+        ],
+        "device_log":[
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "retention.bytes",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "cleanup.policy",
+                "ConfigValue": "compact"
+            },
+            {
+                "ConfigName":  "delete.retention.ms",
+                "ConfigValue": "86400000"
+            },
+            {
+                "ConfigName":  "segment.ms",
+                "ConfigValue": "604800000"
+            },
+            {
+                "ConfigName":  "min.cleanable.dirty.ratio",
+                "ConfigValue": "0.1"
+            }
+        ],
+        "gateway_log":[
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "retention.bytes",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "cleanup.policy",
+                "ConfigValue": "compact"
+            },
+            {
+                "ConfigName":  "delete.retention.ms",
+                "ConfigValue": "86400000"
+            },
+            {
+                "ConfigName":  "segment.ms",
+                "ConfigValue": "604800000"
+            },
+            {
+                "ConfigName":  "min.cleanable.dirty.ratio",
+                "ConfigValue": "0.1"
+            }
+        ]
+    }
 }
