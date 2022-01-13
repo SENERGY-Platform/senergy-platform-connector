@@ -53,6 +53,14 @@ func (this *Client) startMqtt() error {
 	return nil
 }
 
+func (this *Client) SendDeviceError(deviceUri string, message string) error {
+	return this.Publish("error/device/"+deviceUri, message, 2)
+}
+
+func (this *Client) SendClientError(message string) error {
+	return this.Publish("error", message, 2)
+}
+
 func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
 	return this.ListenCommandWithQos(deviceUri, serviceUri, 2, handler)
 }
@@ -77,7 +85,8 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 		//log.Println("DEBUG: client handle command", request)
 		respMsg, err := handler(request.Payload)
 		if err != nil {
-			log.Println("ERROR: while processing command", err)
+			log.Println("ERROR: while processing command:", err)
+			log.Println(this.Publish("error/command/"+request.CorrelationId, err.Error(), 2))
 			return
 		}
 		go func() {
