@@ -200,7 +200,6 @@ func createCharacteristic(name string, config configuration.Config) (string, err
 		MaxValue:           1,
 		Value:              0,
 		SubCharacteristics: nil,
-		RdfType:            "xxx",
 	}, &char)
 	return char.Id, err
 }
