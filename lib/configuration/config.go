@@ -36,7 +36,6 @@ type ConfigStruct struct {
 
 	DeviceManagerUrl string
 	DeviceRepoUrl    string
-	SemanticRepoUrl  string
 
 	AuthClientId             string //keycloak-client
 	AuthClientSecret         string //keycloak-secret

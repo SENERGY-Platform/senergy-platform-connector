@@ -5,7 +5,6 @@
 
     "DeviceManagerUrl":"http://iot:8080",
     "DeviceRepoUrl": "http://device-repo:8080",
-    "SemanticRepoUrl": "http://semantic-repo:8080",
 
     "MemcachedUrl": "memcahed:11211",
     "MqttBroker": "mqtt:1883",

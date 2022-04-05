@@ -74,7 +74,6 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		AuthEndpoint:             config.AuthEndpoint,
 		DeviceManagerUrl:         config.DeviceManagerUrl,
 		DeviceRepoUrl:            config.DeviceRepoUrl,
-		SemanticRepositoryUrl:    config.SemanticRepoUrl,
 		KafkaResponseTopic:       config.KafkaResponseTopic,
 
 		IotCacheUrl:              StringToList(config.IotCacheUrls),

@@ -39,7 +39,7 @@ func getHash(representations []DeviceRepresentation) string {
 }
 
 func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error) {
-	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "", "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "")
 	hash := getHash(this.devices)
 	exists := false
 	deviceUris := []string{}
@@ -79,7 +79,7 @@ func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error
 }
 
 func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, err error) {
-	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "", "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "")
 	for _, device := range this.devices {
 		_, err := iotClient.GetDeviceByLocalId(device.Uri, token)
 		if err != nil && err != security.ErrorNotFound {

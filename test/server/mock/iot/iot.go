@@ -48,7 +48,6 @@ func Mock(config configuration.Config, ctx context.Context) (err error) {
 	server.Start()
 	config.DeviceManagerUrl = server.URL
 	config.DeviceRepoUrl = server.URL
-	config.SemanticRepoUrl = server.URL
 	go func() {
 		<-ctx.Done()
 		server.Close()
