@@ -206,7 +206,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		}
 		//log.Println("DEBUG: /login", msg)
 		if msg.Username != config.AuthClientId {
-			if !msg.CleanSession && config.ForceCleanSession {
+			if !msg.CleanSession && config.ForceCleanSession && !contains(config.CleanSessionAllowUserList, msg.Username) {
 				sendError(writer, "expect clean session", config.Debug)
 				return
 			}
@@ -423,6 +423,15 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	}()
 
 	return server
+}
+
+func contains(list []string, element string) bool {
+	for _, e := range list {
+		if e == element {
+			return true
+		}
+	}
+	return false
 }
 
 func prepareTopic(topic string) string {

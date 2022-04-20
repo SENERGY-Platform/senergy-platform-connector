@@ -86,7 +86,8 @@ type ConfigStruct struct {
 	KafkaPartitionNum      int
 	KafkaReplicationFactor int
 
-	ForceCleanSession bool
+	ForceCleanSession         bool
+	CleanSessionAllowUserList []string
 
 	PublishToPostgres bool
 	PostgresHost      string
