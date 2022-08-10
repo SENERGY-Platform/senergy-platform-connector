@@ -120,6 +120,8 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		PermQueryUrl:    config.PermQueryUrl,
 
 		KafkaTopicConfigs: config.KafkaTopicConfigs,
+
+		NotificationsIgnoreDuplicatesWithinS: config.NotificationsIgnoreDuplicatesWithinS,
 	})
 
 	connector.StatisticsLogger(ctx)

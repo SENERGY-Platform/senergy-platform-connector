@@ -122,6 +122,8 @@ type ConfigStruct struct {
 	NotificationUrl string
 	PermQueryUrl    string
 
+	NotificationsIgnoreDuplicatesWithinS int
+
 	KafkaTopicConfigs map[string][]kafka.ConfigEntry
 }
 

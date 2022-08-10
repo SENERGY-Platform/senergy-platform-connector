@@ -85,6 +85,7 @@
 
     "NotificationUrl": "",
     "PermQueryUrl": "",
+    "NotificationsIgnoreDuplicatesWithinS": 3600,
 
     "KafkaTopicConfigs": {
         "device-types": [
