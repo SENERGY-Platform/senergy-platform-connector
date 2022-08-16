@@ -87,6 +87,8 @@
     "PermQueryUrl": "",
     "NotificationsIgnoreDuplicatesWithinS": 3600,
 
+    "MqttErrorOnEventValidationError": false,
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

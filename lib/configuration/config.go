@@ -124,6 +124,8 @@ type ConfigStruct struct {
 
 	NotificationsIgnoreDuplicatesWithinS int
 
+	MqttErrorOnEventValidationError bool
+
 	KafkaTopicConfigs map[string][]kafka.ConfigEntry
 }
 

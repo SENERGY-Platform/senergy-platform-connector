@@ -18,7 +18,9 @@ package event
 
 import (
 	"encoding/json"
+	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/msgvalidation"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"log"
@@ -86,7 +88,14 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !this.config.MqttPublishAuthOnly {
 		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if err != nil {
-			return handler.Error, err
+			if !this.config.MqttErrorOnEventValidationError &&
+				(errors.Is(err, msgvalidation.ErrUnexpectedField) ||
+					errors.Is(err, msgvalidation.ErrMissingField) ||
+					errors.Is(err, msgvalidation.ErrUnexpectedType)) {
+				return handler.Accepted, nil
+			} else {
+				return handler.Error, err
+			}
 		}
 	}
 	return handler.Accepted, nil
