@@ -41,7 +41,7 @@
 
     "Log": "stdout",
 
-    "WebhookTimeout": 10,
+    "WebhookTimeout": 0,
 
     "Validate": true,
     "ValidateAllowUnknownField": true,
