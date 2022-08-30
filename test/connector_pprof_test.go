@@ -21,7 +21,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/cache"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -33,7 +32,6 @@ import (
 
 func TestWithPProf(t *testing.T) {
 	t.Skip("pprof test disabled")
-	cache.L1Size = 10 * 1024 * 1024
 	ctx, cancel := context.WithCancel(context.Background())
 	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
