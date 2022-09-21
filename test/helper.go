@@ -3,6 +3,7 @@ package test
 import (
 	"encoding/json"
 	"errors"
+	"github.com/SENERGY-Platform/converter/lib/converter/characteristics"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
@@ -124,6 +125,12 @@ func createDeviceType(conf configuration.Config, managerUrl string, characterist
 				LocalId:     "sepl_get",
 				Description: "sepl_get",
 				ProtocolId:  protocol.Id,
+				Attributes: []model.Attribute{
+					{
+						Key:   "senergy/time_path",
+						Value: "metrics.updateTime",
+					},
+				},
 				Outputs: []model.Content{
 					{
 						ProtocolSegmentId: protocol.ProtocolSegments[0].Id,
@@ -133,8 +140,9 @@ func createDeviceType(conf configuration.Config, managerUrl string, characterist
 							Type: model.Structure,
 							SubContentVariables: []model.ContentVariable{
 								{
-									Name: "updateTime",
-									Type: model.Integer,
+									Name:             "updateTime",
+									Type:             model.Integer,
+									CharacteristicId: characteristics.UnixSeconds,
 								},
 								{
 									Name:             "level",
