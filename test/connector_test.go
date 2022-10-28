@@ -22,7 +22,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/platform-connector-lib"
+	"path/filepath"
+
+	"log"
+	"os"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
+
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/psql"
@@ -30,24 +39,10 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	_ "github.com/lib/pq"
-	"log"
-	"os"
-	"reflect"
-	"sync"
-	"testing"
-	"time"
 )
 
-func TestWithClient(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
-	defer cancel()
-
-	config, err := configuration.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
+func createConf(authentication string) (config configuration.Config, err error) {
+	config, err = configuration.LoadConfig("../config.json")
 	config.Debug = true
 	config.FatalKafkaError = false
 	config.Validate = true
@@ -55,6 +50,40 @@ func TestWithClient(t *testing.T) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.PublishToPostgres = true
+	config.MqttAuthMethod = authentication
+	config.AuthClientId = "connector"
+
+	if authentication == "certificate" {
+		config.ClientCertificatePath = filepath.Join("mqtt_certs", "connector_client", "client.crt")
+		config.PrivateKeyPath = filepath.Join("mqtt_certs", "connector_client", "private.key")
+		config.RootCACertificatePath = filepath.Join("mqtt_certs", "ca", "ca.crt")
+	}
+
+	return config, err
+}
+
+func TestRunnerWithClient(t *testing.T) {
+	t.Run("WithPasswordAuthenticationAtMQTT", func(t *testing.T) {
+		t.Skip()
+		authenticationMethod := "password"
+		testClient(authenticationMethod, t)
+	})
+	t.Run("WithCertificateAuthenticationAtMQTT", func(t *testing.T) {
+		authenticationMethod := "certificate"
+		testClient(authenticationMethod, t)
+	})
+}
+
+func testClient(authenticationMethod string, t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer time.Sleep(10 * time.Second) //wait for container shutdown
+	defer cancel()
+
+	config, err := createConf(authenticationMethod)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	config, err = server.New(ctx, config)
 	if err != nil {
@@ -101,14 +130,14 @@ func TestWithClient(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	})
+	}, authenticationMethod)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{})
+	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod)
 	if err != nil {
 		t.Error(err)
 		return
@@ -531,14 +560,14 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	})
+	}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{})
+	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return

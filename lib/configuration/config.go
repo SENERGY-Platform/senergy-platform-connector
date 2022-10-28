@@ -18,13 +18,14 @@ package configuration
 
 import (
 	"encoding/json"
-	"github.com/segmentio/kafka-go"
 	"log"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/segmentio/kafka-go"
 )
 
 type ConfigStruct struct {
@@ -127,6 +128,14 @@ type ConfigStruct struct {
 	MqttErrorOnEventValidationError bool
 
 	KafkaTopicConfigs map[string][]kafka.ConfigEntry
+
+	MqttAuthMethod string
+
+	ClientCertificatePath string
+
+	PrivateKeyPath string
+
+	RootCACertificatePath string
 }
 
 type Config = *ConfigStruct

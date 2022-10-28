@@ -19,12 +19,15 @@ package client
 import (
 	"encoding/json"
 	"errors"
-	"github.com/SENERGY-Platform/platform-connector-lib"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
+
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"log"
-	"time"
 )
 
 func (this *Client) startMqtt() error {
@@ -45,6 +48,21 @@ func (this *Client) startMqtt() error {
 				log.Fatal("FATAL: ", err)
 			}
 		})
+
+	if this.authenticationMethod == "certificate" {
+		dir, err := os.Getwd()
+		ClientCertificatePath := filepath.Join(dir, "mqtt_certs", "mock_client", "client.crt")
+		PrivateKeyPath := filepath.Join(dir, "mqtt_certs", "mock_client", "private.key")
+		RootCACertificatePath := filepath.Join(dir, "mqtt_certs", "ca", "ca.crt")
+
+		tlsConfig, err := lib.CreateTLSConfig(ClientCertificatePath, PrivateKeyPath, RootCACertificatePath)
+		if err != nil {
+			log.Println("Error on MQTT TLS config", err)
+			return err
+		}
+		options = options.SetTLSConfig(tlsConfig)
+	}
+
 	this.mqtt = paho.NewClient(options)
 	if token := this.mqtt.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())

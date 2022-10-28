@@ -103,14 +103,14 @@ func TestHttpCommand(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	})
+	}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{})
+	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return
@@ -490,14 +490,14 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	})
+	}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{})
+	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return

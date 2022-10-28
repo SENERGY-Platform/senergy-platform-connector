@@ -16,7 +16,13 @@
 
 package lib
 
-import "strings"
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
+	"log"
+	"strings"
+)
 
 func StringToList(str string) []string {
 	temp := strings.Split(str, ",")
@@ -28,4 +34,33 @@ func StringToList(str string) []string {
 		}
 	}
 	return result
+}
+
+func CreateTLSConfig(ClientCertificatePath string, PrivateKeyPath string, RootCACertificatePath string) (tlsConfig *tls.Config, err error) {
+	// Load Client/Server Certificate
+	var cer tls.Certificate
+	cer, err = tls.LoadX509KeyPair(ClientCertificatePath, PrivateKeyPath)
+	if err != nil {
+		log.Println("Error on TLS: cant read client certificate", err)
+		return nil, err
+	}
+
+	// Load CA cert
+	caCert, err := ioutil.ReadFile(RootCACertificatePath)
+	if err != nil {
+		log.Println("Error on TLS: cant read CA certificate", err)
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cer},
+		RootCAs:      caCertPool,
+
+		// This circumvents the need for matching request hostname and server certficate CN field
+		InsecureSkipVerify: true,
+	}
+	return
 }

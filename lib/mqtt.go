@@ -19,9 +19,10 @@ package lib
 import (
 	"context"
 	"errors"
+	"log"
+
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	uuid "github.com/satori/go.uuid"
-	"log"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
@@ -40,6 +41,15 @@ func MqttStart(ctx context.Context, config configuration.Config) (mqtt *Mqtt, er
 		SetCleanSession(true).
 		SetClientID(config.AuthClientId + "_" + uuid.NewV4().String()).
 		AddBroker(config.MqttBroker)
+
+	if config.MqttAuthMethod == "certificate" {
+		tlsConfig, err := CreateTLSConfig(config.ClientCertificatePath, config.PrivateKeyPath, config.RootCACertificatePath)
+		if err != nil {
+			log.Println("Error on MQTT TLS config", err)
+			return nil, err
+		}
+		options = options.SetTLSConfig(tlsConfig)
+	}
 
 	mqtt.client = paho.NewClient(options)
 	if token := mqtt.client.Connect(); token.Wait() && token.Error() != nil {

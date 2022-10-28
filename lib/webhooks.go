@@ -21,12 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
-	"github.com/SENERGY-Platform/platform-connector-lib/iot/options"
-	"github.com/SENERGY-Platform/platform-connector-lib/security"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,6 +28,13 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
+
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
+	"github.com/SENERGY-Platform/platform-connector-lib/iot/options"
+	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 )
 
 func sendError(writer http.ResponseWriter, msg string, logging bool) {
@@ -204,13 +205,26 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		if config.Debug {
 			log.Println("DEBUG: /login", msg)
 		}
+
+		authenticationMethod := config.MqttAuthMethod
+
 		//log.Println("DEBUG: /login", msg)
 		if msg.Username != config.AuthClientId {
 			if !msg.CleanSession && config.ForceCleanSession && !contains(config.CleanSessionAllowUserList, msg.Username) {
 				sendError(writer, "expect clean session", config.Debug)
 				return
 			}
-			token, err := connector.Security().GetUserToken(msg.Username, msg.Password)
+
+			var token security.JwtToken
+			var err error
+
+			if authenticationMethod == "password" {
+				token, err = connector.Security().GetUserToken(msg.Username, msg.Password)
+			} else if authenticationMethod == "certificate" {
+				// The user is already authenticated by the TLS client certificate validation in the broker
+				token, err = connector.Security().ExchangeUserToken(msg.Username)
+			}
+
 			if err != nil {
 				sendError(writer, err.Error(), config.Debug)
 				return
@@ -230,10 +244,11 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				}
 				return
 			}
-		} else if msg.Password != config.AuthClientSecret {
+		} else if msg.Password != config.AuthClientSecret && authenticationMethod == "password" {
 			sendError(writer, "access denied", config.Debug)
 			return
 		}
+
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 		if err != nil && config.Debug {
 			log.Println("ERROR: InitWebhooks::login unable to fprint:", err)

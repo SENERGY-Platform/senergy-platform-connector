@@ -18,17 +18,18 @@ package server
 
 import (
 	"context"
+	"log"
+	"net"
+	"runtime/debug"
+	"strconv"
+	"strings"
+
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/docker"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
 	"github.com/ory/dockertest/v3"
-	"log"
-	"net"
-	"runtime/debug"
-	"strconv"
-	"strings"
 )
 
 func New(basectx context.Context, startConfig configuration.Config) (config configuration.Config, err error) {
@@ -102,7 +103,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		return config, err
 	}
 	hostIp := network.IPAM.Config[0].Gateway
-	config.MqttBroker, err = docker.Vernemqtt(pool, ctx, hostIp+":"+config.WebhookPort)
+	config.MqttBroker, err = docker.Vernemqtt(pool, ctx, hostIp+":"+config.WebhookPort, config)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()

@@ -7,7 +7,7 @@
     "DeviceRepoUrl": "http://device-repo:8080",
 
     "MemcachedUrl": "memcahed:11211",
-    "MqttBroker": "mqtt:1883",
+    "MqttBroker": "tcp://mqtt:1883",
 
     "DeviceLogTopic": "device_log",
     "GatewayLogTopic": "gateway_log",
@@ -186,5 +186,7 @@
                 "ConfigValue": "0.1"
             }
         ]
-    }
+    },
+
+    "MqttAuthMethod": "password"
 }

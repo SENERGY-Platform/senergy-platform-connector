@@ -2,35 +2,92 @@ package docker
 
 import (
 	"context"
+	"log"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/ory/dockertest/v3"
 	uuid "github.com/satori/go.uuid"
-	"log"
-	"os"
-	"sync"
 )
 
-func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string) (brokerUrl string, err error) {
+func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, config configuration.Config) (brokerUrl string, err error) {
 	log.Println("start mqtt")
-	container, err := pool.Run("erlio/docker-vernemq", "latest", []string{
-		"DOCKER_VERNEMQ_ACCEPT_EULA=yes",
-		"DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on",
-		"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
-		"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
-		"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__HOOK=auth_on_subscribe",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__ENDPOINT=http://" + connecorUrl + "/subscribe",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__HOOK=auth_on_publish",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__ENDPOINT=http://" + connecorUrl + "/publish",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__HOOK=auth_on_register",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__ENDPOINT=http://" + connecorUrl + "/login",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__HOOK=on_client_offline",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__ENDPOINT=http://" + connecorUrl + "/disconnect",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__HOOK=on_unsubscribe",
-		"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__ENDPOINT=http://" + connecorUrl + "/unsubscribe",
-		"DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD=off",
-		"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL=off",
-	})
+	var container *dockertest.Resource
+	if config.MqttAuthMethod == "password" {
+		container, err = pool.Run("erlio/docker-vernemq", "latest", []string{
+			"DOCKER_VERNEMQ_ACCEPT_EULA=yes",
+			"DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on",
+			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
+			"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
+			"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__HOOK=auth_on_subscribe",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__ENDPOINT=http://" + connecorUrl + "/subscribe",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__HOOK=auth_on_publish",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__ENDPOINT=http://" + connecorUrl + "/publish",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__HOOK=auth_on_register",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__ENDPOINT=http://" + connecorUrl + "/login",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__HOOK=on_client_offline",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__ENDPOINT=http://" + connecorUrl + "/disconnect",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__HOOK=on_unsubscribe",
+			"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__ENDPOINT=http://" + connecorUrl + "/unsubscribe",
+
+			// These plugins need to be deactivated so that the webhooks for auth_on_publish/subscribe are called
+			"DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD=off",
+			"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL=off",
+		})
+
+		brokerUrl = "tcp://" + container.Container.NetworkSettings.IPAddress + ":1883"
+	} else if config.MqttAuthMethod == "certificate" {
+		caCertificateFileName := "ca.crt"
+		serverCertificateFileName := "server.crt"
+		privateKeyFileName := "private.key"
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Println(err)
+		}
+		options := dockertest.RunOptions{
+			Repository: "erlio/docker-vernemq",
+			Tag:        "latest",
+			Env: []string{
+				"DOCKER_VERNEMQ_ACCEPT_EULA=yes",
+				"DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on",
+				"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
+				"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
+				"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__HOOK=auth_on_subscribe",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE__ENDPOINT=http://" + connecorUrl + "/subscribe",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__HOOK=auth_on_publish",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH__ENDPOINT=http://" + connecorUrl + "/publish",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__HOOK=auth_on_register",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG__ENDPOINT=http://" + connecorUrl + "/login",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__HOOK=on_client_offline",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLOFF__ENDPOINT=http://" + connecorUrl + "/disconnect",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__HOOK=on_unsubscribe",
+				"DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR__ENDPOINT=http://" + connecorUrl + "/unsubscribe",
+				"DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD=off",
+				"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL=off",
+				"DOCKER_VERNEMQ_LISTENER__SSL__REQUIRE_CERTIFICATE=on",
+				"DOCKER_VERNEMQ_LISTENER__SSL__USE_IDENTITY_AS_USERNAME=on",
+				"DOCKER_VERNEMQ_LISTENER__SSL__CAFILE=/etc/certs/ca/" + caCertificateFileName,
+				"DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE=/etc/certs/server/" + serverCertificateFileName,
+				"DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE=/etc/certs/server/" + privateKeyFileName,
+				"DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT=0.0.0.0:8883",
+			},
+			Mounts: []string{
+				// TODO: depends on where the tests are run / or /test
+				filepath.Join(dir, "mqtt_certs", "broker") + ":/etc/certs/server",
+				filepath.Join(dir, "mqtt_certs", "ca") + ":/etc/certs/ca",
+			},
+		}
+		container, err = pool.RunWithOptions(&options)
+		brokerUrl = "ssl://" + container.Container.NetworkSettings.IPAddress + ":8883"
+	}
+
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +103,16 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string) (
 			SetAutoReconnect(true).
 			SetCleanSession(false).
 			SetClientID(uuid.NewV4().String()).
-			AddBroker("tcp://" + container.Container.NetworkSettings.IPAddress + ":1883")
+			AddBroker(brokerUrl)
+
+		if config.MqttAuthMethod == "certificate" {
+			tlsConfig, err := lib.CreateTLSConfig(config.ClientCertificatePath, config.PrivateKeyPath, config.RootCACertificatePath)
+			if err != nil {
+				log.Println("Error on MQTT TLS config", err)
+				return err
+			}
+			options = options.SetTLSConfig(tlsConfig)
+		}
 
 		client := paho.NewClient(options)
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -56,7 +122,7 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string) (
 		defer client.Disconnect(0)
 		return nil
 	})
-	return "tcp://" + container.Container.NetworkSettings.IPAddress + ":1883", err
+	return brokerUrl, err
 }
 
 func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sync.WaitGroup) (brokerUrl string, managementUrl string, err error) {

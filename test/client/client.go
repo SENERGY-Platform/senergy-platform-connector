@@ -17,30 +17,32 @@
 package client
 
 import (
-	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"sync"
 	"time"
+
+	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
 //values are matching to test server produced by /senergy-platform-connector/test/server/server.go
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
-func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string) (client *Client, err error) {
 	client = &Client{
-		authUrl:          authUrl,
-		mqttUrl:          mqttUrl,
-		deviceManagerUrl: deviceManagerUrl,
-		deviceRepoUrl:    deviceRepoUrl,
-		HubId:            hubId,
-		hubName:          hubName,
-		username:         userName,
-		password:         password,
-		clientId:         Id,
-		clientSecret:     Secret,
-		devices:          devices,
-		subscriptions:    map[string]Subscription{},
+		authUrl:              authUrl,
+		mqttUrl:              mqttUrl,
+		deviceManagerUrl:     deviceManagerUrl,
+		deviceRepoUrl:        deviceRepoUrl,
+		HubId:                hubId,
+		hubName:              hubName,
+		username:             userName,
+		password:             password,
+		clientId:             Id,
+		clientSecret:         Secret,
+		devices:              devices,
+		subscriptions:        map[string]Subscription{},
+		authenticationMethod: authenticationMethod,
 	}
 	token, err := client.login()
 	if err != nil {
@@ -104,6 +106,8 @@ type Client struct {
 
 	subscriptionsMux sync.Mutex
 	subscriptions    map[string]Subscription
+
+	authenticationMethod string
 }
 
 func (this *Client) Stop() {
