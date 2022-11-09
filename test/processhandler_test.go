@@ -45,6 +45,7 @@ func TestProcessHandler(t *testing.T) {
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
+	config.MqttAuthMethod = "password"
 
 	config, err = server.New(ctx, config)
 	if err != nil {
@@ -66,7 +67,7 @@ func TestProcessHandler(t *testing.T) {
 		SetUsername("admin").
 		SetPassword("admin").
 		SetClientID("admin").
-		SetCleanSession(false).
+		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(func(_ paho.Client) {
 			log.Println("TEST: adminSync connected")
@@ -98,7 +99,7 @@ func TestProcessHandler(t *testing.T) {
 		SetUsername("admin").
 		SetPassword("admin").
 		SetClientID("shared-admin").
-		SetCleanSession(false).
+		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(func(_ paho.Client) {
 			log.Println("TEST: adminSync connected")
@@ -132,7 +133,7 @@ func TestProcessHandler(t *testing.T) {
 		SetUsername("user").
 		SetPassword("user").
 		SetClientID("client").
-		SetCleanSession(false).
+		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(func(_ paho.Client) {
 			log.Println("TEST: clientSync connected")

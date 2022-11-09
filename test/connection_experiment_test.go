@@ -112,7 +112,7 @@ func TestConnectionExperiment3(t *testing.T) {
 	c1 := paho.NewClient(paho.NewClientOptions().
 		SetClientID("test").
 		SetAutoReconnect(false).
-		SetCleanSession(false).
+		SetCleanSession(true).
 		AddBroker(brokerUrl))
 	if token := c1.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())
@@ -133,7 +133,7 @@ func TestConnectionExperiment3(t *testing.T) {
 	c2 := paho.NewClient(paho.NewClientOptions().
 		SetClientID("test").
 		SetAutoReconnect(false).
-		SetCleanSession(false).
+		SetCleanSession(true).
 		AddBroker(brokerUrl))
 	if token := c2.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())
@@ -337,7 +337,7 @@ func TestConnectionExperiment(t *testing.T) {
 	c1 := paho.NewClient(paho.NewClientOptions().
 		SetClientID("test").
 		SetAutoReconnect(true).
-		SetCleanSession(false).
+		SetCleanSession(true).
 		AddBroker(brokerUrl))
 	if token := c1.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())
@@ -348,7 +348,7 @@ func TestConnectionExperiment(t *testing.T) {
 	c2 := paho.NewClient(paho.NewClientOptions().
 		SetClientID("test2").
 		SetAutoReconnect(true).
-		SetCleanSession(false).
+		SetCleanSession(true).
 		AddBroker(brokerUrl))
 	if token := c2.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Connect(): ", token.Error())
@@ -570,7 +570,7 @@ func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sy
 		log.Println("DEBUG: try to connection to broker")
 		options := paho.NewClientOptions().
 			SetAutoReconnect(true).
-			SetCleanSession(false).
+			SetCleanSession(true).
 			SetClientID(uuid.NewV4().String()).
 			AddBroker("tcp://" + container.Container.NetworkSettings.IPAddress + ":1883")
 

@@ -2,10 +2,13 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -21,7 +24,6 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 	if config.MqttAuthMethod == "password" {
 		container, err = pool.Run("erlio/docker-vernemq", "latest", []string{
 			"DOCKER_VERNEMQ_ACCEPT_EULA=yes",
-			"DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on",
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
 			"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
@@ -55,7 +57,6 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 			Tag:        "latest",
 			Env: []string{
 				"DOCKER_VERNEMQ_ACCEPT_EULA=yes",
-				"DOCKER_VERNEMQ_ALLOW_ANONYMOUS=on",
 				"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=debug",
 				"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY=random",
 				"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS=on",
@@ -97,11 +98,31 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 		log.Println("DEBUG: remove container " + container.Container.Name)
 		container.Close()
 	}()
+
+	//mock auth webhooks for initial connection check
+	server := &http.Server{
+		Addr:              ":" + config.WebhookPort,
+		WriteTimeout:      10 * time.Second,
+		ReadTimeout:       2 * time.Second,
+		ReadHeaderTimeout: 2 * time.Second,
+		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			fmt.Fprint(writer, `{"result": "ok"}`)
+		})}
+	go func() {
+		log.Println("Mock Listening on ", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Println("ERROR: unable to start server", err)
+		}
+	}()
+	defer func() {
+		server.Shutdown(context.Background())
+	}()
+
 	err = pool.Retry(func() error {
 		log.Println("DEBUG: try to connection to broker")
 		options := paho.NewClientOptions().
 			SetAutoReconnect(true).
-			SetCleanSession(false).
+			SetCleanSession(true).
 			SetClientID(uuid.NewV4().String()).
 			AddBroker(brokerUrl)
 
@@ -147,7 +168,7 @@ func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sy
 		log.Println("DEBUG: try to connection to broker")
 		options := paho.NewClientOptions().
 			SetAutoReconnect(true).
-			SetCleanSession(false).
+			SetCleanSession(true).
 			SetClientID(uuid.NewV4().String()).
 			AddBroker("tcp://" + container.Container.NetworkSettings.IPAddress + ":1883")
 

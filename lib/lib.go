@@ -161,7 +161,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))
 	}
 
-	go InitWebhooks(config, connector, logger, handlers)
+	InitWebhooks(config, connector, logger, handlers)
 
 	if config.StartupDelay != 0 {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)

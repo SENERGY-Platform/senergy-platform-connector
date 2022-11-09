@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -72,7 +72,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
-		msg, err := ioutil.ReadAll(request.Body)
+		msg, err := io.ReadAll(request.Body)
 		log.Println("INFO: /health body =", err, string(msg))
 		writer.WriteHeader(http.StatusOK)
 	})

@@ -64,7 +64,6 @@ func createConf(authentication string) (config configuration.Config, err error) 
 
 func TestRunnerWithClient(t *testing.T) {
 	t.Run("WithPasswordAuthenticationAtMQTT", func(t *testing.T) {
-		t.Skip()
 		authenticationMethod := "password"
 		testClient(authenticationMethod, t)
 	})
