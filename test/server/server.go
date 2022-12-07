@@ -32,7 +32,7 @@ import (
 	"github.com/ory/dockertest/v3"
 )
 
-func New(basectx context.Context, startConfig configuration.Config) (config configuration.Config, err error) {
+func New(basectx context.Context, startConfig configuration.Config) (config configuration.Config, brokerUrlForClients string, err error) {
 	config = startConfig
 
 	ctx, cancel := context.WithCancel(basectx)
@@ -40,25 +40,25 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 	err = auth.Mock(config, ctx)
 	if err != nil {
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
 	config.WebhookPort, err = GetFreePort()
 	if err != nil {
 		log.Println("unable to find free port", err)
-		return config, err
+		return config, "", err
 	}
 
 	config.HttpCommandConsumerPort, err = GetFreePort()
 	if err != nil {
 		log.Println("unable to find free port", err)
-		return config, err
+		return config, "", err
 	}
 
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		log.Println("Could not connect to docker: ", err)
-		return config, err
+		return config, "", err
 	}
 
 	_, zk, err := docker.Zookeeper(pool, ctx)
@@ -66,7 +66,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 	zookeeperUrl := zk + ":2181"
 
@@ -75,13 +75,13 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
 	err = iot.Mock(config, ctx)
 	if err != nil {
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
 	_, memcacheIp, err := docker.Memcached(pool, ctx)
@@ -89,7 +89,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 	config.MemcachedUrl = memcacheIp + ":11211"
 	config.IotCacheUrls = memcacheIp + ":11211"
@@ -100,23 +100,25 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 	hostIp := network.IPAM.Config[0].Gateway
-	config.MqttBroker, err = docker.Vernemqtt(pool, ctx, hostIp+":"+config.WebhookPort, config)
+	var brokerUrlForConnector string
+	brokerUrlForConnector, brokerUrlForClients, err = docker.Vernemqtt(pool, ctx, hostIp+":"+config.WebhookPort, config)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
+	config.MqttBroker = brokerUrlForConnector
 
 	config.PostgresHost, config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb, err = docker.Timescale(pool, ctx)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
 	hostIp = "127.0.0.1"
@@ -138,7 +140,7 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
 	err = lib.Start(ctx, config)
@@ -146,10 +148,10 @@ func New(basectx context.Context, startConfig configuration.Config) (config conf
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
-		return config, err
+		return config, "", err
 	}
 
-	return config, nil
+	return config, brokerUrlForClients, nil
 }
 
 func getFreePort() (int, error) {

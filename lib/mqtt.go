@@ -42,15 +42,6 @@ func MqttStart(ctx context.Context, config configuration.Config) (mqtt *Mqtt, er
 		SetClientID(config.AuthClientId + "_" + uuid.NewV4().String()).
 		AddBroker(config.MqttBroker)
 
-	if config.MqttAuthMethod == "certificate" {
-		tlsConfig, err := CreateTLSConfig(config.ClientCertificatePath, config.PrivateKeyPath, config.RootCACertificatePath)
-		if err != nil {
-			log.Println("Error on MQTT TLS config", err)
-			return nil, err
-		}
-		options = options.SetTLSConfig(tlsConfig)
-	}
-
 	mqtt.client = paho.NewClient(options)
 	if token := mqtt.client.Connect(); token.Wait() && token.Error() != nil {
 		log.Println("Error on MqttStart.Connect(): ", token.Error())

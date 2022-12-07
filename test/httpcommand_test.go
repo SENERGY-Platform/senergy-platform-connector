@@ -58,7 +58,8 @@ func TestHttpCommand(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 
-	config, err = server.New(ctx, config)
+	var brokerUrlForClients string
+	config, brokerUrlForClients, err = server.New(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -97,7 +98,7 @@ func TestHttpCommand(t *testing.T) {
 
 	//time.Sleep(10 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -110,7 +111,7 @@ func TestHttpCommand(t *testing.T) {
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return
@@ -445,7 +446,8 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	config.PublishToPostgres = true
 	config.MqttErrorOnEventValidationError = true
 
-	config, err = server.New(ctx, config)
+	var brokerUrlForClients string
+	config, brokerUrlForClients, err = server.New(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -484,7 +486,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 
 	//time.Sleep(10 * time.Second)
 
-	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
@@ -497,7 +499,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
 		t.Error(err)
 		return

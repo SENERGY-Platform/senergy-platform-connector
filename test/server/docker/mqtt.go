@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -18,7 +17,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, config configuration.Config) (brokerUrl string, err error) {
+func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, err error) {
 	log.Println("start mqtt")
 	var container *dockertest.Resource
 	if config.MqttAuthMethod == "password" {
@@ -42,8 +41,8 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD=off",
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL=off",
 		})
+		brokerUrlForClients = "tcp://" + container.Container.NetworkSettings.IPAddress + ":1883"
 
-		brokerUrl = "tcp://" + container.Container.NetworkSettings.IPAddress + ":1883"
 	} else if config.MqttAuthMethod == "certificate" {
 		caCertificateFileName := "ca.crt"
 		serverCertificateFileName := "server.crt"
@@ -86,11 +85,12 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 			},
 		}
 		container, err = pool.RunWithOptions(&options)
-		brokerUrl = "ssl://" + container.Container.NetworkSettings.IPAddress + ":8883"
+		brokerUrlForClients = "ssl://" + container.Container.NetworkSettings.IPAddress + ":8883"
 	}
+	brokerUrlForConnector = "tcp://" + container.Container.NetworkSettings.IPAddress + ":1883"
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	go Dockerlog(pool, ctx, container, "VERNEMQ")
 	go func() {
@@ -124,16 +124,7 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 			SetAutoReconnect(true).
 			SetCleanSession(true).
 			SetClientID(uuid.NewV4().String()).
-			AddBroker(brokerUrl)
-
-		if config.MqttAuthMethod == "certificate" {
-			tlsConfig, err := lib.CreateTLSConfig(config.ClientCertificatePath, config.PrivateKeyPath, config.RootCACertificatePath)
-			if err != nil {
-				log.Println("Error on MQTT TLS config", err)
-				return err
-			}
-			options = options.SetTLSConfig(tlsConfig)
-		}
+			AddBroker(brokerUrlForConnector)
 
 		client := paho.NewClient(options)
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -143,7 +134,7 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 		defer client.Disconnect(0)
 		return nil
 	})
-	return brokerUrl, err
+	return brokerUrlForConnector, brokerUrlForClients, err
 }
 
 func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sync.WaitGroup) (brokerUrl string, managementUrl string, err error) {

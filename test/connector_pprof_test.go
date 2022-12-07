@@ -49,7 +49,8 @@ func TestWithPProf(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 
-	config, err = server.New(ctx, config)
+	var brokerUrlForClients string
+	config, brokerUrlForClients, err = server.New(ctx, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -86,7 +87,7 @@ func TestWithPProf(t *testing.T) {
 		return
 	}
 
-	c, err := client.New(config.MqttBroker, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
