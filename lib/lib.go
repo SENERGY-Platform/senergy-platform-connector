@@ -137,7 +137,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
-	logProducer, err := connector.GetProducer(platform_connector_lib.Sync)
+	logProducer, err := connector.GetProducer(platform_connector_lib.Qos(config.ConnectionLogQos))
 	if err != nil {
 		log.Println("ERROR: logger ", err)
 		return err

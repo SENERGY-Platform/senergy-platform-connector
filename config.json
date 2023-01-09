@@ -11,6 +11,7 @@
 
     "DeviceLogTopic": "device_log",
     "GatewayLogTopic": "gateway_log",
+    "ConnectionLogQos": 0,
 
     "KafkaUrl":"kafka:9092",
     "KafkaGroupName": "senergyconnector",

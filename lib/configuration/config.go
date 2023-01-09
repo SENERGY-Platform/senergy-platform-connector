@@ -49,8 +49,9 @@ type ConfigStruct struct {
 
 	WebhookPort string
 
-	GatewayLogTopic string
-	DeviceLogTopic  string
+	GatewayLogTopic  string
+	DeviceLogTopic   string
+	ConnectionLogQos int
 
 	MemcachedUrl string
 
