@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"io"
 	"log"
 	"net/http"
@@ -68,7 +69,7 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler) *http.Server {
+func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
@@ -231,6 +232,11 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			}
 			if token == "" {
 				sendError(writer, "access denied", config.Debug)
+				return
+			}
+			err = connectionLimit.Check(msg.ClientId)
+			if err != nil {
+				sendError(writer, err.Error(), config.Debug)
 				return
 			}
 			if config.CheckHub {

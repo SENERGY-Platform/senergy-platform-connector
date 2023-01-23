@@ -131,6 +131,9 @@ type ConfigStruct struct {
 	KafkaTopicConfigs map[string][]kafka.ConfigEntry
 
 	MqttAuthMethod string // Whether the MQTT broker uses a username/password or client certificate authetication
+
+	ConnectionLimitCount             int
+	ConnectionLimitDurationInSeconds int
 }
 
 type Config = *ConfigStruct

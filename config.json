@@ -90,6 +90,9 @@
 
     "MqttErrorOnEventValidationError": false,
 
+    "ConnectionLimitCount": 10,
+    "ConnectionLimitDurationInSeconds": 600,
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

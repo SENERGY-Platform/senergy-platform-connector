@@ -19,6 +19,7 @@ package lib
 import (
 	"context"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -56,7 +57,10 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 	} else {
 		correlationTimeout = timeout
 	}
-	correlationservice := correlation.New(int32(config.CorrelationExpiration), int(config.CorrelationMaxIdleConns), correlationTimeout, StringToList(config.MemcachedUrl)...)
+
+	memcaacheUrls := StringToList(config.MemcachedUrl)
+
+	correlationservice := correlation.New(int32(config.CorrelationExpiration), int(config.CorrelationMaxIdleConns), correlationTimeout, memcaacheUrls...)
 
 	connector := platform_connector_lib.New(platform_connector_lib.Config{
 		PartitionsNum:            config.KafkaPartitionNum,
@@ -161,7 +165,12 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))
 	}
 
-	InitWebhooks(config, connector, logger, handlers)
+	var connectionLimit *connectionlimit.ConnectionLimitHandler
+	if config.ConnectionLimitCount > 0 {
+		connectionLimit = connectionlimit.New(config.ConnectionLimitCount, int32(config.ConnectionLimitDurationInSeconds), memcaacheUrls...)
+	}
+
+	InitWebhooks(config, connector, logger, handlers, connectionLimit)
 
 	if config.StartupDelay != 0 {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)
