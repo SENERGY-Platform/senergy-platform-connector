@@ -48,6 +48,23 @@ func sendError(writer http.ResponseWriter, msg string, logging bool) {
 	}
 }
 
+func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string, logging bool) {
+	if logging {
+		log.Println("DEBUG: send ignore redirect:", msg)
+	}
+	err := json.NewEncoder(writer).Encode(map[string]interface{}{
+		"result": "ok",
+		"modifiers": map[string]interface{}{
+			"topic":   "ignored/" + topic,
+			"payload": msg,
+			"retain":  false,
+			"qos":     0,
+		}})
+	if err != nil {
+		log.Println("ERROR: unable to send ignore redirect:", err, msg)
+	}
+}
+
 func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
 	topics := []interface{}{}
 	for _, topic := range ok {
@@ -126,7 +143,10 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 						log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
 					}
 					return
-				case handler.Rejected, handler.Error:
+				case handler.Rejected:
+					sendIgnoreRedirect(writer, msg.Topic, err.Error(), config.Debug)
+					return
+				case handler.Error:
 					sendError(writer, err.Error(), config.Debug)
 					return
 				case handler.Unhandled:
@@ -137,7 +157,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				}
 			}
 			log.Println("WARNING: no matching topic handler found", msg.Topic)
-			sendError(writer, "no matching topic handler found", config.Debug)
+			sendIgnoreRedirect(writer, msg.Topic, "no matching topic handler found", config.Debug)
 			return
 		}
 
