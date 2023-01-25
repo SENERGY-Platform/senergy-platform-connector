@@ -63,6 +63,16 @@ func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string) {
 	}
 }
 
+func sendIgnoreRedirectAndNotification(writer http.ResponseWriter, connector *platform_connector_lib.Connector, user, clientId, topic, msg string) {
+	sendIgnoreRedirect(writer, topic, msg)
+	userId, err := connector.Security().GetUserId(user)
+	if err != nil {
+		log.Println("ERROR: unable to get user id", err)
+		return
+	}
+	connector.HandleClientError(userId, clientId, "unable to publish to topic "+topic+": "+msg)
+}
+
 func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
 	topics := []interface{}{}
 	for _, topic := range ok {
@@ -142,7 +152,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 					}
 					return
 				case handler.Rejected:
-					sendIgnoreRedirect(writer, msg.Topic, err.Error())
+					sendIgnoreRedirectAndNotification(writer, connector, msg.Username, msg.ClientId, msg.Topic, err.Error())
 					return
 				case handler.Error:
 					sendError(writer, err.Error(), config.Debug)
@@ -155,7 +165,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				}
 			}
 			log.Println("WARNING: no matching topic handler found", msg.Topic)
-			sendIgnoreRedirect(writer, msg.Topic, "no matching topic handler found")
+			sendIgnoreRedirectAndNotification(writer, connector, msg.Username, msg.ClientId, msg.Topic, "no matching topic handler found")
 			return
 		}
 

@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -50,10 +51,12 @@ func TestIgnore(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 
+	clientId := ""
+
 	notifyCalls := map[string][]string{}
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		temp, _ := io.ReadAll(request.Body)
-		notifyCalls[request.URL.Path] = append(notifyCalls[request.URL.Path], string(temp))
+		notifyCalls[request.URL.Path] = append(notifyCalls[request.URL.Path], strings.ReplaceAll(string(temp), clientId, "client-id-placeholder"))
 	}))
 	defer notifyServer.Close()
 	config.NotificationUrl = notifyServer.URL
@@ -72,6 +75,8 @@ func TestIgnore(t *testing.T) {
 	}
 
 	defer c.Stop()
+
+	clientId = c.HubId
 
 	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
 	if err != nil {
@@ -129,7 +134,14 @@ func TestIgnore(t *testing.T) {
 
 	time.Sleep(10 * time.Second) //wait for command to finish
 
-	expectedNotifications := map[string][]string{}
+	expectedNotifications := map[string][]string{
+		"/notifications": {
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic event/not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic event/not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
+		},
+	}
+
 	if !reflect.DeepEqual(notifyCalls, expectedNotifications) {
 		t.Errorf("%#v", notifyCalls)
 		return
