@@ -48,15 +48,13 @@ func sendError(writer http.ResponseWriter, msg string, logging bool) {
 	}
 }
 
-func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string, logging bool) {
-	if logging {
-		log.Println("DEBUG: send ignore redirect:", msg)
-	}
+func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string) {
+	log.Println("WARNING: send ignore redirect:", topic, msg)
 	err := json.NewEncoder(writer).Encode(map[string]interface{}{
 		"result": "ok",
 		"modifiers": map[string]interface{}{
 			"topic":   "ignored/" + topic,
-			"payload": msg,
+			"payload": base64.StdEncoding.EncodeToString([]byte(msg)),
 			"retain":  false,
 			"qos":     0,
 		}})
@@ -144,7 +142,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 					}
 					return
 				case handler.Rejected:
-					sendIgnoreRedirect(writer, msg.Topic, err.Error(), config.Debug)
+					sendIgnoreRedirect(writer, msg.Topic, err.Error())
 					return
 				case handler.Error:
 					sendError(writer, err.Error(), config.Debug)
@@ -157,7 +155,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				}
 			}
 			log.Println("WARNING: no matching topic handler found", msg.Topic)
-			sendIgnoreRedirect(writer, msg.Topic, "no matching topic handler found", config.Debug)
+			sendIgnoreRedirect(writer, msg.Topic, "no matching topic handler found")
 			return
 		}
 
