@@ -136,9 +136,9 @@ func TestIgnore(t *testing.T) {
 
 	expectedNotifications := map[string][]string{
 		"/notifications": {
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic event/not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: unable to publish to topic event/not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to event/not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to event/not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
 		},
 	}
 

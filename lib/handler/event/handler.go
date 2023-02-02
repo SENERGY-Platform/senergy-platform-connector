@@ -82,9 +82,11 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 					log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
 				}
 				return handler.Accepted, nil
-			} else {
+			}
+			if err == security.ErrorNotFound || err == security.ErrorAccessDenied {
 				return handler.Rejected, err
 			}
+			return handler.Error, err
 		}
 	}
 	if !this.config.MqttPublishAuthOnly {

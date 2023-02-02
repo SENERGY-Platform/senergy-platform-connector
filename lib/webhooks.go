@@ -70,7 +70,7 @@ func sendIgnoreRedirectAndNotification(writer http.ResponseWriter, connector *pl
 		log.Println("ERROR: unable to get user id", err)
 		return
 	}
-	connector.HandleClientError(userId, clientId, "unable to publish to topic "+topic+": "+msg)
+	connector.HandleClientError(userId, clientId, "ignore message to "+topic+": "+msg)
 }
 
 func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
