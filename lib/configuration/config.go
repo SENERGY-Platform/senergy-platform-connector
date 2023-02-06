@@ -117,8 +117,6 @@ type ConfigStruct struct {
 
 	CommandWorkerCount int64
 
-	StatisticsInterval string
-
 	DeviceTypeTopic string
 
 	NotificationUrl string

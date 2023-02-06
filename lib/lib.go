@@ -116,8 +116,6 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		IotCacheTimeout:      config.IotCacheTimeout,
 		IotCacheMaxIdleConns: int(config.IotCacheMaxIdleConns),
 
-		StatisticsInterval: config.StatisticsInterval,
-
 		DeviceTypeTopic: config.DeviceTypeTopic,
 
 		NotificationUrl: config.NotificationUrl,
@@ -127,8 +125,6 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 
 		NotificationsIgnoreDuplicatesWithinS: config.NotificationsIgnoreDuplicatesWithinS,
 	})
-
-	connector.StatisticsLogger(ctx)
 
 	if config.Debug {
 		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))
