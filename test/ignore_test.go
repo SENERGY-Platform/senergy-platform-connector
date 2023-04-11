@@ -143,7 +143,7 @@ func TestIgnore(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(notifyCalls, expectedNotifications) {
-		t.Errorf("%#v", notifyCalls)
+		t.Errorf("\n%#v\n%#v\n", expectedNotifications, notifyCalls)
 		return
 	}
 

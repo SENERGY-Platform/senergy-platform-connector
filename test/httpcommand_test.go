@@ -611,11 +611,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	}
 
 	//expect error
-	err = cerr.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": "nope", "error_to_expect": "wrong structure and type"}`})
-	if err == nil {
-		t.Error("expected error")
-		return
-	}
+	_ = cerr.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": "nope", "error_to_expect": "wrong structure and type"}`})
 
 	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{

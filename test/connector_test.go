@@ -706,12 +706,8 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	//expect error
-	err = cerr.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": "nope", "error_to_expect": "wrong structure and type"}`})
-	if err == nil {
-		t.Error("expected error")
-		return
-	}
+	//expect error (which will not be forwarded to mqtt client)
+	_ = cerr.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": "nope", "error_to_expect": "wrong structure and type"}`})
 
 	partitionsNum := 1
 	replFactor := 1
