@@ -26,7 +26,7 @@ func Tableworker(pool *dockertest.Pool, ctx context.Context, postgresHost string
 		return err
 	}
 
-	go Dockerlog(pool, ctx, container, "TABLEWORKER")
+	//go Dockerlog(pool, ctx, container, "TABLEWORKER")
 	go func() {
 		<-ctx.Done()
 		log.Println("DEBUG: remove container " + container.Container.Name)

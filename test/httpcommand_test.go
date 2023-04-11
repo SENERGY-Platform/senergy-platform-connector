@@ -258,6 +258,8 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 
+	time.Sleep(5 * time.Second) //wait to ensure exact wins the race with sepl_get
+
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
 		t.Error(err)

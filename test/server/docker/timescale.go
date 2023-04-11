@@ -20,7 +20,7 @@ func Timescale(pool *dockertest.Pool, ctx context.Context) (host string, port in
 	if err != nil {
 		return "", 0, "", "", "", err
 	}
-	go Dockerlog(pool, ctx, container, "TIMESCALE")
+	//go Dockerlog(pool, ctx, container, "TIMESCALE")
 	go func() {
 		<-ctx.Done()
 		log.Println("DEBUG: remove container " + container.Container.Name)

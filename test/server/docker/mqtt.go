@@ -92,7 +92,7 @@ func Vernemqtt(pool *dockertest.Pool, ctx context.Context, connecorUrl string, c
 	if err != nil {
 		return "", "", err
 	}
-	go Dockerlog(pool, ctx, container, "VERNEMQ")
+	//go Dockerlog(pool, ctx, container, "VERNEMQ")
 	go func() {
 		<-ctx.Done()
 		log.Println("DEBUG: remove container " + container.Container.Name)
@@ -147,7 +147,7 @@ func VernemqWithManagementApi(pool *dockertest.Pool, ctx context.Context, wg *sy
 	if err != nil {
 		return "", "", err
 	}
-	go Dockerlog(pool, ctx, container, "VERNEMQ")
+	//go Dockerlog(pool, ctx, container, "VERNEMQ")
 	wg.Add(1)
 	go func() {
 		<-ctx.Done()
