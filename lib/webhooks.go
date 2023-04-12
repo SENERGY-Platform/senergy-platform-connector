@@ -420,7 +420,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 				if prefix != "command" {
 					continue
 				}
-				device, err := connector.Iot().GetDeviceByLocalId(deviceUri, token)
+				device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::unsubscribe::DeviceUrlToIotDevice", err)
 					continue

@@ -33,14 +33,14 @@ type Handler struct {
 }
 
 func (this *Handler) Subscribe(clientId string, user string, topic string) (result handler.Result, err error) {
-	return this.checkTopicAccess(user, topic)
+	return this.checkTopicAccess(clientId, user, topic)
 }
 
 func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result handler.Result, err error) {
-	return this.checkTopicAccess(user, topic)
+	return this.checkTopicAccess(clientId, user, topic)
 }
 
-func (this *Handler) checkTopicAccess(user string, topic string) (result handler.Result, err error) {
+func (this *Handler) checkTopicAccess(clientId string, user string, topic string) (result handler.Result, err error) {
 	if !strings.HasPrefix(topic, "processes/") {
 		return handler.Unhandled, nil
 	}
@@ -63,14 +63,16 @@ func (this *Handler) checkTopicAccess(user string, topic string) (result handler
 	if hubId == "+" || hubId == "#" {
 		return handler.Rejected, NonAdminRequestToPlaceholderTopicError //admins may access these topic but those are already accepted for everything
 	}
+	if clientId != hubId {
+		exists, err := this.connector.Iot().ExistsHub(hubId, token) //existence check implies access check
+		if err != nil {
+			return handler.Error, err
+		}
+		if !exists {
+			return handler.Rejected, HubAccessDeniedError
+		}
+	}
 
-	exists, err := this.connector.Iot().ExistsHub(hubId, token) //existence check implies access check
-	if err != nil {
-		return handler.Error, err
-	}
-	if !exists {
-		return handler.Rejected, HubAccessDeniedError
-	}
 	return handler.Accepted, nil
 }
 
