@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/SENERGY-Platform/converter v0.0.0-20230131090133-d4d9baf75374
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230411095116-51713c954b7d
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230412062131-2888aead09d8
 	github.com/Shopify/sarama v1.38.1
 	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746
 	github.com/eclipse/paho.mqtt.golang v1.4.2
