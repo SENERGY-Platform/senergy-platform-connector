@@ -30,8 +30,9 @@ import (
 )
 
 func TestProcessHandler(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -48,7 +49,7 @@ func TestProcessHandler(t *testing.T) {
 	config.MqttAuthMethod = "password"
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return

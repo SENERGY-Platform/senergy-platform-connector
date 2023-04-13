@@ -34,8 +34,9 @@ import (
 )
 
 func TestIgnore(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -62,7 +63,7 @@ func TestIgnore(t *testing.T) {
 	config.NotificationUrl = notifyServer.URL
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return

@@ -26,14 +26,16 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	_ "github.com/lib/pq"
 	"log"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestWithPProf(t *testing.T) {
 	t.Skip("pprof test disabled")
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -50,7 +52,7 @@ func TestWithPProf(t *testing.T) {
 	config.PublishToPostgres = true
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return

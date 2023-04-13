@@ -48,8 +48,9 @@ func TestWithErrorClient(t *testing.T) {
 	if testing.Short() {
 		t.Skip("short")
 	}
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -74,7 +75,7 @@ func TestWithErrorClient(t *testing.T) {
 	config.NotificationUrl = notifyServer.URL
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -261,8 +262,9 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 	if testing.Short() {
 		t.Skip("short")
 	}
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -280,7 +282,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 	config.MqttErrorOnEventValidationError = true
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -691,8 +693,9 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	if testing.Short() {
 		t.Skip("short")
 	}
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for container shutdown
 	defer cancel()
 
 	config, err := configuration.LoadConfig("../config.json")
@@ -710,7 +713,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	config.MqttErrorOnEventValidationError = true
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config)
 	if err != nil {
 		t.Error(err)
 		return
