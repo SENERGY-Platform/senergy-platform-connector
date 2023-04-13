@@ -44,7 +44,7 @@ func Memcached(ctx context.Context, wg *sync.WaitGroup) (hostPort string, ipAddr
 	if err != nil {
 		return "", "", err
 	}
-	hostPort = string(temp)
+	hostPort = temp.Port()
 
 	return hostPort, ipAddress, err
 }
