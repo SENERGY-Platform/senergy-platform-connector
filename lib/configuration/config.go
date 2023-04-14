@@ -38,14 +38,14 @@ type ConfigStruct struct {
 	DeviceManagerUrl string
 	DeviceRepoUrl    string
 
-	AuthClientId             string //keycloak-client
-	AuthClientSecret         string //keycloak-secret
+	AuthClientId             string `config:"secret"` //keycloak-client
+	AuthClientSecret         string `config:"secret"` //keycloak-secret
 	AuthExpirationTimeBuffer float64
 	AuthEndpoint             string
 
-	JwtPrivateKey string
+	JwtPrivateKey string `config:"secret"`
 	JwtExpiration int64
-	JwtIssuer     string
+	JwtIssuer     string `config:"secret"`
 
 	WebhookPort string
 
@@ -69,7 +69,7 @@ type ConfigStruct struct {
 	DeviceTypeExpiration     int64
 	CharacteristicExpiration int64
 
-	TokenCacheUrls       string
+	TokenCacheUrls       string `config:"secret"`
 	TokenCacheExpiration int64
 
 	MqttPublishAuthOnly bool
@@ -94,8 +94,8 @@ type ConfigStruct struct {
 	PublishToPostgres bool
 	PostgresHost      string
 	PostgresPort      int
-	PostgresUser      string
-	PostgresPw        string
+	PostgresUser      string `config:"secret"`
+	PostgresPw        string `config:"secret"`
 	PostgresDb        string
 
 	HttpCommandConsumerPort string
@@ -173,10 +173,13 @@ func HandleEnvironmentVars(config Config) {
 	configType := configValue.Type()
 	for index := 0; index < configType.NumField(); index++ {
 		fieldName := configType.Field(index).Name
+		fieldConfig := configType.Field(index).Tag.Get("config")
 		envName := fieldNameToEnvName(fieldName)
 		envValue := os.Getenv(envName)
 		if envValue != "" {
-			log.Println("use environment variable: ", envName, " = ", envValue)
+			if !strings.Contains(fieldConfig, "secret") {
+				log.Println("use environment variable: ", envName, " = ", envValue)
+			}
 			if configValue.FieldByName(fieldName).Kind() == reflect.Int64 {
 				i, _ := strconv.ParseInt(envValue, 10, 64)
 				configValue.FieldByName(fieldName).SetInt(i)

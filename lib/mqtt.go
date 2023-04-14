@@ -19,10 +19,10 @@ package lib
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"log"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	uuid "github.com/satori/go.uuid"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
@@ -39,7 +39,7 @@ func MqttStart(ctx context.Context, config configuration.Config) (mqtt *Mqtt, er
 		SetUsername(config.AuthClientId).
 		SetAutoReconnect(true).
 		SetCleanSession(true).
-		SetClientID(config.AuthClientId + "_" + uuid.NewV4().String()).
+		SetClientID(config.AuthClientId + "_" + uuid.NewString()).
 		AddBroker(config.MqttBroker)
 
 	mqtt.client = paho.NewClient(options)

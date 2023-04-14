@@ -3,13 +3,13 @@ module github.com/SENERGY-Platform/senergy-platform-connector
 go 1.20
 
 require (
-	github.com/SENERGY-Platform/converter v0.0.0-20230131090133-d4d9baf75374
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230412082144-ebfcfa47d725
+	github.com/SENERGY-Platform/converter v0.0.0-20230413113429-b490a96aabba
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230414071410-091d73d966ea
 	github.com/Shopify/sarama v1.38.1
 	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.7
-	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/testcontainers/testcontainers-go v0.19.1-0.20230411085931-6e83fc2c10b3
 	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a
@@ -40,7 +40,6 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -74,7 +73,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_golang v1.15.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect

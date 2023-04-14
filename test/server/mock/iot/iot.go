@@ -8,8 +8,8 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
-	uuid "github.com/satori/go.uuid"
 	"log"
 	"net"
 	"net/http"
@@ -113,7 +113,7 @@ func (this *Controller) ReadDevice(id string) (result interface{}, err error, co
 func (this *Controller) PublishDeviceCreate(device model.Device) (result interface{}, err error, code int) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	device.Id = uuid.NewV4().String()
+	device.Id = uuid.NewString()
 	this.devices[device.Id] = device
 	this.devicesByLocalId[device.LocalId] = device.Id
 	msg, err := json.Marshal(&deviceCommand{
@@ -188,7 +188,7 @@ func (this *Controller) ReadHub(id string) (result interface{}, err error, code 
 func (this *Controller) PublishHubCreate(hub model.Hub) (result interface{}, err error, code int) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	hub.Id = uuid.NewV4().String()
+	hub.Id = uuid.NewString()
 	this.hubs[hub.Id] = hub
 	return hub, nil, 200
 }
@@ -222,9 +222,9 @@ func (this *Controller) ReadDeviceType(id string) (result interface{}, err error
 func (this *Controller) PublishDeviceTypeCreate(devicetype model.DeviceType) (result interface{}, err error, code int) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	devicetype.Id = uuid.NewV4().String()
+	devicetype.Id = uuid.NewString()
 	for i, service := range devicetype.Services {
-		service.Id = uuid.NewV4().String()
+		service.Id = uuid.NewString()
 		devicetype.Services[i] = service
 	}
 	this.deviceTypes[devicetype.Id] = devicetype
@@ -272,7 +272,7 @@ func (this *Controller) ReadProtocol(id string) (result interface{}, err error, 
 func (this *Controller) PublishProtocolCreate(protocol model.Protocol) (result interface{}, err error, code int) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	protocol.Id = uuid.NewV4().String()
+	protocol.Id = uuid.NewString()
 	this.protocols[protocol.Id] = protocol
 	return protocol, nil, 200
 }
@@ -306,7 +306,7 @@ func (this *Controller) ReadCharacteristic(id string) (result interface{}, err e
 func (this *Controller) PublishCharacteristicCreate(characteristic model.Characteristic) (result interface{}, err error, code int) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	characteristic.Id = uuid.NewV4().String()
+	characteristic.Id = uuid.NewString()
 	this.characteristics[characteristic.Id] = characteristic
 	return characteristic, nil, 200
 }
