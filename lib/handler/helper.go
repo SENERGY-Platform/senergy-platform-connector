@@ -20,6 +20,7 @@ import (
 	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"log"
 	"strings"
 )
 
@@ -63,3 +64,23 @@ func CheckEvent(connector *platform_connector_lib.Connector, token security.JwtT
 }
 
 var ServiceNotFound = errors.New("service not found")
+
+func HandleTopicSubscribe(clientId string, username string, topic string, handlers []Handler) (Result, error) {
+	for _, h := range handlers {
+		handlerResult, err := h.Subscribe(clientId, username, topic)
+		if err != nil {
+			return Error, err
+		}
+		switch handlerResult {
+		case Accepted, Rejected, Error:
+			return handlerResult, err
+		case Unhandled:
+			continue
+		default:
+			log.Println("WARNING: unknown handler result", handlerResult)
+			continue
+		}
+	}
+	log.Println("WARNING: no matching topic handler found", topic)
+	return Rejected, errors.New("no matching topic handler found")
+}
