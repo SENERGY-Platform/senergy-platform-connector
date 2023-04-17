@@ -21,7 +21,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
-	paho "github.com/eclipse/paho.mqtt.golang"
 	_ "github.com/lib/pq"
 	"io"
 	"net/http"
@@ -33,7 +32,15 @@ import (
 	"time"
 )
 
-func TestIgnore(t *testing.T) {
+func TestIgnore4(t *testing.T) {
+	testIgnore(t, client.MQTT4)
+}
+
+func TestIgnore5(t *testing.T) {
+	testIgnore(t, client.MQTT5)
+}
+
+func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -63,13 +70,13 @@ func TestIgnore(t *testing.T) {
 	config.NotificationUrl = notifyServer.URL
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, wg, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
@@ -79,7 +86,7 @@ func TestIgnore(t *testing.T) {
 
 	clientId = c.HubId
 
-	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
@@ -89,30 +96,30 @@ func TestIgnore(t *testing.T) {
 
 	ignoredMsg := map[string][]string{}
 	ignoredMux := sync.Mutex{}
-	token := adminClient.Mqtt().Subscribe("ignored/#", 2, func(c paho.Client, message paho.Message) {
+	err = adminClient.Subscribe("ignored/#", 2, func(topic string, payload []byte) {
 		ignoredMux.Lock()
 		defer ignoredMux.Unlock()
-		ignoredMsg[message.Topic()] = append(ignoredMsg[message.Topic()], string(message.Payload()))
+		ignoredMsg[topic] = append(ignoredMsg[topic], string(payload))
 	})
-	if token.Wait() && token.Error() != nil {
-		t.Error(token.Error())
+	if err != nil {
+		t.Error(err)
 		return
 	}
 
-	token = adminClient.Mqtt().Subscribe("foo/bar", 2, func(c paho.Client, message paho.Message) {
+	err = adminClient.Subscribe("foo/bar", 2, func(topic string, payload []byte) {
 		t.Error("unexpected message")
 		return
 	})
-	if token.Wait() && token.Error() != nil {
-		t.Error(token.Error())
+	if err != nil {
+		t.Error(err)
 		return
 	}
-	token = adminClient.Mqtt().Subscribe("event/#", 2, func(c paho.Client, message paho.Message) {
+	err = adminClient.Subscribe("event/#", 2, func(topic string, payload []byte) {
 		t.Error("unexpected message")
 		return
 	})
-	if token.Wait() && token.Error() != nil {
-		t.Error(token.Error())
+	if err != nil {
+		t.Error(err)
 		return
 	}
 

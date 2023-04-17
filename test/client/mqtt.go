@@ -19,56 +19,29 @@ package client
 import (
 	"encoding/json"
 	"errors"
-	"log"
-	"os"
-	"path/filepath"
-	"time"
-
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"log"
+	"time"
+)
+
+type MqttVersion int
+
+const (
+	MQTT4 MqttVersion = iota
+	MQTT5
 )
 
 func (this *Client) startMqtt() error {
-	options := paho.NewClientOptions().
-		SetPassword(this.password).
-		SetUsername(this.username).
-		SetClientID(this.HubId).
-		SetAutoReconnect(true).
-		SetCleanSession(true).
-		AddBroker(this.mqttUrl).
-		SetConnectionLostHandler(func(client paho.Client, err error) {
-			log.Println("mqtt connection lost:", err)
-		}).
-		SetOnConnectHandler(func(client paho.Client) {
-			log.Println("mqtt (re)connected")
-			err := this.loadOldSubscriptions()
-			if err != nil {
-				log.Fatal("FATAL: ", err)
-			}
-		})
-
-	if this.authenticationMethod == "certificate" {
-		dir, err := os.Getwd()
-		ClientCertificatePath := filepath.Join(dir, "mqtt_certs", "mock_client", "client.crt")
-		PrivateKeyPath := filepath.Join(dir, "mqtt_certs", "mock_client", "private.key")
-		RootCACertificatePath := filepath.Join(dir, "mqtt_certs", "ca", "ca.crt")
-
-		tlsConfig, err := lib.CreateTLSConfig(ClientCertificatePath, PrivateKeyPath, RootCACertificatePath)
-		if err != nil {
-			log.Println("Error on MQTT TLS config", err)
-			return err
-		}
-		options = options.SetTLSConfig(tlsConfig)
+	if this.mqttVersion == MQTT4 {
+		return this.startMqtt4()
 	}
-
-	this.mqtt = paho.NewClient(options)
-	if token := this.mqtt.Connect(); token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Connect(): ", token.Error())
-		return token.Error()
+	if this.mqttVersion == MQTT5 {
+		return this.startMqtt5()
 	}
-	return nil
+	return errors.New("unknown mqtt version")
 }
 
 func (this *Client) SendDeviceError(deviceUri string, message string) error {
@@ -84,14 +57,10 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 }
 
 func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qos byte, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
-	if !this.mqtt.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
-		return errors.New("mqtt client not connected")
-	}
 	topic := "command/" + deviceUri + "/" + serviceUri
-	callback := func(client paho.Client, message paho.Message) {
+	callback := func(topic string, pl []byte) {
 		request := lib.RequestEnvelope{}
-		err := json.Unmarshal(message.Payload(), &request)
+		err := json.Unmarshal(pl, &request)
 		if err != nil {
 			log.Println("ERROR: unable to decode request envalope", err)
 			return
@@ -114,26 +83,17 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 			}
 		}()
 	}
-	token := this.mqtt.Subscribe(topic, qos, callback)
-	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Subscribe(): ", token.Error())
-		return token.Error()
-	}
-	this.registerSubscription(topic, qos, callback)
-	return nil
+	return this.Subscribe(topic, qos, callback)
 }
 
 func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error) {
-	if !this.mqtt.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
-		return errors.New("mqtt client not connected")
+	if this.mqttVersion == MQTT4 {
+		return this.UnsubscribeMqtt4(deviceUri, serviceUri)
 	}
-	token := this.mqtt.Unsubscribe("command/" + deviceUri + "/" + serviceUri)
-	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Unsubscribe(): ", token.Error())
-		return token.Error()
+	if this.mqttVersion == MQTT5 {
+		return this.UnsubscribeMqtt5(deviceUri, serviceUri)
 	}
-	return nil
+	return errors.New("unknown mqtt version")
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
@@ -145,20 +105,14 @@ func (this *Client) SendEventWithQos(deviceUri string, serviceUri string, msg pl
 }
 
 func (this *Client) Publish(topic string, msg interface{}, qos byte) (err error) {
-	payload, err := json.Marshal(msg)
-	if err != nil {
-		return err
+	log.Println("DEBUG: publish", topic, msg)
+	if this.mqttVersion == MQTT4 {
+		return this.PublishMqtt4(topic, msg, qos)
 	}
-	if !this.mqtt.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
-		return errors.New("mqtt client not connected")
+	if this.mqttVersion == MQTT5 {
+		return this.PublishMqtt5(topic, msg, qos)
 	}
-	token := this.mqtt.Publish(topic, qos, false, string(payload))
-	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Publish(): ", token.Error())
-		return token.Error()
-	}
-	return err
+	return errors.New("unknown mqtt version")
 }
 
 type Subscription struct {
@@ -193,18 +147,11 @@ func (this *Client) getSubscriptions() (result []Subscription) {
 }
 
 func (this *Client) loadOldSubscriptions() error {
-	if !this.mqtt.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
-		return errors.New("mqtt client not connected")
+	if this.mqttVersion == MQTT4 {
+		return this.loadOldSubscriptionsMqtt4()
 	}
-	subs := this.getSubscriptions()
-	for _, sub := range subs {
-		log.Println("resubscribe to", sub.Topic)
-		token := this.mqtt.Subscribe(sub.Topic, sub.Qos, sub.Handler)
-		if token.Wait() && token.Error() != nil {
-			log.Println("Error on Subscribe: ", sub.Topic, token.Error())
-			return token.Error()
-		}
+	if this.mqttVersion == MQTT5 {
+		return this.loadOldSubscriptionsMqtt5()
 	}
-	return nil
+	return errors.New("unknown mqtt version")
 }

@@ -17,18 +17,22 @@
 package client
 
 import (
+	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
 
+	"github.com/eclipse/paho.golang/autopaho"
+	paho5 "github.com/eclipse/paho.golang/paho"
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-//values are matching to test server produced by /senergy-platform-connector/test/server/server.go
+// values are matching to test server produced by /senergy-platform-connector/test/server/server.go
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
-func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string) (client *Client, err error) {
+func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion) (client *Client, err error) {
 	client = &Client{
 		authUrl:              authUrl,
 		mqttUrl:              mqttUrl,
@@ -43,6 +47,7 @@ func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl 
 		devices:              devices,
 		subscriptions:        map[string]Subscription{},
 		authenticationMethod: authenticationMethod,
+		mqttVersion:          mqttVersion,
 	}
 	token, err := client.login()
 	if err != nil {
@@ -69,7 +74,7 @@ func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl 
 	return
 }
 
-func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation) (client *Client, err error) {
+func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, mqttVersion MqttVersion) (client *Client, err error) {
 	client = &Client{
 		authUrl:          authUrl,
 		mqttUrl:          mqttUrl,
@@ -83,12 +88,14 @@ func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoU
 		clientSecret:     Secret,
 		devices:          devices,
 		subscriptions:    map[string]Subscription{},
+		mqttVersion:      mqttVersion,
 	}
 	err = client.startMqtt()
 	return
 }
 
 type Client struct {
+	mqttVersion      MqttVersion
 	mqttUrl          string
 	deviceRepoUrl    string
 	deviceManagerUrl string
@@ -99,6 +106,8 @@ type Client struct {
 	password string
 
 	mqtt         paho.Client
+	mqtt5        *autopaho.ConnectionManager
+	mqtt5router  paho5.Router
 	clientId     string
 	clientSecret string
 	devices      []DeviceRepresentation
@@ -111,7 +120,23 @@ type Client struct {
 }
 
 func (this *Client) Stop() {
-	this.mqtt.Disconnect(0)
+	if this.mqttVersion == MQTT4 {
+		this.mqtt.Disconnect(0)
+	}
+	if this.mqttVersion == MQTT5 {
+		disconnecttimeout, _ := context.WithTimeout(context.Background(), 10*time.Second)
+		this.mqtt5.Disconnect(disconnecttimeout)
+	}
+}
+
+func (this *Client) Subscribe(topic string, qos byte, callback func(topic string, pl []byte)) error {
+	if this.mqttVersion == MQTT4 {
+		return this.SubscribeMqtt4(topic, qos, callback)
+	}
+	if this.mqttVersion == MQTT5 {
+		return this.SubscribeMqtt5(topic, qos, callback)
+	}
+	return errors.New("unknown mqtt version")
 }
 
 func (this *Client) Mqtt() paho.Client {

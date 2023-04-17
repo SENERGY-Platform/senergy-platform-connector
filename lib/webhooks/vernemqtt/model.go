@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package vernemqtt4
+package vernemqtt
 
 type PublishWebhookMsg struct {
 	Username string `json:"username"`
@@ -44,7 +44,8 @@ type LoginWebhookMsg struct {
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	ClientId     string `json:"client_id"`
-	CleanSession bool   `json:"clean_session"`
+	CleanSession bool   `json:"clean_session"` //v4
+	CleanStart   bool   `json:"clean_start"`   //v5
 }
 
 type OnlineWebhookMsg struct {

@@ -22,10 +22,10 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/vernemqtt4"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/vernemqtt"
 	"net/http"
 )
 
 func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
-	return vernemqtt4.InitWebhooks(config, connector, logger, handlers, connectionLimit)
+	return vernemqtt.InitWebhooks(config, connector, logger, handlers, connectionLimit)
 }

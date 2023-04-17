@@ -73,7 +73,7 @@ func Forward(ctx context.Context, fromPort int, toAddr string) error {
 }
 
 func handleForwardClient(client net.Conn, addr string) {
-	log.Println("new forward client")
+	//log.Println("new forward client")
 	target, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Println("FORWARD ERROR:", err)

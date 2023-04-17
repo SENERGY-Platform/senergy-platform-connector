@@ -60,7 +60,7 @@ func TestHttpCommand(t *testing.T) {
 	config.PublishToPostgres = true
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, wg, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
 	if err != nil {
 		t.Error(err)
 		return
@@ -105,14 +105,14 @@ func TestHttpCommand(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod)
+	}, config.MqttAuthMethod, client.MQTT4)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4)
 	if err != nil {
 		t.Error(err)
 		return

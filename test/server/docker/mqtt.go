@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -76,12 +77,31 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		}
 	}
 
+	if config.MqttVersion != "" && config.MqttVersion != "3,4" {
+		env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_PROTOCOL_VERSIONS"] = config.MqttVersion
+		env["DOCKER_VERNEMQ_LISTENER.tcp.allowed_protocol_versions"] = config.MqttVersion
+		env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_protocol_versions"] = config.MqttVersion
+
+		env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_PROTOCOL_VERSIONS"] = config.MqttVersion
+		env["DOCKER_VERNEMQ_LISTENER.ssl.allowed_protocol_versions"] = config.MqttVersion
+		env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_protocol_versions"] = config.MqttVersion
+	}
+	if strings.Contains(config.MqttVersion, "5") {
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__HOOK"] = "auth_on_subscribe_m5"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__ENDPOINT"] = "http://" + connecorUrl + "/subscribe"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__HOOK"] = "auth_on_publish_m5"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__ENDPOINT"] = "http://" + connecorUrl + "/publish"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__HOOK"] = "auth_on_register_m5"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__ENDPOINT"] = "http://" + connecorUrl + "/login"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__HOOK"] = "on_unsubscribe_m5"
+		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__ENDPOINT"] = "http://" + connecorUrl + "/unsubscribe"
+	}
+
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:           "erlio/docker-vernemq:latest",
 			Tmpfs:           map[string]string{},
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
-			ExposedPorts:    []string{},
 			AlwaysPullImage: true,
 			Env:             env,
 			Mounts:          mounts,
@@ -98,12 +118,10 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		log.Println("DEBUG: remove container mqtt", c.Terminate(context.Background()))
 	}()
 
-	/*
-		err = Dockerlog(ctx, c, "MQTT")
-		if err != nil {
-			return "", "", err
-		}
-	*/
+	err = Dockerlog(ctx, c, "MQTT")
+	if err != nil {
+		return "", "", err
+	}
 
 	ipAddress, err := c.ContainerIP(ctx)
 	if err != nil {

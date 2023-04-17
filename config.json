@@ -8,6 +8,7 @@
 
     "MemcachedUrl": "memcahed:11211",
     "MqttBroker": "tcp://mqtt:1883",
+    "MqttVersion": "3,4",
 
     "DeviceLogTopic": "device_log",
     "GatewayLogTopic": "gateway_log",

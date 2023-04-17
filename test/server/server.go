@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/testcontainers/testcontainers-go"
 	"log"
 	"net"
@@ -33,7 +34,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
 )
 
-func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config) (config configuration.Config, brokerUrlForClients string, err error) {
+func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config, mqttVersion client.MqttVersion) (config configuration.Config, brokerUrlForClients string, err error) {
 	config = startConfig
 
 	err = auth.Mock(config, ctx)
@@ -91,6 +92,9 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		return config, "", err
 	}
 
+	if mqttVersion == client.MQTT5 {
+		config.MqttVersion = "5"
+	}
 	var brokerUrlForConnector string
 	brokerUrlForConnector, brokerUrlForClients, err = docker.Vernemqtt(ctx, wg, hostIp+":"+config.WebhookPort, config)
 	if err != nil {

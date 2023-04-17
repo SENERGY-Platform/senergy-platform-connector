@@ -35,7 +35,7 @@ type commandQueueValue struct {
 	t              time.Time
 }
 
-func GetQueuedCommandHandler(ctx context.Context, correlationservice *correlation.CorrelationService, mqtt *Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
+func GetQueuedCommandHandler(ctx context.Context, correlationservice *correlation.CorrelationService, mqtt Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
 	queue := make(chan commandQueueValue, config.CommandWorkerCount)
 	handler := GetCommandHandler(correlationservice, mqtt, config)
 	for i := int64(0); i < config.CommandWorkerCount; i++ {
@@ -67,7 +67,7 @@ func GetQueuedCommandHandler(ctx context.Context, correlationservice *correlatio
 	}
 }
 
-func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt *Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
+func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt Mqtt, config configuration.Config) platform_connector_lib.AsyncCommandHandler {
 	return func(commandRequest model.ProtocolMsg, requestMsg platform_connector_lib.CommandRequestMsg, t time.Time) (err error) {
 		commandRequest.Trace = append(commandRequest.Trace, model.Trace{
 			Timestamp: time.Now().UnixNano(),

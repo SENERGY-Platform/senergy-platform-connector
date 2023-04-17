@@ -172,7 +172,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)
 	}
 
-	var mqtt *Mqtt
+	var mqtt Mqtt
 	for i := 0; i < 10; i++ {
 		mqtt, err = MqttStart(ctx, config)
 		if err == nil {

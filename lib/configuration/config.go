@@ -55,7 +55,8 @@ type ConfigStruct struct {
 
 	MemcachedUrl string
 
-	MqttBroker string
+	MqttBroker  string
+	MqttVersion string
 
 	CheckHub bool
 

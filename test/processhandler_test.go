@@ -49,13 +49,13 @@ func TestProcessHandler(t *testing.T) {
 	config.MqttAuthMethod = "password"
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, wg, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4)
 	if err != nil {
 		t.Error(err)
 		return

@@ -54,20 +54,31 @@ func createConf(authentication string) (config configuration.Config, err error) 
 	return config, err
 }
 
-func TestRunnerWithClient(t *testing.T) {
-	t.Run("WithPasswordAuthenticationAtMQTT", func(t *testing.T) {
-		authenticationMethod := "password"
-		testClient(authenticationMethod, t)
-	})
-	t.Run("WithCertificateAuthenticationAtMQTT", func(t *testing.T) {
-		authenticationMethod := "certificate"
-		testClient(authenticationMethod, t)
-	})
+func TestWithPasswordAuthenticationAtMQTT(t *testing.T) {
+	authenticationMethod := "password"
+	testClient(authenticationMethod, client.MQTT4, t)
 }
 
-func testClient(authenticationMethod string, t *testing.T) {
+func TestWithCertificateAuthenticationAtMQTT(t *testing.T) {
+	authenticationMethod := "certificate"
+	testClient(authenticationMethod, client.MQTT4, t)
+}
+
+func TestWithPasswordAuthenticationAtMQTT5(t *testing.T) {
+	authenticationMethod := "password"
+	testClient(authenticationMethod, client.MQTT5, t)
+}
+
+func TestWithCertificateAuthenticationAtMQTT5(t *testing.T) {
+	authenticationMethod := "certificate"
+	testClient(authenticationMethod, client.MQTT5, t)
+}
+
+func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *testing.T) {
 	wg := &sync.WaitGroup{}
+	defer t.Log("wg done")
 	defer wg.Wait()
+	defer t.Log("wait for wg")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -78,7 +89,7 @@ func testClient(authenticationMethod string, t *testing.T) {
 	}
 
 	var brokerUrlForClients string
-	config, brokerUrlForClients, err = server.New(ctx, wg, config)
+	config, brokerUrlForClients, err = server.New(ctx, wg, config, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
@@ -123,14 +134,14 @@ func testClient(authenticationMethod string, t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, authenticationMethod)
+	}, authenticationMethod, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod, mqttVersion)
 	if err != nil {
 		t.Error(err)
 		return
@@ -151,6 +162,7 @@ func testClient(authenticationMethod string, t *testing.T) {
 	var testState float64 = 0
 	mux := sync.Mutex{}
 
+	t.Log("listen for commands")
 	err = c.ListenCommand("test1", "sepl_get", func(request platform_connector_lib.CommandRequestMsg) (response platform_connector_lib.CommandResponseMsg, err error) {
 		mux.Lock()
 		defer mux.Unlock()
@@ -188,6 +200,7 @@ func testClient(authenticationMethod string, t *testing.T) {
 		return
 	}
 
+	t.Log("start kafka consumer")
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl: config.KafkaUrl,
@@ -264,6 +277,7 @@ func testClient(authenticationMethod string, t *testing.T) {
 		return
 	}
 
+	t.Log("publish events")
 	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"}, 2)
 	if err != nil {
 		t.Error(err)
@@ -292,6 +306,7 @@ func testClient(authenticationMethod string, t *testing.T) {
 		replFactor = config.KafkaReplicationFactor
 	}
 
+	t.Log("publish commands")
 	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
 	if err != nil {
 		t.Error(err)
@@ -342,14 +357,14 @@ func testClient(authenticationMethod string, t *testing.T) {
 
 	time.Sleep(20 * time.Second) //wait for command to finish
 
+	t.Log("check state")
+
 	if testState != 9 {
 		t.Error("unexpected command result", testState)
-		return
 	}
 
 	if len(consumedAnalytics) != 1 {
 		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
-		return
 	}
 
 	if len(consumedEvents) != 2 {
@@ -357,7 +372,6 @@ func testClient(authenticationMethod string, t *testing.T) {
 		for _, event := range consumedEvents {
 			t.Log(string(event))
 		}
-		return
 	}
 
 	if len(consumedResponses) != 2 {
@@ -367,7 +381,6 @@ func testClient(authenticationMethod string, t *testing.T) {
 
 	if len(consumedRespEvents) != 1 {
 		t.Error("unexpected response event result len", len(consumedRespEvents))
-		return
 	}
 
 	type EventTestType struct {
