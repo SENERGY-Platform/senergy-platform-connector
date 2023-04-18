@@ -54,6 +54,14 @@ func createConf(authentication string) (config configuration.Config, err error) 
 	return config, err
 }
 
+func TestMqtt(t *testing.T) {
+	t.Skip("collection of test")
+	t.Run("TestWithPasswordAuthenticationAtMQTT", TestWithPasswordAuthenticationAtMQTT)
+	t.Run("TestWithCertificateAuthenticationAtMQTT", TestWithCertificateAuthenticationAtMQTT)
+	t.Run("TestWithPasswordAuthenticationAtMQTT5", TestWithPasswordAuthenticationAtMQTT5)
+	t.Run("TestWithCertificateAuthenticationAtMQTT5", TestWithCertificateAuthenticationAtMQTT5)
+}
+
 func TestWithPasswordAuthenticationAtMQTT(t *testing.T) {
 	authenticationMethod := "password"
 	testClient(authenticationMethod, client.MQTT4, t)

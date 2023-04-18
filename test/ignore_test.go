@@ -58,6 +58,8 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.PublishToPostgres = true
+	config.AuthClientId = "connector"
+	config.AuthClientSecret = "secret"
 
 	clientId := ""
 

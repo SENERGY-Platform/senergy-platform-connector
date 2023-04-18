@@ -61,7 +61,6 @@ func (this *Client) startMqtt5() (err error) {
 			Router: paho.NewStandardRouter(),
 		},
 	}
-	config.SetUsernamePassword(this.username, []byte(this.password))
 
 	if this.authenticationMethod == "certificate" {
 		dir, err := os.Getwd()
@@ -75,6 +74,8 @@ func (this *Client) startMqtt5() (err error) {
 			return err
 		}
 		config.TlsCfg = tlsConfig
+	} else {
+		config.SetUsernamePassword(this.username, []byte(this.password))
 	}
 
 	timeout, _ := context.WithTimeout(context.Background(), time.Minute)

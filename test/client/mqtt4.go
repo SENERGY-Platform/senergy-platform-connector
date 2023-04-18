@@ -29,8 +29,6 @@ import (
 
 func (this *Client) startMqtt4() error {
 	options := paho.NewClientOptions().
-		SetPassword(this.password).
-		SetUsername(this.username).
 		SetClientID(this.HubId).
 		SetAutoReconnect(true).
 		SetCleanSession(true).
@@ -59,6 +57,8 @@ func (this *Client) startMqtt4() error {
 			return err
 		}
 		options = options.SetTLSConfig(tlsConfig)
+	} else {
+		options = options.SetUsername(this.username).SetPassword(this.password)
 	}
 
 	this.mqtt = paho.NewClient(options)
