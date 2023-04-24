@@ -31,7 +31,6 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			{Source: testcontainers.GenericBindMountSource{HostPath: filepath.Join(dir, "mqtt_certs", "ca")}, Target: "/etc/certs/ca"},
 		}
 		env = map[string]string{
-			"DOCKER_VERNEMQ_ACCEPT_EULA":                             "yes",
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL":                     "debug",
 			"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY":              "random",
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS":                   "on",
@@ -56,7 +55,6 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		}
 	} else {
 		env = map[string]string{
-			"DOCKER_VERNEMQ_ACCEPT_EULA":                           "yes",
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL":                   "debug",
 			"DOCKER_VERNEMQ_SHARED_SUBSCRIPTION_POLICY":            "random",
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_WEBHOOKS":                 "on",
@@ -99,8 +97,9 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:           "erlio/docker-vernemq:latest",
+			Image:           "ghcr.io/senergy-platform/vernemq:prod",
 			Tmpfs:           map[string]string{},
+			ExposedPorts:    ports,
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
 			AlwaysPullImage: true,
 			Env:             env,
