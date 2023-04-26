@@ -4,13 +4,13 @@ go 1.20
 
 require (
 	github.com/SENERGY-Platform/converter v0.0.0-20230413113429-b490a96aabba
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230414071410-091d73d966ea
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230426092511-675dc3eb42ee
 	github.com/Shopify/sarama v1.38.1
 	github.com/eclipse/paho.golang v0.11.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/lib/pq v1.10.7
+	github.com/lib/pq v1.10.9
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/testcontainers/testcontainers-go v0.19.1-0.20230411085931-6e83fc2c10b3
 	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a
@@ -22,6 +22,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/RyanCarrier/dijkstra v1.2.0 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20230406081245-2b17534509d4 // indirect
+	github.com/SENERGY-Platform/permission-search v0.0.0-20230426081704-b2797db04370 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
@@ -60,7 +61,7 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/klauspost/compress v1.16.4 // indirect
+	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
@@ -79,7 +80,7 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da // indirect
+	github.com/samuel/go-zookeeper v0.0.0-20200724154423-2164a8ac840e // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
