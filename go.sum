@@ -17,6 +17,8 @@ github.com/SENERGY-Platform/permission-search v0.0.0-20230426081704-b2797db04370
 github.com/SENERGY-Platform/permission-search v0.0.0-20230426081704-b2797db04370/go.mod h1:rQaIJQJJagS7nloXUY0HfpynQei8U3gPBzAn7k4RmdM=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230426092511-675dc3eb42ee h1:s1jFlbgIZuGbZkgHUhNPGOvB6AAHFEtjIJJ+RaaKF4k=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230426092511-675dc3eb42ee/go.mod h1:nFLmsSGW6jMqyvXgPPozxRmGuz373y0ND7USuF/47bw=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230516110647-6795752e65e9 h1:ewh3/pmxsKpeUoM+5rjhP35TcLhfG5iuSuaoMc5sk70=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230516110647-6795752e65e9/go.mod h1:nFLmsSGW6jMqyvXgPPozxRmGuz373y0ND7USuF/47bw=
 github.com/Shopify/sarama v1.38.1 h1:lqqPUPQZ7zPqYlWpTh+LQ9bhYNu2xJL6k1SJN4WVe2A=
 github.com/Shopify/sarama v1.38.1/go.mod h1:iwv9a67Ha8VNa+TifujYoWGxWnu2kNVAQdSdZ4X2o5g=
 github.com/Shopify/toxiproxy/v2 v2.5.0 h1:i4LPT+qrSlKNtQf5QliVjdP08GyAH8+BUIc9gT0eahc=
