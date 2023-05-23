@@ -65,6 +65,7 @@ func TestWithErrorClient(t *testing.T) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.PublishToPostgres = true
+	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 
 	notifyCalls := map[string][]string{}
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -280,6 +281,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 	config.MqttErrorOnEventValidationError = true
+	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
@@ -711,6 +713,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 	config.MqttErrorOnEventValidationError = true
+	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)

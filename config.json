@@ -94,6 +94,8 @@
     "ConnectionLimitCount": 60,
     "ConnectionLimitDurationInSeconds": 600,
 
+    "ForceCommandSubscriptionServiceSingleLevelWildcard": true,
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

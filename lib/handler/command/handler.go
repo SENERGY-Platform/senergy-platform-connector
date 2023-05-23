@@ -17,6 +17,7 @@
 package command
 
 import (
+	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -43,7 +44,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	if !strings.HasPrefix(topic, "command") {
 		return handler.Unhandled, nil
 	}
-	prefix, deviceUri, _, err := handler.ParseTopic(topic)
+	prefix, deviceUri, serviceUri, err := handler.ParseTopic(topic)
 	if err != nil {
 		return handler.Rejected, err
 	}
@@ -51,6 +52,9 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 		//may happen if topic is something like "commandhandling/foo/bar"
 		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is command:", topic)
 		return handler.Unhandled, nil
+	}
+	if this.config.ForceCommandSubscriptionServiceSingleLevelWildcard && serviceUri != "+" {
+		return handler.Error, errors.New("expect a single level wild card in command subscription: command/{device_id}/+")
 	}
 	token, err := this.connector.Security().GetCachedUserToken(user)
 	if err != nil {

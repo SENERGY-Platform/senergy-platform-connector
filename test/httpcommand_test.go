@@ -58,6 +58,7 @@ func TestHttpCommand(t *testing.T) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.PublishToPostgres = true
+	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)

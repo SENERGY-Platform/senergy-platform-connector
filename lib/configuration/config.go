@@ -133,6 +133,8 @@ type ConfigStruct struct {
 
 	ConnectionLimitCount             int
 	ConnectionLimitDurationInSeconds int
+
+	ForceCommandSubscriptionServiceSingleLevelWildcard bool
 }
 
 type Config = *ConfigStruct

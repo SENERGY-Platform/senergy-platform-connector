@@ -51,6 +51,7 @@ func createConf(authentication string) (config configuration.Config, err error) 
 	config.PublishToPostgres = true
 	config.MqttAuthMethod = authentication
 	config.AuthClientId = "connector"
+	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 	return config, err
 }
 
