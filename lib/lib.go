@@ -32,6 +32,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/notifications"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 	"github.com/Shopify/sarama"
 	"log"
 	"strings"
@@ -148,6 +149,12 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
+	m, err := metrics.NewMetrics("senergy_connector")
+	if err != nil {
+		log.Println("ERROR: metrics ", err)
+		return err
+	}
+
 	handlers := []handler.Handler{
 		event.New(config, connector),
 		response.New(config, connector, correlationservice),
@@ -155,7 +162,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		process.New(connector),
 		export.New(connector.Security()),
 		notifications.New(connector.Security()),
-		errormessage.New(connector, correlationservice),
+		errormessage.New(connector, correlationservice, m),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))

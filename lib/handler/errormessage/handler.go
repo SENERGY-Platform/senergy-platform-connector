@@ -20,20 +20,23 @@ import (
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 	"log"
 	"strings"
 )
 
-func New(connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService) *Handler {
+func New(connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService, metrics *metrics.Metrics) *Handler {
 	return &Handler{
 		connector:   connector,
 		correlation: correlation,
+		metrics:     metrics,
 	}
 }
 
 type Handler struct {
 	connector   *platform_connector_lib.Connector
 	correlation *correlation.CorrelationService
+	metrics     *metrics.Metrics
 }
 
 func (this *Handler) Subscribe(clientId string, user string, topic string) (result handler.Result, err error) {
@@ -48,6 +51,9 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if topicParts[0] != "error" {
 		return handler.Unhandled, nil
 	}
+
+	this.metrics.ClientErrorMessages.Inc()
+
 	switch {
 	case len(topicParts) == 1:
 		this.handleGeneralError(user, clientId, payload)
