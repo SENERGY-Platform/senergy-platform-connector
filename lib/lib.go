@@ -149,7 +149,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
-	m, err := metrics.NewMetrics("senergy_connector")
+	m, err := metrics.NewMetrics()
 	if err != nil {
 		log.Println("ERROR: metrics ", err)
 		return err

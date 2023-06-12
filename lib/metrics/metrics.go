@@ -28,10 +28,10 @@ type Metrics struct {
 }
 
 // NewMetrics creates metrics will be exposed /metrics by github.com/SENERGY-Platform/platform-connector-lib/statistics/statistics.go
-func NewMetrics(prefix string) (*Metrics, error) {
+func NewMetrics() (*Metrics, error) {
 	m := &Metrics{
 		ClientErrorMessages: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: prefix + "_client_error_messages",
+			Name: "senergy_connector_client_error_messages",
 			Help: "count of error messages received since startup",
 		}),
 	}
