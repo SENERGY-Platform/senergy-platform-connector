@@ -54,11 +54,10 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 	hub, err := connector.Iot().GetHub(msg.ClientId, token, options.Silent)
 	if err != nil {
 		if err == security.ErrorNotFound {
+			log.Println("WARNING: no hub found")
 			return
 		}
-		if config.Debug {
-			log.Println("DEBUG: InitWebhooks::disconnect::connector.Iot().GetHubDevicesAsId", err)
-		}
+		log.Println("ERROR:", err)
 		return
 	}
 	err = logger.LogHubDisconnect(msg.ClientId)
