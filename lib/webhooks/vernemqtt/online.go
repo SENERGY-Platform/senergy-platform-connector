@@ -43,9 +43,7 @@ func online(writer http.ResponseWriter, request *http.Request, config configurat
 		sendError(writer, err.Error(), true)
 		return
 	}
-	if config.Debug {
-		log.Println("DEBUG: /online", msg)
-	}
+	log.Println("/online", msg)
 
 	token, err := connector.Security().Access()
 	if err != nil {
