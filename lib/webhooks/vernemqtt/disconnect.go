@@ -45,7 +45,7 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 		log.Println("ERROR: InitWebhooks::disconnect::jsondecoding", err)
 		return
 	}
-	log.Println("/disconnect", msg)
+	log.Println("/disconnect", msg.ClientId)
 	token, err := connector.Security().Access()
 	if err != nil {
 		log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)

@@ -42,7 +42,7 @@ func login(writer http.ResponseWriter, request *http.Request, config configurati
 		sendError(writer, err.Error(), true)
 		return
 	}
-	log.Println("/login", msg)
+	log.Println("/login", msg.Username, msg.ClientId, msg.CleanStart, msg.CleanSession)
 
 	authenticationMethod := config.MqttAuthMethod
 
