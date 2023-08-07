@@ -92,7 +92,8 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !this.config.MqttPublishAuthOnly {
 		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if err != nil {
-			if err == security.ErrorNotFound {
+			if errors.Is(err, security.ErrorNotFound) ||
+				errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
 				return handler.Rejected, err
 			} else if !this.config.MqttErrorOnEventValidationError &&
 				(errors.Is(err, msgvalidation.ErrUnexpectedField) ||
