@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/marshalling"
 	"github.com/SENERGY-Platform/platform-connector-lib/msgvalidation"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -96,7 +97,8 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 				errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
 				return handler.Rejected, err
 			} else if !this.config.MqttErrorOnEventValidationError &&
-				(errors.Is(err, msgvalidation.ErrUnexpectedField) ||
+				(marshalling.IsMarshallingErr(err) ||
+					errors.Is(err, msgvalidation.ErrUnexpectedField) ||
 					errors.Is(err, msgvalidation.ErrMissingField) ||
 					errors.Is(err, msgvalidation.ErrUnexpectedType)) {
 				return handler.Accepted, nil

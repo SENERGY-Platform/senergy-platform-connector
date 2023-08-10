@@ -18,6 +18,7 @@ package lib
 
 import (
 	"context"
+	"github.com/IBM/sarama"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
@@ -33,7 +34,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
-	"github.com/Shopify/sarama"
 	"log"
 	"strings"
 	"time"
