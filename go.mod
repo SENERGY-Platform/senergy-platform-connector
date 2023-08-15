@@ -7,7 +7,7 @@ toolchain go1.21.0
 require (
 	github.com/IBM/sarama v1.40.1
 	github.com/SENERGY-Platform/converter v0.0.0-20230413113429-b490a96aabba
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230810081902-a15739e31ad5
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230815113517-0ac2d5f283fa
 	github.com/eclipse/paho.golang v0.11.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.3.0
@@ -25,7 +25,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/RyanCarrier/dijkstra v1.3.0 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20230724134144-c26fd506045f // indirect
-	github.com/SENERGY-Platform/permission-search v0.0.0-20230808130449-7a79427102e9 // indirect
+	github.com/SENERGY-Platform/permission-search v0.0.0-20230814064430-b5ed112b136a // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230611145640-acc696258285 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/docker/docker v24.0.5+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/eapache/go-resiliency v1.3.0 // indirect
+	github.com/eapache/go-resiliency v1.4.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
