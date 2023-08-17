@@ -125,6 +125,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		KafkaTopicConfigs: config.KafkaTopicConfigs,
 
 		NotificationsIgnoreDuplicatesWithinS: config.NotificationsIgnoreDuplicatesWithinS,
+		NotificationUserOverwrite:            config.NotificationUserOverwrite,
 	})
 
 	if config.Debug {

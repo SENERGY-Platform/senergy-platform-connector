@@ -124,6 +124,7 @@ type ConfigStruct struct {
 	PermQueryUrl    string
 
 	NotificationsIgnoreDuplicatesWithinS int
+	NotificationUserOverwrite            string
 
 	MqttErrorOnEventValidationError bool
 

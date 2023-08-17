@@ -18,16 +18,10 @@ github.com/SENERGY-Platform/converter v0.0.0-20230413113429-b490a96aabba h1:7//D
 github.com/SENERGY-Platform/converter v0.0.0-20230413113429-b490a96aabba/go.mod h1:MftDXexxLegRn0BKpbfBlBLo6OU9xSYiVtIi21DujUk=
 github.com/SENERGY-Platform/models/go v0.0.0-20230724134144-c26fd506045f h1:oBq0lbW2zWB5do7DTsLjO+E5Z2AKkYPeRe2CRgb43v0=
 github.com/SENERGY-Platform/models/go v0.0.0-20230724134144-c26fd506045f/go.mod h1:bCREPNRN4P8oxLgpC3/ZKK4jXSy4MSPXoiomhohE+aw=
-github.com/SENERGY-Platform/permission-search v0.0.0-20230808130449-7a79427102e9 h1:UBge1r12X7g1QwMUFC9fiCiUzgK5Ymm+QomVAQddIrc=
-github.com/SENERGY-Platform/permission-search v0.0.0-20230808130449-7a79427102e9/go.mod h1:BrTuD4BECfM7u8u5B5TmaNTemckqRTaY/MWPv4hMTGY=
 github.com/SENERGY-Platform/permission-search v0.0.0-20230814064430-b5ed112b136a h1:UOWNCCwsTWPuwvHSsQ3jwcL7soEyivmGHc7wkt/jyXo=
 github.com/SENERGY-Platform/permission-search v0.0.0-20230814064430-b5ed112b136a/go.mod h1:BrTuD4BECfM7u8u5B5TmaNTemckqRTaY/MWPv4hMTGY=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230810073124-28af5ee6c434 h1:QtfMEnaZcw16Oa+l2SI/X/9yGyKLSR02G9Fg7RPJMgM=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230810073124-28af5ee6c434/go.mod h1:NxuTyQu1oSUoFyEUTjOhBUbQbAoDXGS5wUT4t2NBBW8=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230810081902-a15739e31ad5 h1:IubxT2UCXLBdP7Mq53MbPUw2S5tyCpk3Dn3gUuKUmFc=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230810081902-a15739e31ad5/go.mod h1:NxuTyQu1oSUoFyEUTjOhBUbQbAoDXGS5wUT4t2NBBW8=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230815113517-0ac2d5f283fa h1:gzCjgmoDdpQ59RwSZnTWwXM+uiWpku/1Hk31h86EkbA=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230815113517-0ac2d5f283fa/go.mod h1:DG2bBm2KKQehS9nrJFQLZHNTmCeDCUiVb7W3m+GS8Bo=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230817071608-7ce4db35e829 h1:Sivgmu52OsBErJhO9RJrON4vY4pUlmbGy+80FDRbM64=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20230817071608-7ce4db35e829/go.mod h1:DG2bBm2KKQehS9nrJFQLZHNTmCeDCUiVb7W3m+GS8Bo=
 github.com/Shopify/toxiproxy/v2 v2.5.0 h1:i4LPT+qrSlKNtQf5QliVjdP08GyAH8+BUIc9gT0eahc=
 github.com/Shopify/toxiproxy/v2 v2.5.0/go.mod h1:yhM2epWtAmel9CB8r2+L+PCmhH6yH2pITaPAo7jxJl0=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -64,8 +58,6 @@ github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKoh
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/eapache/go-resiliency v1.3.0 h1:RRL0nge+cWGlxXbUzJ7yMcq6w2XBEr19dCN6HECGaT0=
-github.com/eapache/go-resiliency v1.3.0/go.mod h1:5yPzW0MIvSe0JDsv0v+DvcjEv2FyD6iZYSs1ZI+iQho=
 github.com/eapache/go-resiliency v1.4.0 h1:3OK9bWpPk5q6pbFAaYSEwD9CLUSHG8bnZuqX2yMt3B0=
 github.com/eapache/go-resiliency v1.4.0/go.mod h1:5yPzW0MIvSe0JDsv0v+DvcjEv2FyD6iZYSs1ZI+iQho=
 github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 h1:Oy0F4ALJ04o5Qqpdz8XLIpNA3WM/iSIXqxtqo7UGVws=
@@ -114,7 +106,6 @@ github.com/hashicorp/go-uuid v1.0.3 h1:2gKiV6YVmrJ1i2CKKa9obLvRieoRGviZFL26PcT/C
 github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/imdario/mergo v0.3.16 h1:wwQJbIsHYGMUyLSPrEq1CT16AhnhNJQ51+4fdHUnCl4=
 github.com/imdario/mergo v0.3.16/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=
-github.com/jackc/chunkreader v1.0.0 h1:4s39bBR8ByfqH+DKm8rQA3E1LHZWB9XWcrz8fqaZbe0=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
 github.com/jackc/chunkreader/v2 v2.0.0/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=
 github.com/jackc/chunkreader/v2 v2.0.1 h1:i+RDz65UE+mmpjTfyz0MoVTnzeYxroil2G82ki7MGG8=
@@ -136,7 +127,6 @@ github.com/jackc/pgmock v0.0.0-20210724152146-4ad1a8207f65 h1:DadwsjnMwFjfWc9y5W
 github.com/jackc/pgmock v0.0.0-20210724152146-4ad1a8207f65/go.mod h1:5R2h2EEX+qri8jOWMbJCtaPWkrrNc7OHwsp2TCqp7ak=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
-github.com/jackc/pgproto3 v1.1.0 h1:FYYE4yRw+AgI8wXIinMlNjBbp/UitDJwfj5LqqewP1A=
 github.com/jackc/pgproto3 v1.1.0/go.mod h1:eR5FA3leWg7p9aeAqi37XOTgTIbkABlvcPB3E5rlc78=
 github.com/jackc/pgproto3/v2 v2.0.0-alpha1.0.20190420180111-c116219b62db/go.mod h1:bhq50y+xrl9n5mRYyCBFKkpRVTLYJVWeCc+mEAI3yXA=
 github.com/jackc/pgproto3/v2 v2.0.0-alpha1.0.20190609003834-432c2951c711/go.mod h1:uH0AWtUmuShn0bcesswc4aBTWGvw0cAxIJp+6OB//Wg=
