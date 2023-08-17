@@ -126,6 +126,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 
 		NotificationsIgnoreDuplicatesWithinS: config.NotificationsIgnoreDuplicatesWithinS,
 		NotificationUserOverwrite:            config.NotificationUserOverwrite,
+		NotificationSlackWebhookUrl:          config.NotificationSlackWebhookUrl,
 	})
 
 	if config.Debug {

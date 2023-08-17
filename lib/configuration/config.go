@@ -125,6 +125,7 @@ type ConfigStruct struct {
 
 	NotificationsIgnoreDuplicatesWithinS int
 	NotificationUserOverwrite            string
+	NotificationSlackWebhookUrl          string
 
 	MqttErrorOnEventValidationError bool
 
