@@ -24,7 +24,7 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/RyanCarrier/dijkstra v1.3.0 // indirect
-	github.com/SENERGY-Platform/models/go v0.0.0-20230724134144-c26fd506045f // indirect
+	github.com/SENERGY-Platform/models/go v0.0.0-20230824080159-16585960df38 // indirect
 	github.com/SENERGY-Platform/permission-search v0.0.0-20230814064430-b5ed112b136a // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230611145640-acc696258285 // indirect
