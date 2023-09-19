@@ -33,6 +33,7 @@ func ProtocolsEndpoints(control *Controller, router *httprouter.Router) {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+		protocol.GenerateId()
 		result, err, errCode := control.PublishProtocolCreate(protocol)
 		if err != nil {
 			http.Error(writer, err.Error(), errCode)
