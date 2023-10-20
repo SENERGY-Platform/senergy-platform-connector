@@ -2,12 +2,11 @@ package docker
 
 import (
 	"context"
-	"fmt"
-	"github.com/testcontainers/testcontainers-go"
-	"io"
+	"errors"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"log"
 	"net"
-	"os"
+	"time"
 )
 
 func getFreePort() (int, error) {
@@ -24,69 +23,30 @@ func getFreePort() (int, error) {
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
-func Dockerlog(ctx context.Context, container testcontainers.Container, name string) error {
-	l, err := container.Logs(ctx)
-	if err != nil {
-		return err
+func waitretry(timeout time.Duration, f func(ctx context.Context, target wait.StrategyTarget) error) func(ctx context.Context, target wait.StrategyTarget) error {
+	return func(ctx context.Context, target wait.StrategyTarget) (err error) {
+		return retry(timeout, func() error {
+			return f(ctx, target)
+		})
 	}
-	out := &LogWriter{logger: log.New(os.Stdout, "["+name+"] ", log.LstdFlags)}
-	go func() {
-		_, err := io.Copy(out, l)
+}
+
+func retry(timeout time.Duration, f func() error) (err error) {
+	err = errors.New("initial")
+	start := time.Now()
+	for i := int64(1); err != nil && time.Since(start) < timeout; i++ {
+		err = f()
 		if err != nil {
-			log.Println("ERROR: unable to copy docker log", err)
-		}
-	}()
-	return nil
-}
-
-type LogWriter struct {
-	logger *log.Logger
-}
-
-func (this *LogWriter) Write(p []byte) (n int, err error) {
-	this.logger.Print(string(p))
-	return len(p), nil
-}
-
-func Forward(ctx context.Context, fromPort int, toAddr string) error {
-	log.Println("forward", fromPort, "to", toAddr)
-	incoming, err := net.Listen("tcp", fmt.Sprintf(":%d", fromPort))
-	if err != nil {
-		return err
-	}
-	go func() {
-		defer log.Println("closed forward incoming")
-		<-ctx.Done()
-		incoming.Close()
-	}()
-	go func() {
-		for {
-			client, err := incoming.Accept()
-			if err != nil {
-				log.Println("FORWARD ERROR:", err)
-				return
+			log.Println("ERROR: :", err)
+			wait := time.Duration(i) * time.Second
+			if time.Since(start)+wait < timeout {
+				log.Println("ERROR: retry after:", wait.String())
+				time.Sleep(wait)
+			} else {
+				time.Sleep(time.Since(start) + wait - timeout)
+				return f()
 			}
-			go handleForwardClient(client, toAddr)
 		}
-	}()
-	return nil
-}
-
-func handleForwardClient(client net.Conn, addr string) {
-	//log.Println("new forward client")
-	target, err := net.Dial("tcp", addr)
-	if err != nil {
-		log.Println("FORWARD ERROR:", err)
-		return
 	}
-	go func() {
-		defer target.Close()
-		defer client.Close()
-		io.Copy(target, client)
-	}()
-	go func() {
-		defer target.Close()
-		defer client.Close()
-		io.Copy(client, target)
-	}()
+	return err
 }

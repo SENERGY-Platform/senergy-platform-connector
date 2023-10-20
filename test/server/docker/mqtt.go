@@ -117,11 +117,6 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		log.Println("DEBUG: remove container mqtt", c.Terminate(context.Background()))
 	}()
 
-	err = Dockerlog(ctx, c, "MQTT")
-	if err != nil {
-		return "", "", err
-	}
-
 	ipAddress, err := c.ContainerIP(ctx)
 	if err != nil {
 		return "", "", err

@@ -89,7 +89,7 @@
     "PermQueryUrl": "",
     "NotificationsIgnoreDuplicatesWithinS": 3600,
     "NotificationUserOverwrite": "",
-    "NotificationSlackWebhookUrl": "",
+    "DeveloperNotificationUrl": "http://api.developer-notifications:8080",
 
     "MqttErrorOnEventValidationError": false,
 

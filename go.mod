@@ -5,9 +5,9 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/IBM/sarama v1.41.2
+	github.com/IBM/sarama v1.41.3
 	github.com/SENERGY-Platform/converter v0.0.0-20230829101037-a44339c413f0
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20231016075812-114d222c2706
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20231020071420-3e427f845516
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.3.1
@@ -16,7 +16,6 @@ require (
 	github.com/prometheus/client_golang v1.17.0
 	github.com/segmentio/kafka-go v0.4.44
 	github.com/testcontainers/testcontainers-go v0.25.0
-	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a
 )
 
 require (
@@ -24,8 +23,9 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/Microsoft/hcsshim v0.11.1 // indirect
+	github.com/Microsoft/hcsshim v0.11.2 // indirect
 	github.com/RyanCarrier/dijkstra v1.3.0 // indirect
+	github.com/SENERGY-Platform/developer-notifications v0.0.0-20231019073933-3a60bb47e556 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20230824080159-16585960df38 // indirect
 	github.com/SENERGY-Platform/permission-search v0.0.0-20230829121111-76c8c176bddb // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -70,9 +70,9 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.17.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
+	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
@@ -85,14 +85,12 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.44.0 // indirect
+	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.9 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/slack-go/slack v0.12.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
@@ -104,8 +102,8 @@ require (
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231012201019-e917dd12ba7a // indirect
-	google.golang.org/grpc v1.58.3 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231016165738-49dd2c1f3d0b // indirect
+	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-playground/colors.v1 v1.2.0 // indirect
 )
