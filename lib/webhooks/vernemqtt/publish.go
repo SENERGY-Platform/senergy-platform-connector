@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"log"
@@ -64,7 +65,7 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 			sendError(writer, err.Error(), true)
 			return
 		}
-
+		statistics.SourceReceive(float64(len(payload)), msg.Username)
 		for _, h := range handlers {
 			handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload, msg.Qos)
 			if err != nil && config.Debug {
