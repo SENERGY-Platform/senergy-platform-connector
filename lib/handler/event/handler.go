@@ -78,6 +78,10 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	}
 	if !this.config.CheckHub {
 		if err := handler.CheckEvent(this.connector, token, deviceUri, serviceUri); err != nil {
+			if this.config.Debug {
+				log.Println("DEBUG: check event was not successful: %s", err)
+			}
+
 			if err == handler.ServiceNotFound {
 				if this.config.Debug {
 					log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
@@ -93,6 +97,9 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !this.config.MqttPublishAuthOnly {
 		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if err != nil {
+			if this.config.Debug {
+				log.Println("DEBUG: cant handle device event", err)
+			}
 			if errors.Is(err, security.ErrorNotFound) ||
 				errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
 				return handler.Rejected, err
