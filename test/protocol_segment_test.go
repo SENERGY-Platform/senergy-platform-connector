@@ -129,7 +129,7 @@ func TestMultipleProtocolSegments(t *testing.T) {
 	}
 
 	t.Log("publish events")
-	err = c.Publish("fog/analytics/analytics-foo", map[string]interface{}{"operator_id": "foo"}, 2)
+	err = c.Publish("fog/analytics/upstream/messages/analytics-foo", map[string]interface{}{"operator_id": "foo"}, 2)
 	if err != nil {
 		t.Error(err)
 		return

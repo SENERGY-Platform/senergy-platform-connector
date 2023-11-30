@@ -19,9 +19,13 @@ package fog
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
+	analyticsFogUpstreamLib "github.com/SENERGY-Platform/analytics-fog-lib/lib/upstream"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+
 	"strings"
 )
 
@@ -32,15 +36,13 @@ type ProducerProvider interface {
 func NewHandler(producerProvider ProducerProvider, fogTopicPrefix string) *Handler {
 	return &Handler{
 		producerProvider:        producerProvider,
-		fogTopicPrefix:          fogTopicPrefix,
-		fogAnalyticsTopicPrefix: fogTopicPrefix + "analytics/",
+		fogTopicPrefix: fogTopicPrefix,
 	}
 }
 
 type Handler struct {
 	producerProvider        ProducerProvider
-	fogTopicPrefix          string
-	fogAnalyticsTopicPrefix string
+	fogTopicPrefix string
 }
 
 type Result = handler.Result
@@ -71,10 +73,17 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !strings.HasPrefix(topic, this.fogTopicPrefix) {
 		return Unhandled, nil
 	}
-	if !strings.HasPrefix(topic, this.fogAnalyticsTopicPrefix) {
+
+	if !strings.HasPrefix(topic, this.fogTopicPrefix + "analytics/") {
 		return Accepted, nil
 	}
-	target := strings.Replace(topic, this.fogAnalyticsTopicPrefix, "", 1)
+
+	if !strings.HasPrefix(topic, analyticsFogUpstreamLib.CloudUpstreamTopic) {
+		return Accepted, nil
+	}
+	
+	target := strings.Replace(topic, analyticsFogUpstreamLib.CloudUpstreamTopic + "/", "", 1)
+
 	key, err := this.getKey(payload)
 	if err != nil {
 		return Error, fmt.Errorf("unsupported message format: %w", err)
@@ -83,6 +92,8 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if err != nil {
 		return Error, err
 	}
+
+	log.Printf("Try to publish to: %s", target)
 	err = producer.ProduceWithKey(target, string(payload), key)
 	if err != nil {
 		return Error, err

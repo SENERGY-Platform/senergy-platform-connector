@@ -16,6 +16,8 @@ github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7
 github.com/Microsoft/hcsshim v0.11.4/go.mod h1:smjE4dvqPX9Zldna+t5FG3rnoHhaB7QYxPRqGcpAD9w=
 github.com/RyanCarrier/dijkstra v1.3.0 h1:lqrLMwKy8PtyDpWqZpcbzr9KkqnLJrDdQ9u3iNyNxm8=
 github.com/RyanCarrier/dijkstra v1.3.0/go.mod h1:9egjhC7eVsfREX6NrYS+1wHzk9C/9v2Cz26/bqpjjTc=
+github.com/SENERGY-Platform/analytics-fog-lib v1.0.17 h1:qfHqF/rpQ7m235m/itrAcmPvr49FyqdbVM3X0BGnk2E=
+github.com/SENERGY-Platform/analytics-fog-lib v1.0.17/go.mod h1:WVm6fWbrcAKJ2V+rUXlKQNnVp8bd+11AYJxSlxA6F+Q=
 github.com/SENERGY-Platform/converter v0.0.4 h1:Fajw2h4jrkIWG4sLetzURHMLbCwDlFK+ITRreKFJBoM=
 github.com/SENERGY-Platform/converter v0.0.4/go.mod h1:btnyQ+HafCfU36KacJKMBjUKbGpoQr+/8rGr5X6k1ZI=
 github.com/SENERGY-Platform/developer-notifications v0.0.1 h1:GwL1Q8TNXUAbUHHClNf8ggsIS/JaIIz5Pf7wb2dRzLI=

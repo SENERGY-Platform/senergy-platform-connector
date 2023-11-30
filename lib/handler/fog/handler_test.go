@@ -73,7 +73,7 @@ func TestHandlerPublish(t *testing.T) {
 	))
 
 	t.Run(testFogPublish(
-		"fog/analytics/foo",
+		"fog/analytics/upstream/messages/foo",
 		``,
 		handler,
 		km,
@@ -82,7 +82,7 @@ func TestHandlerPublish(t *testing.T) {
 	))
 
 	t.Run(testFogPublish(
-		"fog/analytics/foo",
+		"fog/analytics/upstream/messages/foo",
 		`{"operator_id":"bar"}`,
 		handler,
 		km,
