@@ -79,7 +79,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !this.config.CheckHub {
 		if err := handler.CheckEvent(this.connector, token, deviceUri, serviceUri); err != nil {
 			if this.config.Debug {
-				log.Println("DEBUG: check event was not successful: %s", err)
+				log.Println("DEBUG: check event was not successful: ", err)
 			}
 
 			if err == handler.ServiceNotFound {
