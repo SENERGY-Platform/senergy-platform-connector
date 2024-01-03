@@ -63,7 +63,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), int(config.CorrelationMaxIdleConns), correlationTimeout, memcaacheUrls...)
 
-	connector := platform_connector_lib.New(platform_connector_lib.Config{
+	connector, err := platform_connector_lib.New(platform_connector_lib.Config{
 		PartitionsNum:            config.KafkaPartitionNum,
 		ReplicationFactor:        config.KafkaReplicationFactor,
 		FatalKafkaError:          config.FatalKafkaError,
@@ -128,6 +128,10 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		NotificationUserOverwrite:            config.NotificationUserOverwrite,
 		DeveloperNotificationUrl:             config.DeveloperNotificationUrl,
 	})
+	if err != nil {
+		log.Println("ERROR: lib init", err)
+		return err
+	}
 
 	if config.Debug {
 		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))

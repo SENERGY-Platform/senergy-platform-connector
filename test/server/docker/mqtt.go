@@ -5,9 +5,11 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 )
@@ -16,7 +18,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	log.Println("start mqtt")
 	ports := []string{"1883/tcp"}
 	env := map[string]string{}
-	var mounts testcontainers.ContainerMounts
+	var files []testcontainers.ContainerFile
 	if config.MqttAuthMethod == "certificate" {
 		ports = append(ports, "8883/tcp")
 		caCertificateFileName := "ca.crt"
@@ -26,9 +28,43 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		if err != nil {
 			log.Println(err)
 		}
-		mounts = testcontainers.ContainerMounts{
-			{Source: testcontainers.GenericBindMountSource{HostPath: filepath.Join(dir, "mqtt_certs", "broker")}, Target: "/etc/certs/server"},
-			{Source: testcontainers.GenericBindMountSource{HostPath: filepath.Join(dir, "mqtt_certs", "ca")}, Target: "/etc/certs/ca"},
+		files = []testcontainers.ContainerFile{}
+
+		err = filepath.WalkDir(filepath.Join(dir, "mqtt_certs", "broker"), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				log.Println("ERROR:", err)
+				debug.PrintStack()
+				return err
+			}
+			if !d.IsDir() {
+				sub := strings.TrimPrefix(path, filepath.Join(dir, "mqtt_certs", "broker"))
+				if !strings.HasPrefix(sub, "/") {
+					sub = "/" + sub
+				}
+				files = append(files, testcontainers.ContainerFile{HostFilePath: path, ContainerFilePath: "/opt" + sub, FileMode: 444})
+			}
+			return nil
+		})
+		if err != nil {
+			return "", "", err
+		}
+		err = filepath.WalkDir(filepath.Join(dir, "mqtt_certs", "ca"), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				log.Println("ERROR:", err)
+				debug.PrintStack()
+				return err
+			}
+			if !d.IsDir() {
+				sub := strings.TrimPrefix(path, filepath.Join(dir, "mqtt_certs", "ca"))
+				if !strings.HasPrefix(sub, "/") {
+					sub = "/" + sub
+				}
+				files = append(files, testcontainers.ContainerFile{HostFilePath: path, ContainerFilePath: "/opt" + sub, FileMode: 444})
+			}
+			return nil
+		})
+		if err != nil {
+			return "", "", err
 		}
 		env = map[string]string{
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL":                     "debug",
@@ -48,9 +84,9 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			"DOCKER_VERNEMQ_PLUGINS__VMQ_ACL":                        "off",
 			"DOCKER_VERNEMQ_LISTENER__SSL__REQUIRE_CERTIFICATE":      "on",
 			"DOCKER_VERNEMQ_LISTENER__SSL__USE_IDENTITY_AS_USERNAME": "on",
-			"DOCKER_VERNEMQ_LISTENER__SSL__CAFILE":                   "/etc/certs/ca/" + caCertificateFileName,
-			"DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE":                 "/etc/certs/server/" + serverCertificateFileName,
-			"DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE":                  "/etc/certs/server/" + privateKeyFileName,
+			"DOCKER_VERNEMQ_LISTENER__SSL__CAFILE":                   "/opt/" + caCertificateFileName,
+			"DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE":                 "/opt/" + serverCertificateFileName,
+			"DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE":                  "/opt/" + privateKeyFileName,
 			"DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT":                  "0.0.0.0:8883",
 		}
 	} else {
@@ -103,7 +139,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
 			AlwaysPullImage: true,
 			Env:             env,
-			Mounts:          mounts,
+			Files:           files,
 		},
 		Started: true,
 	})
