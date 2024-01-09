@@ -99,7 +99,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		var info platform_connector_lib.HandledDeviceInfo
 		info, err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if info.DeviceId != "" && info.DeviceTypeId != "" {
-			statistics.DeviceMsgReceive(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
+			statistics.DeviceMsgReceive(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
 		}
 		if err != nil {
 			if this.config.Debug {
@@ -113,13 +113,13 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 					errors.Is(err, msgvalidation.ErrUnexpectedField) ||
 					errors.Is(err, msgvalidation.ErrMissingField) ||
 					errors.Is(err, msgvalidation.ErrUnexpectedType)) {
-				statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
+				statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
 				return handler.Accepted, nil
 			} else {
 				return handler.Error, err
 			}
 		}
-		statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
+		statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
 	}
 	return handler.Accepted, nil
 }

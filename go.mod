@@ -4,9 +4,9 @@ go 1.21.3
 
 require (
 	github.com/IBM/sarama v1.42.1
-	github.com/SENERGY-Platform/analytics-fog-lib v1.0.17
+	github.com/SENERGY-Platform/analytics-fog-lib v1.0.33
 	github.com/SENERGY-Platform/converter v0.0.4
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109112823-b1a686164036
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109133203-1b76d430cc65
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.5.0
