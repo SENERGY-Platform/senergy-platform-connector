@@ -24,8 +24,8 @@ github.com/SENERGY-Platform/models/go v0.0.0-20230824080159-16585960df38 h1:PDvF
 github.com/SENERGY-Platform/models/go v0.0.0-20230824080159-16585960df38/go.mod h1:bCREPNRN4P8oxLgpC3/ZKK4jXSy4MSPXoiomhohE+aw=
 github.com/SENERGY-Platform/permission-search v0.0.1 h1:W8mf8aRUzhfljbO5mRg5rg+pg+cMIJYv4Z2j51dTHok=
 github.com/SENERGY-Platform/permission-search v0.0.1/go.mod h1:TxlFzRwUfDp9gordsK5dehq83AYDavt2876ElMP9n/E=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109095947-17304087f476 h1:52lDK+pDGQSii3mZRfumkDLdxTYSErCD1E4rrUIHWK8=
-github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109095947-17304087f476/go.mod h1:9FxQ5RbpwaoLH8hSCr9VAID82w1lPHgB+rLwVQcaHjU=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109112823-b1a686164036 h1:JB+HFfBq7lRWb3LfU1/t7LnLtI4xiym8xb/+XJ4n7a8=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109112823-b1a686164036/go.mod h1:9FxQ5RbpwaoLH8hSCr9VAID82w1lPHgB+rLwVQcaHjU=
 github.com/SENERGY-Platform/service-commons v0.0.0-20231115074650-7021aeae60e4 h1:bEEbT/oUAT4g+pF1GWA212zJnib5tSrt9wT56VLKwk4=
 github.com/SENERGY-Platform/service-commons v0.0.0-20231115074650-7021aeae60e4/go.mod h1:1JjqDM3qfVrqU37VXRUlLIFRVWbnaXttsMEKNH8yCRA=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

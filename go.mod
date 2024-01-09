@@ -7,7 +7,7 @@ toolchain go1.21.0
 require (
 	github.com/IBM/sarama v1.42.1
 	github.com/SENERGY-Platform/converter v0.0.4
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109095947-17304087f476
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240109112823-b1a686164036
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.5.0
