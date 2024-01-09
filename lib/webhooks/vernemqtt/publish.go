@@ -24,6 +24,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+	"io"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -44,8 +45,14 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 			log.Println("DEBUG: /publish in ", time.Now().Sub(start))
 		}(now)
 	}
+	buf, err := io.ReadAll(request.Body)
+	if err != nil {
+		sendError(writer, err.Error(), true)
+		return
+	}
+	msgSize := float64(len(buf))
 	msg := PublishWebhookMsg{}
-	err := json.NewDecoder(request.Body).Decode(&msg)
+	err = json.Unmarshal(buf, &msg)
 	if err != nil {
 		sendError(writer, err.Error(), true)
 		return
@@ -65,9 +72,9 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 			sendError(writer, err.Error(), true)
 			return
 		}
-		statistics.SourceReceive(float64(len(payload)), msg.Username)
+		statistics.SourceReceive(msgSize, msg.Username)
 		for _, h := range handlers {
-			handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload, msg.Qos)
+			handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload, msg.Qos, msgSize)
 			if err != nil && config.Debug {
 				log.Println("DEBUG:", err)
 			}
@@ -77,6 +84,7 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 				if err != nil {
 					log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
 				}
+				statistics.SourceReceiveHandled(msgSize, msg.Username)
 				return
 			case handler.Rejected:
 				sendIgnoreRedirectAndNotification(writer, connector, msg.Username, msg.ClientId, msg.Topic, err.Error())

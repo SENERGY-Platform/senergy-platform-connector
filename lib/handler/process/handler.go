@@ -36,7 +36,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	return this.checkTopicAccess(clientId, user, topic)
 }
 
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result handler.Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int, size float64) (result handler.Result, err error) {
 	return this.checkTopicAccess(clientId, user, topic)
 }
 

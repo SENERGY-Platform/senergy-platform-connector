@@ -52,7 +52,7 @@ const (
 	Error            = handler.Error
 )
 
-//the user param may be used in the future to check auth
+// the user param may be used in the future to check auth
 func (this *Handler) Subscribe(clientId string, user string, topic string) (result Result, err error) {
 	if this == nil {
 		return Unhandled, nil
@@ -63,8 +63,8 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	return Accepted, nil
 }
 
-//the user param may be used in the future to check auth
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result Result, err error) {
+// the user param may be used in the future to check auth
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int, size float64) (result handler.Result, err error) {
 	if this == nil {
 		return Unhandled, nil
 	}

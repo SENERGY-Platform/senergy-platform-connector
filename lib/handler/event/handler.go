@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/marshalling"
 	"github.com/SENERGY-Platform/platform-connector-lib/msgvalidation"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"log"
@@ -45,7 +46,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	return handler.Unhandled, nil
 }
 
-func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int) (result handler.Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int, size float64) (result handler.Result, err error) {
 	if !strings.HasPrefix(topic, "event") {
 		return handler.Unhandled, nil
 	}
@@ -95,7 +96,11 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		}
 	}
 	if !this.config.MqttPublishAuthOnly {
-		err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
+		var info platform_connector_lib.HandledDeviceInfo
+		info, err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
+		if info.DeviceId != "" && info.DeviceTypeId != "" {
+			statistics.DeviceMsgReceive(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
+		}
 		if err != nil {
 			if this.config.Debug {
 				log.Println("DEBUG: cant handle device event", err)
@@ -108,11 +113,13 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 					errors.Is(err, msgvalidation.ErrUnexpectedField) ||
 					errors.Is(err, msgvalidation.ErrMissingField) ||
 					errors.Is(err, msgvalidation.ErrUnexpectedType)) {
+				statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
 				return handler.Accepted, nil
 			} else {
 				return handler.Error, err
 			}
 		}
+		statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, strings.Join(info.ServiceIds, ","))
 	}
 	return handler.Accepted, nil
 }

@@ -64,7 +64,7 @@ func testSubscribe(topic string, user string, _handler *Handler, expectedResult 
 
 func testPublish(topic string, payload string, _handler *Handler, expectedResult handler.Result) (string, func(t *testing.T)) {
 	return topic, func(t *testing.T) {
-		result, err := _handler.Publish("", "", topic, []byte(payload), 2)
+		result, err := _handler.Publish("", "", topic, []byte(payload), 2, 0)
 		if err != nil {
 			if expectedResult != handler.Error {
 				t.Error(result, err)

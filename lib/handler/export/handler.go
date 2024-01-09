@@ -53,6 +53,6 @@ func (this *Handler) Subscribe(_ string, user string, topic string) (result hand
 	return handler.Accepted, nil
 }
 
-func (this *Handler) Publish(_ string, _ string, _ string, _ []byte, _ int) (result handler.Result, err error) {
+func (this *Handler) Publish(clientId string, user string, topic string, payload []byte, qos int, size float64) (result handler.Result, err error) {
 	return handler.Unhandled, nil
 }

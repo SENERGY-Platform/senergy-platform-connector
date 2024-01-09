@@ -128,7 +128,7 @@ func testFogSubscribe(topic string, handler *Handler, expectedResult Result) (st
 func testFogPublish(topic string, payload string, handler *Handler, km *KafkaMock, expectedResult Result, expectedProduced []KafkaMockMessage) (string, func(t *testing.T)) {
 	return topic, func(t *testing.T) {
 		startCount := len(km.Published)
-		result, err := handler.Publish("", "", topic, []byte(payload), 2)
+		result, err := handler.Publish("", "", topic, []byte(payload), 2, 0)
 		if err != nil {
 			if expectedResult != Error {
 				t.Error(result, err)
