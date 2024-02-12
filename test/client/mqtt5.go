@@ -36,7 +36,8 @@ func (this *Client) startMqtt5() (err error) {
 		return err
 	}
 	config := autopaho.ClientConfig{
-		BrokerUrls: []*url.URL{broker},
+		BrokerUrls:                    []*url.URL{broker},
+		CleanStartOnInitialConnection: true,
 		OnConnectionUp: func(manager *autopaho.ConnectionManager, connack *paho.Connack) {
 			log.Println("mqtt (re)connected")
 			err := this.loadOldSubscriptions()
@@ -75,7 +76,8 @@ func (this *Client) startMqtt5() (err error) {
 		}
 		config.TlsCfg = tlsConfig
 	} else {
-		config.SetUsernamePassword(this.username, []byte(this.password))
+		config.ConnectUsername = this.username
+		config.ConnectPassword = []byte(this.password)
 	}
 
 	timeout, _ := context.WithTimeout(context.Background(), time.Minute)
