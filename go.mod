@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.43.0
 	github.com/SENERGY-Platform/analytics-fog-lib v1.1.5
 	github.com/SENERGY-Platform/converter v0.0.5
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306130844-1605b6768712
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306134041-264f1950322f
 	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.6.0
@@ -14,7 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.19.0
 	github.com/segmentio/kafka-go v0.4.47
-	github.com/testcontainers/testcontainers-go v0.28.0
+	github.com/testcontainers/testcontainers-go v0.29.1
 )
 
 require (
