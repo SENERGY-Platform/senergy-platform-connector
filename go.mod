@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.43.0
 	github.com/SENERGY-Platform/analytics-fog-lib v1.1.5
 	github.com/SENERGY-Platform/converter v0.0.5
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306111314-154015c02c9a
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306130844-1605b6768712
 	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.6.0
@@ -27,7 +27,7 @@ require (
 	github.com/SENERGY-Platform/developer-notifications v0.0.2 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20230824080159-16585960df38 // indirect
 	github.com/SENERGY-Platform/permission-search v0.0.4 // indirect
-	github.com/SENERGY-Platform/service-commons v0.0.0-20240305143349-19fa57c20f9f // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20240306125932-a3fb4550e86c // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
