@@ -6,7 +6,7 @@ require (
 	github.com/IBM/sarama v1.43.0
 	github.com/SENERGY-Platform/analytics-fog-lib v1.1.5
 	github.com/SENERGY-Platform/converter v0.0.5
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306094138-284a472fad85
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20240306111314-154015c02c9a
 	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.6.0
