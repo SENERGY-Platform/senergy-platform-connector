@@ -18,6 +18,7 @@ package metrics
 
 import (
 	"errors"
+	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 )
@@ -29,6 +30,7 @@ type Metrics struct {
 
 // NewMetrics creates metrics will be exposed /metrics by github.com/SENERGY-Platform/platform-connector-lib/statistics/statistics.go
 func NewMetrics() (*Metrics, error) {
+	statistics.Init()
 	m := &Metrics{
 		ClientErrorMessages: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "senergy_connector_client_error_messages",
