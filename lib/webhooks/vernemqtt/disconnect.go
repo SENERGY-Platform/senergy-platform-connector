@@ -18,6 +18,7 @@ package vernemqtt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
@@ -25,11 +26,12 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
 )
 
-func disconnect(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger) {
+func disconnect(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLogger connectionlog.Logger, logger *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {
 			debug.PrintStack()
@@ -45,7 +47,8 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 		log.Println("ERROR: InitWebhooks::disconnect::jsondecoding", err)
 		return
 	}
-	log.Println("/disconnect", msg.ClientId)
+
+	logger.Info("disconnect", "action", "disconnect", "clientId", msg.ClientId)
 	token, err := connector.Security().Access()
 	if err != nil {
 		log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
@@ -53,14 +56,14 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 	}
 	hub, err := connector.Iot().GetHub(msg.ClientId, token, options.Silent)
 	if err != nil {
-		if err == security.ErrorNotFound {
+		if errors.Is(err, security.ErrorNotFound) {
 			log.Println("WARNING: no hub found")
 			return
 		}
 		log.Println("ERROR:", err)
 		return
 	}
-	err = logger.LogHubDisconnect(msg.ClientId)
+	err = connectionLogger.LogHubDisconnect(msg.ClientId)
 	if err != nil {
 		log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
 		return
@@ -71,7 +74,7 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 			log.Println("ERROR: InitWebhooks::disconnect::GetDeviceByLocalId", err)
 			continue
 		}
-		err = logger.LogDeviceDisconnect(device.Id)
+		err = connectionLogger.LogDeviceDisconnect(device.Id)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::LogDeviceDisconnect", err)
 		}

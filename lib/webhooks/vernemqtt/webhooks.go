@@ -91,8 +91,10 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 	}
 }
 
-func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
+func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, connectionLogger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
 	router := http.NewServeMux()
+
+	logger := GetLogger()
 
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
@@ -110,20 +112,20 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
-		login(writer, request, config, connector, connectionLimit)
+		login(writer, request, config, connector, connectionLimit, logger)
 	})
 
 	router.HandleFunc("/online", func(writer http.ResponseWriter, request *http.Request) {
-		online(writer, request, config, connector, logger)
+		online(writer, request, config, connector, connectionLogger)
 	})
 
 	//https://vernemq.com/docs/plugindevelopment/sessionlifecycle.html
 	router.HandleFunc("/disconnect", func(writer http.ResponseWriter, request *http.Request) {
-		disconnect(writer, request, config, connector, logger)
+		disconnect(writer, request, config, connector, connectionLogger, logger)
 	})
 
 	router.HandleFunc("/unsubscribe", func(writer http.ResponseWriter, request *http.Request) {
-		unsubscribe(writer, request, config, connector, logger)
+		unsubscribe(writer, request, config, connector, connectionLogger)
 	})
 
 	var httpHandler http.Handler

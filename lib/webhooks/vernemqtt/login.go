@@ -24,11 +24,12 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
 )
 
-func login(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLimit *connectionlimit.ConnectionLimitHandler) {
+func login(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLimit *connectionlimit.ConnectionLimitHandler, logger *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {
 			debug.PrintStack()
@@ -46,9 +47,9 @@ func login(writer http.ResponseWriter, request *http.Request, config configurati
 	authenticationMethod := config.MqttAuthMethod
 
 	if authenticationMethod == "certificate" {
-		log.Println("/login", msg.PeerAddr, "cert", msg.ClientId, msg.CleanStart, msg.CleanSession)
+		logger.Info("login", "action", "login", "peerAddr", msg.PeerAddr, "loginType", "cert", "clientId", msg.ClientId, "cleanStart", msg.CleanStart, "cleanSession", msg.CleanSession)
 	} else {
-		log.Println("/login", msg.PeerAddr, msg.Username, msg.ClientId, msg.CleanStart, msg.CleanSession)
+		logger.Info("login", "action", "login", "peerAddr", msg.PeerAddr, "loginType", "pw", "username", msg.Username, "clientId", msg.ClientId, "cleanStart", msg.CleanStart, "cleanSession", msg.CleanSession)
 	}
 
 	//log.Println("DEBUG: /login", msg)
