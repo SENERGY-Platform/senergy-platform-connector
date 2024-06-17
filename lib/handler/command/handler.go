@@ -20,6 +20,7 @@ import (
 	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"log"
@@ -56,7 +57,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	if this.config.ForceCommandSubscriptionServiceSingleLevelWildcard && serviceUri != "+" {
 		return handler.Error, errors.New("expect a single level wild card in command subscription: command/{device_id}/+")
 	}
-	token, err := this.connector.Security().GetCachedUserToken(user)
+	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
 	if err != nil {
 		return handler.Error, err
 	}

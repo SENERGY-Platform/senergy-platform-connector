@@ -137,6 +137,8 @@ type ConfigStruct struct {
 	ConnectionLimitDurationInSeconds int
 
 	ForceCommandSubscriptionServiceSingleLevelWildcard bool
+
+	SecRemoteProtocol string
 }
 
 type Config = *ConfigStruct

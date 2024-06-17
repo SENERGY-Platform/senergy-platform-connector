@@ -98,6 +98,8 @@
 
     "ForceCommandSubscriptionServiceSingleLevelWildcard": true,
 
+    "SecRemoteProtocol": "senergy",
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

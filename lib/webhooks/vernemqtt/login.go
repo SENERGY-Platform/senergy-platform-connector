@@ -21,12 +21,14 @@ import (
 	"fmt"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 )
 
 func login(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLimit *connectionlimit.ConnectionLimitHandler, logger *slog.Logger) {
@@ -63,10 +65,18 @@ func login(writer http.ResponseWriter, request *http.Request, config configurati
 		var err error
 
 		if authenticationMethod == "password" {
-			token, err = connector.Security().GetUserToken(msg.Username, msg.Password)
+			token, err = connector.Security().GetUserToken(msg.Username, msg.Password, model.RemoteInfo{
+				Ip:       msg.PeerAddr,
+				Port:     strconv.Itoa(msg.PeerPort),
+				Protocol: config.SecRemoteProtocol,
+			})
 		} else if authenticationMethod == "certificate" {
 			// The user is already authenticated by the TLS client certificate validation in the broker
-			token, err = connector.Security().ExchangeUserToken(msg.Username)
+			token, err = connector.Security().ExchangeUserToken(msg.Username, model.RemoteInfo{
+				Ip:       msg.PeerAddr,
+				Port:     strconv.Itoa(msg.PeerPort),
+				Protocol: config.SecRemoteProtocol,
+			})
 		}
 
 		if err != nil {

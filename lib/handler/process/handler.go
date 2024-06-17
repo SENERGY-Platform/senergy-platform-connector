@@ -19,6 +19,7 @@ package process
 import (
 	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"strings"
@@ -44,7 +45,7 @@ func (this *Handler) checkTopicAccess(clientId string, user string, topic string
 	if !strings.HasPrefix(topic, "processes/") {
 		return handler.Unhandled, nil
 	}
-	token, err := this.connector.Security().GetCachedUserToken(user)
+	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
 	if err != nil {
 		return handler.Error, err
 	}

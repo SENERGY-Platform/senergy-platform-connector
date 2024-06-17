@@ -17,9 +17,10 @@
 package client
 
 import (
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 )
 
 func (this *Client) login() (security.OpenidToken, error) {
-	return security.GetOpenidPasswordToken(this.authUrl, this.clientId, this.clientSecret, this.username, this.password)
+	return security.GetOpenidPasswordToken(this.authUrl, this.clientId, this.clientSecret, this.username, this.password, model.RemoteInfo{})
 }

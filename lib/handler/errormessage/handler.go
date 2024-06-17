@@ -19,6 +19,7 @@ package errormessage
 import (
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 	"log"
@@ -80,7 +81,7 @@ func (this *Handler) handleDeviceError(user string, deviceId string, payload []b
 		log.Println("ERROR: unable to get user id", err)
 		return
 	}
-	token, err := this.connector.Security().GetCachedUserToken(user)
+	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
 	if err != nil {
 		log.Println("ERROR: unable to get user token", err)
 		return
