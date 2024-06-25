@@ -27,6 +27,7 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"log"
 	"strings"
 )
@@ -51,7 +52,12 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !strings.HasPrefix(topic, "event") {
 		return handler.Unhandled, nil
 	}
-	prefix, deviceUri, serviceUri, err := handler.ParseTopic(topic)
+	var prefix, owner, deviceUri, serviceUri string
+	if this.config.TopicsWithOwner {
+		prefix, owner, deviceUri, serviceUri, err = handler.ParseTopicWithOwner(topic)
+	} else {
+		prefix, deviceUri, serviceUri, err = handler.ParseTopic(topic)
+	}
 	if err != nil {
 		return handler.Rejected, err
 	}
@@ -66,6 +72,15 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		return handler.Error, err
 	}
 
+	if this.config.TopicsWithOwner {
+		parsedToken, err := jwt.Parse(string(token))
+		if err != nil {
+			return handler.Error, err
+		}
+		if !parsedToken.IsAdmin() && parsedToken.GetUserId() != owner {
+			return handler.Rejected, errors.New("mismatch between client user and owner in topic")
+		}
+	}
 	if this.config.CheckHub {
 		err := handler.CheckHub(this.connector, token, clientId, deviceUri)
 		if err != nil {

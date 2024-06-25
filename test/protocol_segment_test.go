@@ -100,7 +100,7 @@ func TestMultipleProtocolSegments(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, authenticationMethod, mqttVersion)
+	}, authenticationMethod, mqttVersion, config.TopicsWithOwner)
 	if err != nil {
 		t.Error(err)
 		return

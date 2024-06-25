@@ -32,14 +32,16 @@ import (
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
-func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion) (client *Client, err error) {
+func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion, ownerInTopic bool) (client *Client, err error) {
 	client = &Client{
+		ownerInTopic:         ownerInTopic,
 		authUrl:              authUrl,
 		mqttUrl:              mqttUrl,
 		deviceManagerUrl:     deviceManagerUrl,
 		deviceRepoUrl:        deviceRepoUrl,
 		HubId:                hubId,
 		hubName:              hubName,
+		userid:               userName,
 		username:             userName,
 		password:             password,
 		clientId:             Id,
@@ -74,8 +76,9 @@ func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl 
 	return
 }
 
-func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, mqttVersion MqttVersion) (client *Client, err error) {
+func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, mqttVersion MqttVersion, ownerInTopic bool) (client *Client, err error) {
 	client = &Client{
+		ownerInTopic:     ownerInTopic,
 		authUrl:          authUrl,
 		mqttUrl:          mqttUrl,
 		deviceManagerUrl: deviceManagerUrl,
@@ -95,6 +98,8 @@ func NewWithoutProvisioning(mqttUrl string, deviceManagerUrl string, deviceRepoU
 }
 
 type Client struct {
+	ownerInTopic bool
+
 	mqttVersion      MqttVersion
 	mqttUrl          string
 	deviceRepoUrl    string
@@ -102,6 +107,7 @@ type Client struct {
 	authUrl          string
 	HubId            string
 
+	userid   string
 	username string
 	password string
 

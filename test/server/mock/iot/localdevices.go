@@ -3,6 +3,7 @@ package iot
 import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -38,6 +39,14 @@ func LocalDevicesEndpoints(control *Controller, router *httprouter.Router) {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+		if device.OwnerId == "" {
+			token, err := jwt.GetParsedToken(request)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+			device.OwnerId = token.GetUserId()
+		}
 		result, err, errCode := control.PublishDeviceCreate(device)
 		if err != nil {
 			http.Error(writer, err.Error(), errCode)
@@ -63,6 +72,14 @@ func LocalDevicesEndpoints(control *Controller, router *httprouter.Router) {
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
+		}
+		if device.OwnerId == "" {
+			token, err := jwt.GetParsedToken(request)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+			device.OwnerId = token.GetUserId()
 		}
 		result, err, errCode := control.PublishDeviceUpdate(id, device)
 		if err != nil {

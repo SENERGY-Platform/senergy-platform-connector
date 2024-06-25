@@ -55,7 +55,7 @@ func TestProcessHandler(t *testing.T) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
 	if err != nil {
 		t.Error(err)
 		return

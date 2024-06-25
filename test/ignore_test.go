@@ -78,7 +78,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, config.TopicsWithOwner)
 	if err != nil {
 		t.Error(err)
 		return
@@ -88,7 +88,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	clientId = c.HubId
 
-	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion)
+	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, config.TopicsWithOwner)
 	if err != nil {
 		t.Error(err)
 		return
@@ -130,13 +130,17 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		t.Error(err)
 		return
 	}
-	err = c.Publish("event/not/msgformat", "my message", 2)
+	eventprefix := "event/"
+	if config.TopicsWithOwner {
+		eventprefix = "event/ownerid/"
+	}
+	err = c.Publish(eventprefix+"not/msgformat", "my message", 2)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	err = c.Publish("event/not/foryou", map[string]string{}, 2)
+	err = c.Publish(eventprefix+"not/foryou", map[string]string{}, 2)
 	if err != nil {
 		t.Error(err)
 		return
@@ -147,8 +151,8 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	expectedNotifications := map[string][]string{
 		"/notifications": {
 			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to event/not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to event/not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
 		},
 	}
 
@@ -158,12 +162,12 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	}
 
 	expectedIgnores := map[string][]string{
-		"ignored/event/not/foryou":    {"not found"},
-		"ignored/event/not/msgformat": {"json: cannot unmarshal string into Go value of type map[string]string"},
-		"ignored/foo/bar":             {"no matching topic handler found"},
+		"ignored/" + eventprefix + "not/foryou":    {"not found"},
+		"ignored/" + eventprefix + "not/msgformat": {"json: cannot unmarshal string into Go value of type map[string]string"},
+		"ignored/foo/bar":                          {"no matching topic handler found"},
 	}
 	if !reflect.DeepEqual(ignoredMsg, expectedIgnores) {
-		t.Errorf("%#v", ignoredMsg)
+		t.Errorf("\n%#v\n%#v\n", ignoredMsg, expectedIgnores)
 		return
 	}
 }

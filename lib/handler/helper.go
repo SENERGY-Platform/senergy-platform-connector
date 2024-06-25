@@ -33,6 +33,15 @@ func ParseTopic(topic string) (prefix string, deviceUri string, serviceUri strin
 	return parts[0], parts[1], parts[2], nil
 }
 
+func ParseTopicWithOwner(topic string) (prefix string, ownerId string, deviceUri string, serviceUri string, err error) {
+	parts := strings.Split(topic, "/")
+	if len(parts) != 4 {
+		err = errors.New("expect 3-part topic with prefix/device-uri/service-uri")
+		return
+	}
+	return parts[0], parts[1], parts[2], parts[3], nil
+}
+
 func CheckHub(connector *platform_connector_lib.Connector, token security.JwtToken, hubId string, deviceUri string) (err error) {
 	hub, err := connector.Iot().GetHub(hubId, token)
 	if err != nil {

@@ -95,7 +95,7 @@ func TestWithPProf(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4)
+	}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
 	if err != nil {
 		t.Error(err)
 		return

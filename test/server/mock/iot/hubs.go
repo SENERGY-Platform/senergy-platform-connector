@@ -3,6 +3,7 @@ package iot
 import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -40,6 +41,14 @@ func HubsEndpoints(control *Controller, router *httprouter.Router) {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+		if hub.OwnerId == "" {
+			token, err := jwt.GetParsedToken(request)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+			hub.OwnerId = token.GetUserId()
+		}
 		result, err, errCode := control.PublishHubCreate(hub)
 		if err != nil {
 			http.Error(writer, err.Error(), errCode)
@@ -60,6 +69,14 @@ func HubsEndpoints(control *Controller, router *httprouter.Router) {
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
+		}
+		if hub.OwnerId == "" {
+			token, err := jwt.GetParsedToken(request)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+			hub.OwnerId = token.GetUserId()
 		}
 		result, err, errCode := control.PublishHubUpdate(id, hub)
 		if err != nil {

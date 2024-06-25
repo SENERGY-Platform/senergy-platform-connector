@@ -139,6 +139,8 @@ type ConfigStruct struct {
 	ForceCommandSubscriptionServiceSingleLevelWildcard bool
 
 	SecRemoteProtocol string
+
+	TopicsWithOwner bool
 }
 
 type Config = *ConfigStruct

@@ -18,11 +18,13 @@ package response
 
 import (
 	"encoding/json"
+	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"log"
 	"strings"
 )
@@ -49,7 +51,12 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !strings.HasPrefix(topic, "response") {
 		return handler.Unhandled, nil
 	}
-	prefix, deviceUri, _, err := handler.ParseTopic(topic)
+	var prefix, owner, deviceUri string
+	if this.config.TopicsWithOwner {
+		prefix, owner, deviceUri, _, err = handler.ParseTopicWithOwner(topic)
+	} else {
+		prefix, deviceUri, _, err = handler.ParseTopic(topic)
+	}
 	if err != nil {
 		return handler.Error, err
 	}
@@ -62,6 +69,16 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
 	if err != nil {
 		return handler.Error, err
+	}
+
+	if this.config.TopicsWithOwner {
+		parsedToken, err := jwt.Parse(string(token))
+		if err != nil {
+			return handler.Error, err
+		}
+		if !parsedToken.IsAdmin() && parsedToken.GetUserId() != owner {
+			return handler.Rejected, errors.New("mismatch between client user and owner in topic")
+		}
 	}
 
 	if this.config.CheckHub {

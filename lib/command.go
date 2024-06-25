@@ -91,6 +91,10 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 		if config.Debug {
 			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
 		}
-		return mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		if config.TopicsWithOwner {
+			return mqtt.Publish("command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		} else {
+			return mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		}
 	}
 }

@@ -91,7 +91,12 @@ func (this *Client) UnsubscribeMqtt4(deviceUri string, serviceUri string) (err e
 		log.Println("WARNING: mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	token := this.mqtt.Unsubscribe("command/" + deviceUri + "/" + serviceUri)
+	var token paho.Token
+	if this.ownerInTopic {
+		token = this.mqtt.Unsubscribe("command/" + this.userid + "/" + deviceUri + "/" + serviceUri)
+	} else {
+		token = this.mqtt.Unsubscribe("command/" + deviceUri + "/" + serviceUri)
+	}
 	if token.Wait() && token.Error() != nil {
 		log.Println("Error on Client.Unsubscribe(): ", token.Error())
 		return token.Error()

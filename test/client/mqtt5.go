@@ -108,9 +108,16 @@ func (this *Client) SubscribeMqtt5(topic string, qos byte, callback func(topic s
 
 func (this *Client) UnsubscribeMqtt5(deviceUri string, serviceUri string) (err error) {
 	timeout, _ := context.WithTimeout(context.Background(), time.Minute)
-	_, err = this.mqtt5.Unsubscribe(timeout, &paho.Unsubscribe{
-		Topics: []string{"command/" + deviceUri + "/" + serviceUri},
-	})
+	if this.ownerInTopic {
+		_, err = this.mqtt5.Unsubscribe(timeout, &paho.Unsubscribe{
+			Topics: []string{"command/" + this.userid + "/" + deviceUri + "/" + serviceUri},
+		})
+	} else {
+		_, err = this.mqtt5.Unsubscribe(timeout, &paho.Unsubscribe{
+			Topics: []string{"command/" + deviceUri + "/" + serviceUri},
+		})
+	}
+
 	if err != nil {
 		log.Println("Error on Client.Unsubscribe(): ", err)
 		return err

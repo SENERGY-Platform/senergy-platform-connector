@@ -39,14 +39,7 @@ import (
 	"time"
 )
 
-func Start(parentCtx context.Context, config configuration.Config) (err error) {
-	ctx, cancel := context.WithCancel(parentCtx)
-	defer func() {
-		if err != nil {
-			cancel()
-		}
-	}()
-
+func Start(ctx context.Context, config configuration.Config) (err error) {
 	asyncFlushFrequency, err := time.ParseDuration(config.AsyncFlushFrequency)
 	if err != nil {
 		return err
@@ -168,7 +161,7 @@ func Start(parentCtx context.Context, config configuration.Config) (err error) {
 		process.New(connector),
 		export.New(connector.Security()),
 		notifications.New(connector.Security()),
-		errormessage.New(connector, correlationservice, m),
+		errormessage.New(config, connector, correlationservice, m),
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))

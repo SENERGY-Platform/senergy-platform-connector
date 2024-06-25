@@ -17,17 +17,22 @@
 package errormessage
 
 import (
+	"errors"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/platform-connector-lib/security"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"log"
 	"strings"
 )
 
-func New(connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService, metrics *metrics.Metrics) *Handler {
+func New(config configuration.Config, connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService, metrics *metrics.Metrics) *Handler {
 	return &Handler{
+		config:      config,
 		connector:   connector,
 		correlation: correlation,
 		metrics:     metrics,
@@ -38,6 +43,7 @@ type Handler struct {
 	connector   *platform_connector_lib.Connector
 	correlation *correlation.CorrelationService
 	metrics     *metrics.Metrics
+	config      configuration.Config
 }
 
 func (this *Handler) Subscribe(clientId string, user string, topic string) (result handler.Result, err error) {
@@ -55,15 +61,55 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 
 	this.metrics.ClientErrorMessages.Inc()
 
-	switch {
-	case len(topicParts) == 1:
-		this.handleGeneralError(user, clientId, payload)
-	case len(topicParts) == 3 && topicParts[1] == "device":
-		this.handleDeviceError(user, topicParts[2], payload)
-	case len(topicParts) == 3 && topicParts[1] == "command":
-		this.handleCommandError(user, topicParts[2], payload)
+	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
+	if err != nil {
+		log.Println("ERROR: unable to get user token", err)
+		return
 	}
-	return handler.Accepted, nil
+
+	parsedToken, err := jwt.Parse(string(token))
+	if err != nil {
+		return handler.Error, err
+	}
+	userId := parsedToken.GetUserId()
+
+	if this.config.TopicsWithOwner {
+		//expect topics like
+		//error/device/{owner_id}/{local_device_id}
+		//error/command/{owner_id}/{correlation_id}
+		if len(topicParts) >= 3 && userId != topicParts[2] {
+			return handler.Rejected, errors.New("mismatch between client user and owner in topic")
+		}
+		switch {
+		case len(topicParts) == 1:
+			//TODO: "error" -> "error/client/{owner_id}" ?
+			this.handleGeneralError(userId, clientId, payload)
+			return handler.Accepted, nil
+		case len(topicParts) == 4 && topicParts[1] == "device":
+			this.handleDeviceError(token, userId, topicParts[3], payload)
+			return handler.Accepted, nil
+		case len(topicParts) == 4 && topicParts[1] == "command":
+			this.handleCommandError(userId, topicParts[3], payload)
+			return handler.Accepted, nil
+		}
+		return handler.Rejected, errors.New("unknown error topic")
+	} else {
+		//expect topics like
+		//error/device/{local_device_id}
+		//error/command/{correlation_id}
+		switch {
+		case len(topicParts) == 1:
+			this.handleGeneralError(userId, clientId, payload)
+			return handler.Accepted, nil
+		case len(topicParts) == 3 && topicParts[1] == "device":
+			this.handleDeviceError(token, userId, topicParts[2], payload)
+			return handler.Accepted, nil
+		case len(topicParts) == 3 && topicParts[1] == "command":
+			this.handleCommandError(userId, topicParts[2], payload)
+			return handler.Accepted, nil
+		}
+		return handler.Rejected, errors.New("unknown error topic")
+	}
 }
 
 func (this *Handler) handleGeneralError(user string, clientId string, payload []byte) {
@@ -75,17 +121,7 @@ func (this *Handler) handleGeneralError(user string, clientId string, payload []
 	this.connector.HandleClientError(userId, clientId, string(payload))
 }
 
-func (this *Handler) handleDeviceError(user string, deviceId string, payload []byte) {
-	userId, err := this.connector.Security().GetUserId(user)
-	if err != nil {
-		log.Println("ERROR: unable to get user id", err)
-		return
-	}
-	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
-	if err != nil {
-		log.Println("ERROR: unable to get user token", err)
-		return
-	}
+func (this *Handler) handleDeviceError(token security.JwtToken, userId string, deviceId string, payload []byte) {
 	device, err := this.connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceId)
 	if err != nil {
 		log.Println("ERROR: unable to get user device", err)
@@ -94,12 +130,7 @@ func (this *Handler) handleDeviceError(user string, deviceId string, payload []b
 	this.connector.HandleDeviceError(userId, device, string(payload))
 }
 
-func (this *Handler) handleCommandError(user string, correlationId string, payload []byte) {
-	userId, err := this.connector.Security().GetUserId(user)
-	if err != nil {
-		log.Println("ERROR: unable to get user id", err)
-		return
-	}
+func (this *Handler) handleCommandError(userId string, correlationId string, payload []byte) {
 	protocolMsg, err := this.correlation.Get(correlationId)
 	if err != nil {
 		log.Println("ERROR: unable to use correlationId", err)

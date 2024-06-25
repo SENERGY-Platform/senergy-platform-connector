@@ -45,11 +45,15 @@ func (this *Client) startMqtt() error {
 }
 
 func (this *Client) SendDeviceError(deviceUri string, message string) error {
-	return this.Publish("error/device/"+deviceUri, message, 2)
+	if this.ownerInTopic {
+		return this.Publish("error/device/"+this.userid+"/"+deviceUri, message, 2)
+	} else {
+		return this.Publish("error/device/"+deviceUri, message, 2)
+	}
 }
 
 func (this *Client) SendClientError(message string) error {
-	return this.Publish("error", message, 2)
+	return this.Publish("error", message, 2) //TODO: "error" -> "error/client/{owner_id}" ?
 }
 
 func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
@@ -58,6 +62,9 @@ func (this *Client) ListenCommand(deviceUri string, serviceUri string, handler f
 
 func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qos byte, handler func(msg platform_connector_lib.CommandRequestMsg) (platform_connector_lib.CommandResponseMsg, error)) error {
 	topic := "command/" + deviceUri + "/" + serviceUri
+	if this.ownerInTopic {
+		topic = "command/" + this.userid + "/" + deviceUri + "/" + serviceUri
+	}
 	callback := func(topic string, pl []byte) {
 		request := lib.RequestEnvelope{}
 		err := json.Unmarshal(pl, &request)
@@ -73,11 +80,19 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 		respMsg, err := handler(request.Payload)
 		if err != nil {
 			log.Println("ERROR: while processing command:", err)
-			log.Println(this.Publish("error/command/"+request.CorrelationId, err.Error(), 2))
+			if this.ownerInTopic {
+				log.Println(this.Publish("error/command/"+this.userid+"/"+request.CorrelationId, err.Error(), 2))
+			} else {
+				log.Println(this.Publish("error/command/"+request.CorrelationId, err.Error(), 2))
+			}
 			return
 		}
 		go func() {
-			err = this.Publish("response/"+deviceUri+"/"+serviceUri, response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}, qos)
+			if this.ownerInTopic {
+				err = this.Publish("response/"+this.userid+"/"+deviceUri+"/"+serviceUri, response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}, qos)
+			} else {
+				err = this.Publish("response/"+deviceUri+"/"+serviceUri, response.ResponseEnvelope{CorrelationId: request.CorrelationId, Payload: respMsg}, qos)
+			}
 			if err != nil {
 				log.Println("ERROR: unable to Publish response", err)
 			}
@@ -97,11 +112,19 @@ func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error)
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
-	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, 2)
+	if this.ownerInTopic {
+		return this.Publish("event/"+this.userid+"/"+deviceUri+"/"+serviceUri, msg, 2)
+	} else {
+		return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, 2)
+	}
 }
 
 func (this *Client) SendEventWithQos(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg, qos byte) (err error) {
-	return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, qos)
+	if this.ownerInTopic {
+		return this.Publish("event/"+this.userid+"/"+deviceUri+"/"+serviceUri, msg, qos)
+	} else {
+		return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, qos)
+	}
 }
 
 func (this *Client) Publish(topic string, msg interface{}, qos byte) (err error) {
