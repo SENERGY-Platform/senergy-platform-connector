@@ -46,15 +46,14 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	if !strings.HasPrefix(topic, "command") {
 		return handler.Unhandled, nil
 	}
-	var prefix, owner, deviceUri, serviceUri string
-	if this.config.TopicsWithOwner {
-		prefix, owner, deviceUri, serviceUri, err = handler.ParseTopicWithOwner(topic)
-	} else {
-		prefix, deviceUri, serviceUri, err = handler.ParseTopic(topic)
-	}
+	prefix, owner, deviceUri, serviceUri, err := handler.ParseTopic(topic)
 	if err != nil {
 		return handler.Rejected, err
 	}
+	if this.config.ForceTopicsWithOwner && owner == "" {
+		return handler.Rejected, errors.New("expect owner id in topic")
+	}
+
 	if prefix != "command" {
 		//may happen if topic is something like "commandhandling/foo/bar"
 		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is command:", topic)
@@ -67,7 +66,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	if err != nil {
 		return handler.Error, err
 	}
-	if this.config.TopicsWithOwner {
+	if owner != "" {
 		parsedToken, err := jwt.Parse(string(token))
 		if err != nil {
 			return handler.Error, err

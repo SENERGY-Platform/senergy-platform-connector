@@ -106,14 +106,14 @@ func TestHttpCommand(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return

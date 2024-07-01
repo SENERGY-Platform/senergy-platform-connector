@@ -106,7 +106,7 @@ func TestWithErrorClient(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -202,6 +202,8 @@ func TestWithErrorClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	time.Sleep(2 * time.Second)
 
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
@@ -329,14 +331,14 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -523,6 +525,8 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	time.Sleep(2 * time.Second)
 
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
@@ -761,14 +765,14 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, config.TopicsWithOwner)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -923,6 +927,8 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	time.Sleep(2 * time.Second)
 
 	resp, err = http.Post("http://localhost:"+config.HttpCommandConsumerPort+"/commands", "application/json", bytes.NewReader(testCommandMsg))
 	if err != nil {

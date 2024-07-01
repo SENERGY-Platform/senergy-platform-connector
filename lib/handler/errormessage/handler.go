@@ -73,43 +73,37 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	}
 	userId := parsedToken.GetUserId()
 
-	if this.config.TopicsWithOwner {
-		//expect topics like
-		//error/device/{owner_id}/{local_device_id}
-		//error/command/{owner_id}/{correlation_id}
-		if len(topicParts) >= 3 && userId != topicParts[2] {
-			return handler.Rejected, errors.New("mismatch between client user and owner in topic")
-		}
-		switch {
-		case len(topicParts) == 1:
-			//TODO: "error" -> "error/client/{owner_id}" ?
-			this.handleGeneralError(userId, clientId, payload)
-			return handler.Accepted, nil
-		case len(topicParts) == 4 && topicParts[1] == "device":
-			this.handleDeviceError(token, userId, topicParts[3], payload)
-			return handler.Accepted, nil
-		case len(topicParts) == 4 && topicParts[1] == "command":
-			this.handleCommandError(userId, topicParts[3], payload)
-			return handler.Accepted, nil
-		}
-		return handler.Rejected, errors.New("unknown error topic")
-	} else {
-		//expect topics like
-		//error/device/{local_device_id}
-		//error/command/{correlation_id}
-		switch {
-		case len(topicParts) == 1:
-			this.handleGeneralError(userId, clientId, payload)
-			return handler.Accepted, nil
-		case len(topicParts) == 3 && topicParts[1] == "device":
-			this.handleDeviceError(token, userId, topicParts[2], payload)
-			return handler.Accepted, nil
-		case len(topicParts) == 3 && topicParts[1] == "command":
-			this.handleCommandError(userId, topicParts[2], payload)
-			return handler.Accepted, nil
-		}
-		return handler.Rejected, errors.New("unknown error topic")
+	if len(topicParts) >= 4 && userId != topicParts[2] {
+		return handler.Rejected, errors.New("mismatch between client user and owner in topic")
 	}
+	switch {
+	case len(topicParts) == 1:
+		this.handleGeneralError(userId, clientId, payload)
+		return handler.Accepted, nil
+	case len(topicParts) == 3 && topicParts[1] == "device":
+		//error/device/{local_device_id}
+		if this.config.ForceTopicsWithOwner {
+			return handler.Rejected, errors.New("expect owner in topic")
+		}
+		this.handleDeviceError(token, userId, topicParts[2], payload)
+		return handler.Accepted, nil
+	case len(topicParts) == 3 && topicParts[1] == "command":
+		//error/command/{correlation_id}
+		if this.config.ForceTopicsWithOwner {
+			return handler.Rejected, errors.New("expect owner in topic")
+		}
+		this.handleCommandError(userId, topicParts[2], payload)
+		return handler.Accepted, nil
+	case len(topicParts) == 4 && topicParts[1] == "device":
+		//error/device/{owner_id}/{local_device_id}
+		this.handleDeviceError(token, userId, topicParts[3], payload)
+		return handler.Accepted, nil
+	case len(topicParts) == 4 && topicParts[1] == "command":
+		//error/command/{owner_id}/{correlation_id}
+		this.handleCommandError(userId, topicParts[3], payload)
+		return handler.Accepted, nil
+	}
+	return handler.Rejected, errors.New("unknown error topic")
 }
 
 func (this *Handler) handleGeneralError(user string, clientId string, payload []byte) {

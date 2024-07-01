@@ -66,6 +66,7 @@ func (this *Client) ListenCommandWithQos(deviceUri string, serviceUri string, qo
 		topic = "command/" + this.userid + "/" + deviceUri + "/" + serviceUri
 	}
 	callback := func(topic string, pl []byte) {
+		log.Println("DEBUG: client receive command", topic, string(pl))
 		request := lib.RequestEnvelope{}
 		err := json.Unmarshal(pl, &request)
 		if err != nil {
@@ -112,11 +113,7 @@ func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error)
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
-	if this.ownerInTopic {
-		return this.Publish("event/"+this.userid+"/"+deviceUri+"/"+serviceUri, msg, 2)
-	} else {
-		return this.Publish("event/"+deviceUri+"/"+serviceUri, msg, 2)
-	}
+	return this.SendEventWithQos(deviceUri, serviceUri, msg, 2)
 }
 
 func (this *Client) SendEventWithQos(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg, qos byte) (err error) {

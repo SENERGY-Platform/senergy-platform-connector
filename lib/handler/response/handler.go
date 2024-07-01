@@ -51,14 +51,12 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	if !strings.HasPrefix(topic, "response") {
 		return handler.Unhandled, nil
 	}
-	var prefix, owner, deviceUri string
-	if this.config.TopicsWithOwner {
-		prefix, owner, deviceUri, _, err = handler.ParseTopicWithOwner(topic)
-	} else {
-		prefix, deviceUri, _, err = handler.ParseTopic(topic)
-	}
+	prefix, owner, deviceUri, _, err := handler.ParseTopic(topic)
 	if err != nil {
-		return handler.Error, err
+		return handler.Rejected, err
+	}
+	if this.config.ForceTopicsWithOwner && owner == "" {
+		return handler.Rejected, errors.New("expect owner id in topic")
 	}
 	if prefix != "response" {
 		//may happen if topic is something like "responsehandling/foo/bar"
@@ -71,7 +69,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		return handler.Error, err
 	}
 
-	if this.config.TopicsWithOwner {
+	if owner != "" {
 		parsedToken, err := jwt.Parse(string(token))
 		if err != nil {
 			return handler.Error, err

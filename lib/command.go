@@ -89,12 +89,21 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 			return err
 		}
 		if config.Debug {
-			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
+			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
 		}
-		if config.TopicsWithOwner {
-			return mqtt.Publish("command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
-		} else {
-			return mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		err = mqtt.Publish("command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		if err != nil {
+			return err
 		}
+		if !config.ForceTopicsWithOwner {
+			if config.Debug {
+				log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
+			}
+			err = mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }

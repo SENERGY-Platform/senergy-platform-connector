@@ -59,12 +59,7 @@ func unsubscribe(writer http.ResponseWriter, request *http.Request, config confi
 			if !strings.HasPrefix(topic, "command") {
 				continue
 			}
-			var prefix, _, deviceUri string
-			if config.TopicsWithOwner {
-				prefix, _, deviceUri, _, err = handler.ParseTopicWithOwner(topic)
-			} else {
-				prefix, deviceUri, _, err = handler.ParseTopic(topic)
-			}
+			prefix, _, deviceUri, _, err := handler.ParseTopic(topic)
 			if err != nil {
 				log.Println("ERROR: InitWebhooks::unsubscribe::parseTopic", err)
 				return

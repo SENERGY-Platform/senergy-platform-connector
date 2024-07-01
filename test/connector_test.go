@@ -143,14 +143,14 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, authenticationMethod, mqttVersion, config.TopicsWithOwner)
+	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod, mqttVersion, config.TopicsWithOwner)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -346,6 +346,8 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
+	time.Sleep(2 * time.Second)
+
 	testCommand, err = createTestCommandMsg(config, "test1", "sepl_get", nil)
 	if err != nil {
 		t.Error(err)
@@ -448,7 +450,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
+		t.Errorf("unexpected response\n%#v\n%#v\n", expectedProtocolMsg, respResult)
 		return
 	}
 

@@ -32,6 +32,8 @@ import (
 var Id = "connector"
 var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
+const OwnerInTopicDefault = true
+
 func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion, ownerInTopic bool) (client *Client, err error) {
 	client = &Client{
 		ownerInTopic:         ownerInTopic,

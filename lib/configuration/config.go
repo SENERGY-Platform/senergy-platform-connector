@@ -140,7 +140,7 @@ type ConfigStruct struct {
 
 	SecRemoteProtocol string
 
-	TopicsWithOwner bool
+	ForceTopicsWithOwner bool
 }
 
 type Config = *ConfigStruct

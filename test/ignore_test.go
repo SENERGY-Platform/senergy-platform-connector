@@ -78,7 +78,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, config.TopicsWithOwner)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -88,7 +88,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	clientId = c.HubId
 
-	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, config.TopicsWithOwner)
+	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault)
 	if err != nil {
 		t.Error(err)
 		return
@@ -131,7 +131,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		return
 	}
 	eventprefix := "event/"
-	if config.TopicsWithOwner {
+	if config.ForceTopicsWithOwner {
 		eventprefix = "event/ownerid/"
 	}
 	err = c.Publish(eventprefix+"not/msgformat", "my message", 2)
