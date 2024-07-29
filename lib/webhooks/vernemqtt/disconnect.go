@@ -23,6 +23,7 @@ import (
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot/options"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
@@ -63,13 +64,18 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 		log.Println("ERROR:", err)
 		return
 	}
+	userToken, err := connector.Security().GetCachedUserToken(hub.OwnerId, model.RemoteInfo{})
+	if err != nil {
+		log.Println("ERROR: InitWebhooks::disconnect::connector.Security().GetCachedUserToken", err)
+		return
+	}
 	err = connectionLogger.LogHubDisconnect(msg.ClientId)
 	if err != nil {
 		log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
 		return
 	}
 	for _, localId := range hub.DeviceLocalIds {
-		device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(localId)
+		device, err := connector.IotCache.WithToken(userToken).GetDeviceByLocalId(localId)
 		if err != nil {
 			log.Println("ERROR: InitWebhooks::disconnect::GetDeviceByLocalId", err)
 			continue
