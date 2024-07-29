@@ -100,7 +100,7 @@
 
     "SecRemoteProtocol": "https",
 
-    "ForceTopicsWithOwner": false,
+    "ForceTopicsWithOwner": true,
 
     "KafkaTopicConfigs": {
         "device-types": [
