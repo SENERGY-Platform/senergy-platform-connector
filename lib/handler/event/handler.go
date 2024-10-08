@@ -97,13 +97,13 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 				log.Println("DEBUG: check event was not successful: ", err)
 			}
 
-			if err == handler.ServiceNotFound {
+			if errors.Is(err, handler.ServiceNotFound) {
 				if this.config.Debug {
 					log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
 				}
 				return handler.Accepted, nil
 			}
-			if err == security.ErrorNotFound || err == security.ErrorAccessDenied {
+			if errors.Is(err, security.ErrorNotFound) || errors.Is(err, security.ErrorAccessDenied) {
 				return handler.Rejected, err
 			}
 			return handler.Error, err

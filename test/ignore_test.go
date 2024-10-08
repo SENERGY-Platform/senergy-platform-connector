@@ -152,7 +152,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		"/notifications": {
 			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
 			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/foryou: not found\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/foryou: not found: device-manager/local-devices/not 404\\n\\nClient: client-id-placeholder\"}\n",
 		},
 	}
 
@@ -162,7 +162,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	}
 
 	expectedIgnores := map[string][]string{
-		"ignored/" + eventprefix + "not/foryou":    {"not found"},
+		"ignored/" + eventprefix + "not/foryou":    {"not found: device-manager/local-devices/not 404"},
 		"ignored/" + eventprefix + "not/msgformat": {"json: cannot unmarshal string into Go value of type map[string]string"},
 		"ignored/foo/bar":                          {"no matching topic handler found"},
 	}

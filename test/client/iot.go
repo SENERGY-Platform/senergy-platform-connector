@@ -17,6 +17,7 @@
 package client
 
 import (
+	"errors"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
@@ -82,11 +83,11 @@ func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, 
 	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "")
 	for _, device := range this.devices {
 		_, err := iotClient.GetDeviceByLocalId(device.Uri, token)
-		if err != nil && err != security.ErrorNotFound {
+		if err != nil && !errors.Is(err, security.ErrorNotFound) {
 			log.Println("ERROR: iotClient.DeviceUrlToIotDevice()", err)
 			return false, err
 		}
-		if err == security.ErrorNotFound {
+		if errors.Is(err, security.ErrorNotFound) {
 			_, err = this.createIotDevice(device, token)
 			if err != nil {
 				log.Println("ERROR: iotClient.CreateIotDevice()", err)

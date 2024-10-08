@@ -61,6 +61,7 @@ func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string) {
 }
 
 func sendIgnoreRedirectAndNotification(writer http.ResponseWriter, connector *platform_connector_lib.Connector, user, clientId, topic, msg string) {
+	msg = removeSecretsFromString(connector.Config, msg)
 	sendIgnoreRedirect(writer, topic, msg)
 	userId, err := connector.Security().GetUserId(user)
 	if err != nil {
@@ -68,6 +69,27 @@ func sendIgnoreRedirectAndNotification(writer http.ResponseWriter, connector *pl
 		return
 	}
 	connector.HandleClientError(userId, clientId, "ignore message to "+topic+": "+msg)
+}
+
+func removeSecretsFromString(config platform_connector_lib.Config, input string) string {
+	output := input
+	secrets := map[string]string{
+		config.DeviceRepoUrl:            "device-repository",
+		config.DeviceManagerUrl:         "device-manager",
+		config.PermQueryUrl:             "permission-search",
+		config.KafkaUrl:                 "kafka",
+		config.AuthClientSecret:         "***",
+		config.AuthEndpoint:             "auth",
+		config.DeveloperNotificationUrl: "dev-notify",
+		config.JwtPrivateKey:            "***",
+		config.PostgresPw:               "***",
+	}
+	for secret, replace := range secrets {
+		if secret != "" && secret != "-" {
+			output = strings.ReplaceAll(output, secret, replace)
+		}
+	}
+	return output
 }
 
 func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
