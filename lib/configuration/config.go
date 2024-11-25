@@ -141,6 +141,8 @@ type ConfigStruct struct {
 	SecRemoteProtocol string
 
 	ForceTopicsWithOwner bool
+
+	MutedUserNotificationTitles []string
 }
 
 type Config = *ConfigStruct

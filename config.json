@@ -90,6 +90,7 @@
     "NotificationsIgnoreDuplicatesWithinS": 3600,
     "NotificationUserOverwrite": "",
     "DeveloperNotificationUrl": "http://api.developer-notifications:8080",
+    "MutedUserNotificationTitles": ["Device-Message Format-Error", "Client-Error"],
 
     "MqttErrorOnEventValidationError": false,
 

@@ -60,6 +60,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	config.PublishToPostgres = true
 	config.AuthClientId = "connector"
 	config.AuthClientSecret = "secret"
+	config.MutedUserNotificationTitles = nil
 
 	clientId := ""
 

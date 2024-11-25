@@ -66,6 +66,7 @@ func TestWithErrorClient(t *testing.T) {
 	config.Log = "stdout"
 	config.PublishToPostgres = true
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
+	config.MutedUserNotificationTitles = nil
 
 	notifyCalls := map[string][]string{}
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
