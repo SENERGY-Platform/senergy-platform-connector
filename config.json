@@ -5,6 +5,7 @@
 
     "DeviceManagerUrl":"http://iot:8080",
     "DeviceRepoUrl": "http://device-repo:8080",
+    "PermissionsV2Url": "http://permv2.permissions:8080",
 
     "MemcachedUrl": "memcahed:11211",
     "MqttBroker": "tcp://mqtt:1883",

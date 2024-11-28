@@ -76,7 +76,7 @@ func removeSecretsFromString(config platform_connector_lib.Config, input string)
 	secrets := map[string]string{
 		config.DeviceRepoUrl:            "device-repository",
 		config.DeviceManagerUrl:         "device-manager",
-		config.PermQueryUrl:             "permission-search",
+		config.PermissionsV2Url:         "permissions-v2",
 		config.KafkaUrl:                 "kafka",
 		config.AuthClientSecret:         "***",
 		config.AuthEndpoint:             "auth",

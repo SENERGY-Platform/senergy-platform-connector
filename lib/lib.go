@@ -112,8 +112,8 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 
 		DeviceTypeTopic: config.DeviceTypeTopic,
 
-		NotificationUrl: config.NotificationUrl,
-		PermQueryUrl:    config.PermQueryUrl,
+		NotificationUrl:  config.NotificationUrl,
+		PermissionsV2Url: config.PermissionsV2Url,
 
 		KafkaTopicConfigs: config.KafkaTopicConfigs,
 

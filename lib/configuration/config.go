@@ -120,8 +120,8 @@ type ConfigStruct struct {
 
 	DeviceTypeTopic string
 
-	NotificationUrl string
-	PermQueryUrl    string
+	NotificationUrl  string
+	PermissionsV2Url string
 
 	NotificationsIgnoreDuplicatesWithinS int
 	NotificationUserOverwrite            string
