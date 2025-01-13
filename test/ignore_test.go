@@ -151,9 +151,9 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	expectedNotifications := map[string][]string{
 		"/notifications": {
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\"}\n",
-			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/foryou: not found: device-manager/local-devices/not 404\\n\\nClient: client-id-placeholder\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to foo/bar: no matching topic handler found\\n\\nClient: client-id-placeholder\",\"topic\":\"mgw\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/msgformat: json: cannot unmarshal string into Go value of type map[string]string\\n\\nClient: client-id-placeholder\",\"topic\":\"mgw\"}\n",
+			"{\"userId\":\"sepl\",\"title\":\"Client-Error\",\"message\":\"Error: ignore message to " + eventprefix + "not/foryou: not found: device-manager/local-devices/not 404\\n\\nClient: client-id-placeholder\",\"topic\":\"mgw\"}\n",
 		},
 	}
 
