@@ -35,7 +35,9 @@ import (
 func disconnect(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLogger connectionlog.Logger, logger *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {
-			debug.PrintStack()
+			if config.Debug {
+				debug.PrintStack()
+			}
 			sendError(writer, fmt.Sprint(p), true)
 			return
 		} else {

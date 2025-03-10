@@ -34,7 +34,9 @@ import (
 func publish(writer http.ResponseWriter, request *http.Request, config configuration.Config, handlers []handler.Handler, connector *platform_connector_lib.Connector) {
 	defer func() {
 		if p := recover(); p != nil {
-			debug.PrintStack()
+			if config.Debug {
+				debug.PrintStack()
+			}
 			sendError(writer, fmt.Sprint(p), true)
 			return
 		}
