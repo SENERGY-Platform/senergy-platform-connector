@@ -156,12 +156,16 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 			httpTimeout = tmp
 		}
 		logger, err = connectionlog.NewWithProducerAndConnCheck(logProducer, connection_check_lib.New(&http.Client{Timeout: httpTimeout}, config.ConnectionCheckUrl), config.DeviceLogTopic, config.GatewayLogTopic)
+		if err != nil {
+			log.Println("ERROR: logger ", err)
+			return err
+		}
 	} else {
 		logger, err = connectionlog.NewWithProducer(logProducer, config.DeviceLogTopic, config.GatewayLogTopic)
-	}
-	if err != nil {
-		log.Println("ERROR: logger ", err)
-		return err
+		if err != nil {
+			log.Println("ERROR: logger ", err)
+			return err
+		}
 	}
 
 	m, err := metrics.NewMetrics()
