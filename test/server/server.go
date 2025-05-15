@@ -104,24 +104,10 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 	}
 	config.MqttBroker = brokerUrlForConnector
 
-	config.PostgresHost, config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb, err = docker.Timescale(ctx, wg)
-	if err != nil {
-		log.Println("ERROR:", err)
-		debug.PrintStack()
-		return config, "", err
-	}
-
 	//transform local-address to address in docker container
 	deviceManagerUrlStruct := strings.Split(config.DeviceManagerUrl, ":")
 	deviceManagerUrl := "http://" + hostIp + ":" + deviceManagerUrlStruct[len(deviceManagerUrlStruct)-1]
 	log.Println("DEBUG: semantic url transformation:", config.DeviceManagerUrl, "-->", deviceManagerUrl)
-
-	err = docker.Tableworker(ctx, wg, config.PostgresHost, config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb, config.KafkaUrl, deviceManagerUrl)
-	if err != nil {
-		log.Println("ERROR:", err)
-		debug.PrintStack()
-		return config, "", err
-	}
 
 	err = lib.Start(ctx, config)
 	if err != nil {

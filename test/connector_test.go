@@ -18,11 +18,8 @@ package test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
-
 	"log"
 	"os"
 	"reflect"
@@ -33,7 +30,6 @@ import (
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/platform-connector-lib/psql"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
@@ -48,7 +44,6 @@ func createConf(authentication string) (config configuration.Config, err error) 
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
-	config.PublishToPostgres = true
 	config.MqttAuthMethod = authentication
 	config.AuthClientId = "connector"
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
@@ -104,19 +99,6 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.PostgresHost,
-		config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb)
-
-	// open database
-	db, err := sql.Open("postgres", psqlconn)
-	if err != nil {
-		t.Fatal("could not establish db")
-	}
-	err = db.Ping()
-	if err != nil {
-		t.Fatal("could not connect to db")
-	}
-
 	testCharacteristicName := "test2"
 
 	_, err = createCharacteristic("test1", config)
@@ -129,7 +111,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		t.Error(err)
 		return
 	}
-	deviceTypeId, serviceId1, getServiceTopic, serviceId2, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
+	deviceTypeId, _, getServiceTopic, _, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
 	if err != nil {
 		t.Error(err)
 		return
@@ -452,64 +434,6 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
 		t.Errorf("unexpected response\n%#v\n%#v\n", expectedProtocolMsg, respResult)
 		return
-	}
-
-	shortServiceId1, err := psql.ShortenId(serviceId1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	shortDeviceId, err := psql.ShortenId(eventResult.DeviceId)
-	if err != nil {
-		t.Fatal(err)
-	}
-	query := "SELECT * FROM \"device:" + shortDeviceId + "_service:" + shortServiceId1 + "\";"
-	resp, err := db.Query(query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !resp.Next() {
-		t.Fatal("Event not written to Postgres!")
-	}
-	var row testMessagePostgres
-	err = resp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title, &row.metrics_missing)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if row.metrics_updateTime != 0 || row.metrics_title != "event" || row.metrics_level_unit != "test2" || row.metrics_level != 42 || row.metrics_missing != nil {
-		t.Fatal("Invalid values written to postgres")
-	}
-	if !resp.Next() {
-		t.Fatal("Event not written to Postgres!")
-	}
-	err = resp.Scan(&row.time, &row.metrics_updateTime, &row.metrics_level, &row.metrics_level_unit, &row.metrics_title, &row.metrics_missing)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if row.time.Unix() != int64(row.metrics_updateTime) || row.metrics_updateTime != 42 || row.metrics_title != "level" || row.metrics_level_unit != "test2" || row.metrics_level != 9 || row.metrics_missing != nil {
-		t.Fatal("Invalid values written to postgres")
-	}
-	if resp.Next() {
-		t.Fatal("Too many events written to Postgres!")
-	}
-
-	shortServiceId2, err := psql.ShortenId(serviceId2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp, err = db.Query("SELECT count(*) FROM \"device:" + shortDeviceId + "_service:" + shortServiceId2 + "\";")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !resp.Next() {
-		t.Fatal("Response not written to Postgres!")
-	}
-	var count int
-	err = resp.Scan(&count)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 1 {
-		t.Fatal("Too many responses written to Postgres!")
 	}
 }
 
