@@ -18,9 +18,7 @@ package test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/SENERGY-Platform/converter/lib/converter/characteristics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 
@@ -59,19 +57,6 @@ func TestMultipleProtocolSegments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 		return
-	}
-
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.PostgresHost,
-		config.PostgresPort, config.PostgresUser, config.PostgresPw, config.PostgresDb)
-
-	// open database
-	db, err := sql.Open("postgres", psqlconn)
-	if err != nil {
-		t.Fatal("could not establish db")
-	}
-	err = db.Ping()
-	if err != nil {
-		t.Fatal("could not connect to db")
 	}
 
 	testCharacteristicName := "test2"
