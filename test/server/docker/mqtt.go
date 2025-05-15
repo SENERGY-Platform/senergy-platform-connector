@@ -133,7 +133,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:           "ghcr.io/senergy-platform/vernemq:prod",
+			Image:           "ghcr.io/senergy-platform/vernemq:v1.13.0",
 			Tmpfs:           map[string]string{},
 			ExposedPorts:    ports,
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
