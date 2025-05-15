@@ -146,7 +146,7 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 		return err
 	}
 
-	var connCheckClient *connection_check_lib.Client
+	var logger connectionlog.Logger
 	if config.ConnectionCheckUrl != "" {
 		httpTimeout := time.Second * 15
 		tmp, err := time.ParseDuration(config.ConnectionCheckHttpTimeout)
@@ -155,9 +155,10 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 		} else {
 			httpTimeout = tmp
 		}
-		connCheckClient = connection_check_lib.New(&http.Client{Timeout: httpTimeout}, config.ConnectionCheckUrl)
+		logger, err = connectionlog.NewWithProducerAndConnCheck(logProducer, connection_check_lib.New(&http.Client{Timeout: httpTimeout}, config.ConnectionCheckUrl), config.DeviceLogTopic, config.GatewayLogTopic)
+	} else {
+		logger, err = connectionlog.NewWithProducer(logProducer, config.DeviceLogTopic, config.GatewayLogTopic)
 	}
-	logger, err := connectionlog.NewWithProducerAndConnCheck(logProducer, connCheckClient, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {
 		log.Println("ERROR: logger ", err)
 		return err
