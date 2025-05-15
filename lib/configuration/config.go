@@ -143,6 +143,9 @@ type ConfigStruct struct {
 	ForceTopicsWithOwner bool
 
 	MutedUserNotificationTitles []string
+
+	ConnectionCheckUrl         string
+	ConnectionCheckHttpTimeout string
 }
 
 type Config = *ConfigStruct

@@ -19,6 +19,7 @@ package lib
 import (
 	"context"
 	"github.com/IBM/sarama"
+	connection_check_lib "github.com/SENERGY-Platform/connection-check-v2/lib"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
@@ -35,6 +36,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -143,7 +145,19 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 		log.Println("ERROR: logger ", err)
 		return err
 	}
-	logger, err := connectionlog.NewWithProducer(logProducer, config.DeviceLogTopic, config.GatewayLogTopic)
+
+	var connCheckClient *connection_check_lib.Client
+	if config.ConnectionCheckUrl != "" {
+		httpTimeout := time.Second * 15
+		tmp, err := time.ParseDuration(config.ConnectionCheckHttpTimeout)
+		if err != nil && config.ConnectionCheckHttpTimeout != "" {
+			log.Println("WARNING: invalid ConnectionCheckHttpTimeout; use default 15s")
+		} else {
+			httpTimeout = tmp
+		}
+		connCheckClient = connection_check_lib.New(&http.Client{Timeout: httpTimeout}, config.ConnectionCheckUrl)
+	}
+	logger, err := connectionlog.NewWithProducerAndConnCheck(logProducer, connCheckClient, config.DeviceLogTopic, config.GatewayLogTopic)
 	if err != nil {
 		log.Println("ERROR: logger ", err)
 		return err
