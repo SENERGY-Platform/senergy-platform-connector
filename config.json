@@ -203,5 +203,6 @@
         ]
     },
 
-    "MqttAuthMethod": "password"
+    "MqttAuthMethod": "password",
+    "ConnectionCheckHttpTimeout": "15s"
 }
