@@ -146,6 +146,8 @@ type ConfigStruct struct {
 
 	ConnectionCheckUrl         string
 	ConnectionCheckHttpTimeout string
+
+	ApiDocsProviderBaseUrl string
 }
 
 type Config = *ConfigStruct
