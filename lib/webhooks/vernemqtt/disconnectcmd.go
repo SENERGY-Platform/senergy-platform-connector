@@ -51,12 +51,6 @@ func disconnectCommand(writer http.ResponseWriter, request *http.Request, config
 		return
 	}
 
-	err = execDisconnectCommand(config, msg, logger)
-	if err != nil {
-		sendError(writer, err.Error(), true)
-		return
-	}
-
 	if config.DisconnectCommandDelay != "" && config.DisconnectCommandDelay != "-" {
 		duration, err := time.ParseDuration(config.DisconnectCommandDelay)
 		if err != nil {
