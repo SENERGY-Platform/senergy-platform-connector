@@ -45,6 +45,8 @@ func TestDisconnectCommand(t *testing.T) {
 		return
 	}
 
+	config.DisconnectCommandDelay = "1s"
+
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
 	if err != nil {

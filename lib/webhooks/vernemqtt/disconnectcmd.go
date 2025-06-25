@@ -64,6 +64,11 @@ func disconnectCommand(writer http.ResponseWriter, request *http.Request, config
 				logger.Error("disconnect-cmd error", "action", "disconnect-cmd", "username", msg.Username, "error", err)
 			}
 		})
+	} else {
+		err = execDisconnectCommand(config, msg, logger)
+		if err != nil {
+			logger.Error("disconnect-cmd error", "action", "disconnect-cmd", "username", msg.Username, "error", err)
+		}
 	}
 
 	_, err = fmt.Fprint(writer, `{"result": "ok"}`)
