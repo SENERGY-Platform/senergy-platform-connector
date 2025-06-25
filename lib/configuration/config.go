@@ -148,6 +148,9 @@ type ConfigStruct struct {
 	ConnectionCheckHttpTimeout string
 
 	ApiDocsProviderBaseUrl string
+
+	VmqAdminApiUrl         string
+	DisconnectCommandDelay string
 }
 
 type Config = *ConfigStruct

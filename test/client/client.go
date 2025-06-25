@@ -125,6 +125,8 @@ type Client struct {
 	subscriptions    map[string]Subscription
 
 	authenticationMethod string
+
+	ConnLog []string
 }
 
 func (this *Client) Stop() {

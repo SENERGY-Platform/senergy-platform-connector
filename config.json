@@ -104,6 +104,9 @@
 
     "ForceTopicsWithOwner": true,
 
+    "VmqAdminApiUrl": "",
+    "DisconnectCommandDelay": "120s",
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

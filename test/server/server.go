@@ -96,7 +96,7 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		config.MqttVersion = "5"
 	}
 	var brokerUrlForConnector string
-	brokerUrlForConnector, brokerUrlForClients, err = docker.Vernemqtt(ctx, wg, hostIp+":"+config.WebhookPort, config)
+	brokerUrlForConnector, brokerUrlForClients, config.VmqAdminApiUrl, err = docker.Vernemqtt(ctx, wg, hostIp+":"+config.WebhookPort, config)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()

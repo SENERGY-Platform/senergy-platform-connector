@@ -118,6 +118,10 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 
 	logger := GetLogger()
 
+	router.HandleFunc("/disconnect-command", func(writer http.ResponseWriter, request *http.Request) {
+		disconnectCommand(writer, request, config, logger)
+	})
+
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
 		log.Println("INFO: /health received")
 		msg, err := io.ReadAll(request.Body)

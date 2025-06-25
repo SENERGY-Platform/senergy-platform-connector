@@ -34,10 +34,12 @@ func (this *Client) startMqtt4() error {
 		SetCleanSession(true).
 		AddBroker(this.mqttUrl).
 		SetConnectionLostHandler(func(client paho.Client, err error) {
+			this.ConnLog = append(this.ConnLog, "mqtt connection lost")
 			log.Println("mqtt connection lost:", err)
 		}).
 		SetOnConnectHandler(func(client paho.Client) {
 			log.Println("mqtt (re)connected")
+			this.ConnLog = append(this.ConnLog, "mqtt (re)connected")
 			err := this.loadOldSubscriptions()
 			if err != nil {
 				debug.PrintStack()

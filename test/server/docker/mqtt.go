@@ -5,6 +5,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -12,9 +13,10 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 )
 
-func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, err error) {
+func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, apiUrl string, err error) {
 	log.Println("start mqtt")
 	ports := []string{"1883/tcp"}
 	env := map[string]string{}
@@ -46,7 +48,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			return nil
 		})
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 		err = filepath.WalkDir(filepath.Join(dir, "mqtt_certs", "ca"), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -64,7 +66,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			return nil
 		})
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 		env = map[string]string{
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL":                     "debug",
@@ -133,7 +135,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:           "ghcr.io/senergy-platform/vernemq:v1.13.0",
+			Image:           "ghcr.io/senergy-platform/vernemq:v2.0.1",
 			Tmpfs:           map[string]string{},
 			ExposedPorts:    ports,
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
@@ -144,18 +146,30 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		Started: true,
 	})
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
+		/*
+			reader, err := c.Logs(context.Background())
+			if err != nil {
+				log.Println("ERROR: unable to get container log")
+				return
+			}
+			buf := new(strings.Builder)
+			io.Copy(buf, reader)
+			fmt.Println("VERNEMQTT LOGS: ------------------------------------------")
+			fmt.Println(buf.String())
+			fmt.Println("\n---------------------------------------------------------------")
+		*/
 		log.Println("DEBUG: remove container mqtt", c.Terminate(context.Background()))
 	}()
 
 	ipAddress, err := c.ContainerIP(ctx)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if config.MqttAuthMethod == "certificate" {
@@ -165,5 +179,15 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	}
 	brokerUrlForConnector = "tcp://" + ipAddress + ":1883"
 
-	return brokerUrlForConnector, brokerUrlForClients, err
+	time.Sleep(2 * time.Second)
+	_, out, err := c.Exec(ctx, []string{"vmq-admin", "api-key", "add", "key=testkey"})
+	if err != nil {
+		return "", "", "", err
+	}
+	_, err = io.Copy(os.Stdout, out)
+	log.Println("print cmt out:", err)
+
+	apiUrl = "http://testkey@" + ipAddress + ":8888"
+
+	return brokerUrlForConnector, brokerUrlForClients, apiUrl, err
 }

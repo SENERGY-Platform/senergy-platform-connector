@@ -31,7 +31,7 @@ func TestMqtt(t *testing.T) {
 	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_, _, err := Vernemqtt(ctx, wg, "", &configuration.ConfigStruct{})
+	_, _, _, err := Vernemqtt(ctx, wg, "", &configuration.ConfigStruct{})
 	if err != nil {
 		t.Error(err)
 		return

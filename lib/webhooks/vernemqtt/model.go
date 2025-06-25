@@ -57,3 +57,7 @@ type OnlineWebhookMsg struct {
 type DisconnectWebhookMsg struct {
 	ClientId string `json:"client_id"`
 }
+
+type DisconnectCommand struct {
+	Username string `json:"username"`
+}
