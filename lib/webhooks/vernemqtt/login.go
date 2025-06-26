@@ -31,6 +31,15 @@ import (
 	"strconv"
 )
 
+// login godoc
+// @Summary      login webhook
+// @Description  checks auth; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format
+// @Accept       json
+// @Produce      json
+// @Param        message body LoginWebhookMsg true "login infos"
+// @Success      200 {object}  OkResponse
+// @Failure      400 {object}  ErrorResponse
+// @Router       /login [POST]
 func login(writer http.ResponseWriter, request *http.Request, config configuration.Config, connector *platform_connector_lib.Connector, connectionLimit *connectionlimit.ConnectionLimitHandler, logger *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {

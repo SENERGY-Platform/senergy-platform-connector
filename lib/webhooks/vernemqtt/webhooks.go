@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/helper"
+	"github.com/swaggo/swag"
 	"io"
 	"log"
 	"net/http"
@@ -35,11 +36,13 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 )
 
+//go:generate go tool swag init -o ../../../docs --parseDependency -d .. -g vernemqtt/webhooks.go
+
 func sendError(writer http.ResponseWriter, msg string, logging bool) {
 	if logging {
 		log.Println("DEBUG: send error:", msg)
 	}
-	err := json.NewEncoder(writer).Encode(map[string]map[string]string{"result": {"error": msg}})
+	err := json.NewEncoder(writer).Encode(ErrorResponse{Result: ErrorResponseResult{Error: msg}})
 	if err != nil {
 		log.Println("ERROR: unable to send error msg:", err, msg)
 	}
@@ -47,14 +50,15 @@ func sendError(writer http.ResponseWriter, msg string, logging bool) {
 
 func sendIgnoreRedirect(writer http.ResponseWriter, topic string, msg string) {
 	log.Println("WARNING: send ignore redirect:", topic, msg)
-	err := json.NewEncoder(writer).Encode(map[string]interface{}{
-		"result": "ok",
-		"modifiers": map[string]interface{}{
-			"topic":   "ignored/" + topic,
-			"payload": base64.StdEncoding.EncodeToString([]byte(msg)),
-			"retain":  false,
-			"qos":     0,
-		}})
+	err := json.NewEncoder(writer).Encode(RedirectResponse{
+		Result: "ok",
+		Modifiers: RedirectModifiers{
+			Topic:   "ignored/" + topic,
+			Payload: base64.StdEncoding.EncodeToString([]byte(msg)),
+			Retain:  false,
+			Qos:     0,
+		},
+	})
 	if err != nil {
 		log.Println("ERROR: unable to send ignore redirect:", err, msg)
 	}
@@ -93,30 +97,48 @@ func removeSecretsFromString(config platform_connector_lib.Config, input string)
 }
 
 func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, rejected []WebhookmsgTopic) {
-	topics := []interface{}{}
+	topics := []WebhookmsgTopic{}
 	for _, topic := range ok {
 		topics = append(topics, topic)
 	}
 	for _, topic := range rejected {
-		topics = append(topics, map[string]interface{}{
-			"topic": topic.Topic,
-			"qos":   128,
+		topics = append(topics, WebhookmsgTopic{
+			Topic: topic.Topic,
+			Qos:   128,
 		})
 	}
-	msg := map[string]interface{}{
-		"result": "ok",
-		"topics": topics,
-	}
-	err := json.NewEncoder(writer).Encode(msg)
+	err := json.NewEncoder(writer).Encode(SubscriptionResponse{
+		Result: "ok",
+		Topics: topics,
+	})
 	if err != nil {
 		log.Println("ERROR: unable to send sendSubscriptionResult msg:", err)
 	}
 }
 
+// InitWebhooks doc
+// @title         Senergy-Connector-Webhooks
+// @description   webhooks for vernemqtt; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format
+// @version       0.1
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+// @BasePath  /
 func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, connectionLogger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
 	router := http.NewServeMux()
 
 	logger := GetLogger()
+
+	router.HandleFunc("GET /doc", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+		doc, err := swag.ReadDoc()
+		if err != nil {
+			http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		//remove empty host to enable developer-swagger-api service to replace it; can not use cleaner delete on json object, because developer-swagger-api is sensible to formatting; better alternative is refactoring of developer-swagger-api/apis/db/db.py
+		doc = strings.Replace(doc, `"host": "",`, "", 1)
+		_, _ = writer.Write([]byte(doc))
+	})
 
 	router.HandleFunc("/disconnect-command", func(writer http.ResponseWriter, request *http.Request) {
 		disconnectCommand(writer, request, config, logger)

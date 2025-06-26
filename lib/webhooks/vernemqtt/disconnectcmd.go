@@ -29,6 +29,15 @@ import (
 	"time"
 )
 
+// disconnectCommand godoc
+// @Summary      disconnected command webhook
+// @Description  disconnects mqtt clients of given user; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format
+// @Accept       json
+// @Produce      json
+// @Param        message body DisconnectCommand true "disconnect command info"
+// @Success      200 {object}  OkResponse
+// @Failure      400 {object}  ErrorResponse
+// @Router       /disconnect-command [POST]
 func disconnectCommand(writer http.ResponseWriter, request *http.Request, config configuration.Config, logger *slog.Logger) {
 	defer func() {
 		if p := recover(); p != nil {

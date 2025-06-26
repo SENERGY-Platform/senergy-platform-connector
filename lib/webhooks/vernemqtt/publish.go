@@ -31,6 +31,16 @@ import (
 	"time"
 )
 
+// publish godoc
+// @Summary      publish webhook
+// @Description  checks auth for the published message and forwards it to kafka; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format
+// @Accept       json
+// @Produce      json
+// @Param        message body PublishWebhookMsg true "publish message"
+// @Success      200 {object}  OkResponse
+// @Success      201 {object}  RedirectResponse
+// @Failure      400 {object}  ErrorResponse
+// @Router       /publish [POST]
 func publish(writer http.ResponseWriter, request *http.Request, config configuration.Config, handlers []handler.Handler, connector *platform_connector_lib.Connector) {
 	defer func() {
 		if p := recover(); p != nil {

@@ -26,6 +26,16 @@ import (
 	"runtime/debug"
 )
 
+// subscribe godoc
+// @Summary      subscribe webhook
+// @Description  checks auth for the subscription; SubscriptionResponse.Topics.Qos==128 signals rejected subscription; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format
+// @Accept       json
+// @Produce      json
+// @Param        message body SubscribeWebhookMsg true "subscription message"
+// @Success      200 {object}  OkResponse
+// @Success      201 {object}  SubscriptionResponse
+// @Failure      400 {object}  ErrorResponse
+// @Router       /subscribe [POST]
 func subscribe(writer http.ResponseWriter, request *http.Request, config configuration.Config, handlers []handler.Handler) {
 	defer func() {
 		if p := recover(); p != nil {

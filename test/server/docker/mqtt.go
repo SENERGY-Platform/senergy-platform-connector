@@ -139,7 +139,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			Tmpfs:           map[string]string{},
 			ExposedPorts:    ports,
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
-			AlwaysPullImage: true,
+			AlwaysPullImage: false,
 			Env:             env,
 			Files:           files,
 		},
