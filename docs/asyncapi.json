@@ -2,23 +2,47 @@
     "asyncapi": "3.0.0",
     "info": {
         "title": "Senergy-Platform-Connector",
-        "version": ""
+        "version": "",
+        "description": "topics or parts of topics in '[]' are placeholders"
     },
     "servers": {
         "kafka": {
             "host": "kafka:9092",
             "protocol": "kafka"
+        },
+        "mqtt": {
+            "host": "mqtt:1883",
+            "protocol": "mqtt"
         }
     },
     "channels": {
-        "Service-Topic": {
-            "address": "<Service-Topic>",
-            "description": "topic is a service.Id with replaced '#' and ':' by '_'",
+        "[service-topic]": {
+            "address": "[service-topic]",
             "messages": {
                 "subscribe.message": {
                     "$ref": "#/components/messages/Envelope"
                 }
-            }
+            },
+            "description": "[service-topic] is a service.Id with replaced '#' and ':' by '_'",
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
+        },
+        "command/[owner]/[device-local-id]/[service-local-id]": {
+            "address": "command/[owner]/[device-local-id]/[service-local-id]",
+            "messages": {
+                "subscribe.message": {
+                    "$ref": "#/components/messages/LibRequestEnvelope"
+                }
+            },
+            "description": "if config.ForceTopicsWithOwner==false -> topic = command/[device-local-id]/[service-local-id]",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
         },
         "connector": {
             "address": "connector",
@@ -26,7 +50,13 @@
                 "publish.message": {
                     "$ref": "#/components/messages/ModelProtocolMsg"
                 }
-            }
+            },
+            "description": "may be configured by config.Protocol",
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
         },
         "device-types": {
             "address": "device-types",
@@ -34,7 +64,12 @@
                 "publish.message": {
                     "$ref": "#/components/messages/PlatformConnectorLibDeviceTypeCommand"
                 }
-            }
+            },
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
         },
         "device_log": {
             "address": "device_log",
@@ -42,7 +77,151 @@
                 "subscribe.message": {
                     "$ref": "#/components/messages/ConnectionlogDeviceLog"
                 }
-            }
+            },
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
+        },
+        "error": {
+            "address": "error",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "type": "string"
+                    },
+                    "name": "Error-Message",
+                    "title": "Error-Message"
+                }
+            },
+            "description": "connector notifies user of the received error. technically no mqtt interaction but vernemqtt webhook.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "error/command/[correlation-id]": {
+            "address": "error/command/[correlation-id]",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "type": "string"
+                    },
+                    "name": "Error-Message",
+                    "title": "Error-Message"
+                }
+            },
+            "description": "connector notifies user of the received error and sends a command response with the error to kafka. technically no mqtt interaction but vernemqtt webhook.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "error/command/[owner-id]/[correlation-id]": {
+            "address": "error/command/[owner-id]/[correlation-id]",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "type": "string"
+                    },
+                    "name": "Error-Message",
+                    "title": "Error-Message"
+                }
+            },
+            "description": "connector notifies user of the received error and sends a command response with the error to kafka. technically no mqtt interaction but vernemqtt webhook.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "error/device/[local-device-id]": {
+            "address": "error/device/[local-device-id]",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "type": "string"
+                    },
+                    "name": "Error-Message",
+                    "title": "Error-Message"
+                }
+            },
+            "description": "connector notifies user of the received error. technically no mqtt interaction but vernemqtt webhook.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "error/device/[owner-id]/[local-device-id]": {
+            "address": "error/device/[owner-id]/[local-device-id]",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "type": "string"
+                    },
+                    "name": "Error-Message",
+                    "title": "Error-Message"
+                }
+            },
+            "description": "connector notifies user of the received error. technically no mqtt interaction but vernemqtt webhook.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "event/[owner]/[device-local-id]/[service-local-id]": {
+            "address": "event/[owner]/[device-local-id]/[service-local-id]",
+            "messages": {
+                "publish.message": {
+                    "payload": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": [
+                            "null",
+                            "object"
+                        ]
+                    },
+                    "name": "Event",
+                    "title": "Event",
+                    "description": "map of protocol-segment-name to raw payload. the payload is described in DeviceType.Service"
+                }
+            },
+            "description": "technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks. if config.ForceTopicsWithOwner==false -> topic = event/[device-local-id]/[service-local-id]",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "export/[user-id]/[anything]": {
+            "address": "export/[user-id]/[anything]",
+            "messages": {
+                "subscribe.message": {}
+            },
+            "description": "connector checks only access rights. real handling is performed by other service. technically no mqtt interaction but vernemqtt webhook. connector checks if user may subscribe to this topic.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "fog/analytics/[anything]": {
+            "address": "fog/analytics/[anything]",
+            "messages": {
+                "publish.message": {}
+            },
+            "description": "technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
         },
         "gateway_log": {
             "address": "gateway_log",
@@ -50,7 +229,36 @@
                 "subscribe.message": {
                     "$ref": "#/components/messages/ConnectionlogHubLog"
                 }
-            }
+            },
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
+        },
+        "notifications/[user-id]/[anything]": {
+            "address": "notifications/[user-id]/[anything]",
+            "messages": {
+                "subscribe.message": {}
+            },
+            "description": "connector checks only access rights. real handling is performed by other service. technically no mqtt interaction but vernemqtt webhook. connector checks if user may subscribe to this topic.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
+        },
+        "processes/[hub-id]/[anything]": {
+            "address": "processes/[hub-id]/[anything]",
+            "messages": {
+                "publish.message": {}
+            },
+            "description": "connector checks only access rights. real handling is performed by github.com/SENERGY-Platform/process-sync. technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
         },
         "response": {
             "address": "response",
@@ -58,18 +266,49 @@
                 "subscribe.message": {
                     "$ref": "#/components/messages/ModelProtocolMsg"
                 }
-            }
+            },
+            "description": "may be configured by config.KafkaResponseTopic",
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
+        },
+        "response/[owner]/[device-local-id]/[service-local-id]": {
+            "address": "response/[owner]/[device-local-id]/[service-local-id]",
+            "messages": {
+                "publish.message": {
+                    "$ref": "#/components/messages/ResponseResponseEnvelope"
+                }
+            },
+            "description": "technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks. if config.ForceTopicsWithOwner==false -> topic = response/[device-local-id]/[service-local-id]",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
+                }
+            ]
         }
     },
     "operations": {
-        "Service-Topic.subscribe": {
+        "[service-topic].subscribe": {
             "action": "send",
             "channel": {
-                "$ref": "#/channels/Service-Topic"
+                "$ref": "#/channels/[service-topic]"
             },
             "messages": [
                 {
-                    "$ref": "#/channels/Service-Topic/messages/subscribe.message"
+                    "$ref": "#/channels/[service-topic]/messages/subscribe.message"
+                }
+            ]
+        },
+        "command/[owner]/[device-local-id]/[service-local-id].subscribe": {
+            "action": "send",
+            "channel": {
+                "$ref": "#/channels/command~1[owner]~1[device-local-id]~1[service-local-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/command~1[owner]~1[device-local-id]~1[service-local-id]/messages/subscribe.message"
                 }
             ]
         },
@@ -106,6 +345,94 @@
                 }
             ]
         },
+        "error.publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/error"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/error/messages/publish.message"
+                }
+            ]
+        },
+        "error/command/[correlation-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/error~1command~1[correlation-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/error~1command~1[correlation-id]/messages/publish.message"
+                }
+            ]
+        },
+        "error/command/[owner-id]/[correlation-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/error~1command~1[owner-id]~1[correlation-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/error~1command~1[owner-id]~1[correlation-id]/messages/publish.message"
+                }
+            ]
+        },
+        "error/device/[local-device-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/error~1device~1[local-device-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/error~1device~1[local-device-id]/messages/publish.message"
+                }
+            ]
+        },
+        "error/device/[owner-id]/[local-device-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/error~1device~1[owner-id]~1[local-device-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/error~1device~1[owner-id]~1[local-device-id]/messages/publish.message"
+                }
+            ]
+        },
+        "event/[owner]/[device-local-id]/[service-local-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/event~1[owner]~1[device-local-id]~1[service-local-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/event~1[owner]~1[device-local-id]~1[service-local-id]/messages/publish.message"
+                }
+            ]
+        },
+        "export/[user-id]/[anything].subscribe": {
+            "action": "send",
+            "channel": {
+                "$ref": "#/channels/export~1[user-id]~1[anything]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/export~1[user-id]~1[anything]/messages/subscribe.message"
+                }
+            ]
+        },
+        "fog/analytics/[anything].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/fog~1analytics~1[anything]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/fog~1analytics~1[anything]/messages/publish.message"
+                }
+            ]
+        },
         "gateway_log.subscribe": {
             "action": "send",
             "channel": {
@@ -117,6 +444,28 @@
                 }
             ]
         },
+        "notifications/[user-id]/[anything].subscribe": {
+            "action": "send",
+            "channel": {
+                "$ref": "#/channels/notifications~1[user-id]~1[anything]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/notifications~1[user-id]~1[anything]/messages/subscribe.message"
+                }
+            ]
+        },
+        "processes/[hub-id]/[anything].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/processes~1[hub-id]~1[anything]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/processes~1[hub-id]~1[anything]/messages/publish.message"
+                }
+            ]
+        },
         "response.subscribe": {
             "action": "send",
             "channel": {
@@ -125,6 +474,17 @@
             "messages": [
                 {
                     "$ref": "#/channels/response/messages/subscribe.message"
+                }
+            ]
+        },
+        "response/[owner]/[device-local-id]/[service-local-id].publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/response~1[owner]~1[device-local-id]~1[service-local-id]"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/response~1[owner]~1[device-local-id]~1[service-local-id]/messages/publish.message"
                 }
             ]
         }
@@ -175,6 +535,29 @@
                             "object",
                             "null"
                         ]
+                    }
+                },
+                "type": "object"
+            },
+            "LibRequestEnvelope": {
+                "properties": {
+                    "completion_strategy": {
+                        "type": "string"
+                    },
+                    "correlation_id": {
+                        "type": "string"
+                    },
+                    "payload": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "timestamp": {
+                        "type": "integer"
                     }
                 },
                 "type": "object"
@@ -584,6 +967,29 @@
                     }
                 },
                 "type": "object"
+            },
+            "ResponseResponseEnvelope": {
+                "properties": {
+                    "correlation_id": {
+                        "type": "string"
+                    },
+                    "payload": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "trace": {
+                        "items": {
+                            "$ref": "#/components/schemas/ModelTrace"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object"
             }
         },
         "messages": {
@@ -608,6 +1014,13 @@
                 "name": "Envelope",
                 "title": "Envelope"
             },
+            "LibRequestEnvelope": {
+                "payload": {
+                    "$ref": "#/components/schemas/LibRequestEnvelope"
+                },
+                "name": "DeviceCommand",
+                "title": "DeviceCommand"
+            },
             "ModelProtocolMsg": {
                 "payload": {
                     "$ref": "#/components/schemas/ModelProtocolMsg"
@@ -621,6 +1034,13 @@
                 },
                 "name": "DeviceTypeCommand",
                 "title": "DeviceTypeCommand"
+            },
+            "ResponseResponseEnvelope": {
+                "payload": {
+                    "$ref": "#/components/schemas/ResponseResponseEnvelope"
+                },
+                "name": "CommandResponse",
+                "title": "CommandResponse"
             }
         }
     }
