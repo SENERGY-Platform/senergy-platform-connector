@@ -35,14 +35,14 @@ type ProducerProvider interface {
 
 func NewHandler(producerProvider ProducerProvider, fogTopicPrefix string) *Handler {
 	return &Handler{
-		producerProvider:        producerProvider,
-		fogTopicPrefix: fogTopicPrefix,
+		producerProvider: producerProvider,
+		fogTopicPrefix:   fogTopicPrefix,
 	}
 }
 
 type Handler struct {
-	producerProvider        ProducerProvider
-	fogTopicPrefix string
+	producerProvider ProducerProvider
+	fogTopicPrefix   string
 }
 
 type Result = handler.Result
@@ -74,15 +74,19 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		return Unhandled, nil
 	}
 
-	if !strings.HasPrefix(topic, this.fogTopicPrefix + "analytics/") {
+	if !strings.HasPrefix(topic, this.fogTopicPrefix+"analytics/") {
 		return Accepted, nil
 	}
 
 	if !strings.HasPrefix(topic, analyticsFogUpstreamLib.CloudUpstreamTopic) {
 		return Accepted, nil
 	}
-	
-	target := strings.Replace(topic, analyticsFogUpstreamLib.CloudUpstreamTopic + "/", "", 1)
+
+	//both fog/analytics/upstream/messages/# and fog/analytics/+/upstream/# exist
+	//the connector only handles fog/analytics/upstream fog/analytics/upstream/messages/#
+	//but allows fog/analytics/upstream/messages/# to enable other services to consume fog/analytics/upstream/messages/#
+
+	target := strings.Replace(topic, analyticsFogUpstreamLib.CloudUpstreamTopic+"/", "", 1)
 
 	key, err := this.getKey(payload)
 	if err != nil {
