@@ -47,6 +47,7 @@ func TestProcessHandler(t *testing.T) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.MqttAuthMethod = "password"
+	config.InitTopics = true
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)

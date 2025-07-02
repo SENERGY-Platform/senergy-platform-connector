@@ -151,6 +151,8 @@ type ConfigStruct struct {
 
 	VmqAdminApiUrl         string
 	DisconnectCommandDelay string
+
+	InitTopics bool
 }
 
 type Config = *ConfigStruct

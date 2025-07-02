@@ -107,6 +107,8 @@
     "VmqAdminApiUrl": "",
     "DisconnectCommandDelay": "120s",
 
+    "InitTopics": false,
+
     "KafkaTopicConfigs": {
         "device-types": [
             {

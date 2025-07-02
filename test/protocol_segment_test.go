@@ -96,12 +96,13 @@ func TestMultipleProtocolSegments(t *testing.T) {
 	t.Log("start kafka consumer")
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    serviceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     serviceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil

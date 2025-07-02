@@ -63,6 +63,7 @@ func TestWithErrorClient(t *testing.T) {
 	config.Log = "stdout"
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
 	config.MutedUserNotificationTitles = nil
+	config.InitTopics = true
 
 	notifyCalls := map[string][]string{}
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -142,12 +143,13 @@ func TestWithErrorClient(t *testing.T) {
 
 	consumedErrors := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    "errors",
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     "errors",
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedErrors = append(consumedErrors, msg)
 		return nil
@@ -168,7 +170,7 @@ func TestWithErrorClient(t *testing.T) {
 		replFactor = config.KafkaReplicationFactor
 	}
 
-	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
+	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor, true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -381,12 +383,13 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    getServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     getServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
@@ -400,12 +403,13 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedAnalytics := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    "analytics-foo",
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     "analytics-foo",
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedAnalytics = append(consumedAnalytics, msg)
 		return nil
@@ -419,12 +423,13 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedRespEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    setServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     setServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
@@ -438,12 +443,13 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedResponses := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    "response",
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     "response",
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
@@ -479,7 +485,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		replFactor = config.KafkaReplicationFactor
 	}
 
-	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
+	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor, true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -735,12 +741,13 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    getServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     getServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
@@ -755,12 +762,13 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 
 	consumedRespEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    setServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     setServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil

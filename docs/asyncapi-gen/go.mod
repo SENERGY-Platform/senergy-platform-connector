@@ -3,7 +3,7 @@ module asyncapi-gen
 go 1.24.0
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250515085751-54e25594b235
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250702080138-532fc33901d1
 	github.com/SENERGY-Platform/senergy-platform-connector v0.2.8
 	github.com/swaggest/go-asyncapi v0.8.0
 )
@@ -17,10 +17,11 @@ require (
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2 // indirect
 	github.com/SENERGY-Platform/converter v0.0.10 // indirect
 	github.com/SENERGY-Platform/developer-notifications v0.0.4 // indirect
-	github.com/SENERGY-Platform/device-repository v0.2.8 // indirect
+	github.com/SENERGY-Platform/device-repository v0.2.27 // indirect
+	github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20241007061544-de7132ae94e4 // indirect
-	github.com/SENERGY-Platform/permissions-v2 v0.0.27 // indirect
-	github.com/SENERGY-Platform/service-commons v0.0.0-20250123095636-6dfc659ee43e // indirect
+	github.com/SENERGY-Platform/permissions-v2 v0.0.38 // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

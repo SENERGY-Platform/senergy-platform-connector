@@ -60,6 +60,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 	config.AuthClientId = "connector"
 	config.AuthClientSecret = "secret"
 	config.MutedUserNotificationTitles = nil
+	config.InitTopics = true
 
 	clientId := ""
 

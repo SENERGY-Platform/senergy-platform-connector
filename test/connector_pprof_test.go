@@ -49,6 +49,7 @@ func TestWithPProf(t *testing.T) {
 	config.ValidateAllowUnknownField = true
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
+	config.InitTopics = true
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)

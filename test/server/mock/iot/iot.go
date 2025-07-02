@@ -20,7 +20,7 @@ import (
 
 func Mock(config configuration.Config, ctx context.Context) (err error) {
 	log.Println("start iot mock")
-	kafkaProducer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1)
+	kafkaProducer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1, true)
 	if err != nil {
 		return err
 	}

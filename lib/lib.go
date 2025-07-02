@@ -123,6 +123,8 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 		NotificationUserOverwrite:            config.NotificationUserOverwrite,
 		DeveloperNotificationUrl:             config.DeveloperNotificationUrl,
 		MutedUserNotificationTitles:          config.MutedUserNotificationTitles,
+
+		InitTopics: config.InitTopics,
 	})
 	if err != nil {
 		log.Println("ERROR: lib init", err)

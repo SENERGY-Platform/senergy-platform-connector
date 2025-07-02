@@ -47,6 +47,7 @@ func createConf(authentication string) (config configuration.Config, err error) 
 	config.MqttAuthMethod = authentication
 	config.AuthClientId = "connector"
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
+	config.InitTopics = true
 	return config, err
 }
 
@@ -194,12 +195,13 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	t.Log("start kafka consumer")
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    getServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     getServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
@@ -213,12 +215,13 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 
 	consumedAnalytics := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    "analytics-foo",
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     "analytics-foo",
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedAnalytics = append(consumedAnalytics, msg)
 		return nil
@@ -232,12 +235,13 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 
 	consumedRespEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    setServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     setServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
@@ -251,12 +255,13 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 
 	consumedResponses := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    "response",
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     "response",
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
@@ -298,7 +303,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	}
 
 	t.Log("publish commands")
-	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor)
+	producer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, true, true, partitionsNum, replFactor, true)
 	if err != nil {
 		t.Error(err)
 		return
@@ -381,6 +386,11 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		ServiceId string                            `json:"service_id"`
 		Value     map[string]map[string]interface{} `json:"value"`
 	}
+	if len(consumedEvents) == 0 {
+		t.Error("no events consumed")
+		return
+	}
+
 	eventResult := EventTestType{}
 	err = json.Unmarshal(consumedEvents[0], &eventResult)
 	if err != nil {

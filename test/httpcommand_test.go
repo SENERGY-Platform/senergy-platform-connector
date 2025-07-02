@@ -55,6 +55,7 @@ func TestHttpCommand(t *testing.T) {
 	config.ValidateAllowMissingField = true
 	config.Log = "stdout"
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
+	config.InitTopics = true
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
@@ -148,12 +149,13 @@ func TestHttpCommand(t *testing.T) {
 
 	consumedEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    getServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     getServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
 		return nil
@@ -168,12 +170,13 @@ func TestHttpCommand(t *testing.T) {
 
 	consumedRespEvents := [][]byte{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl: config.KafkaUrl,
-		GroupId:  "test_client",
-		Topic:    setServiceTopic,
-		MinBytes: 1000,
-		MaxBytes: 1000000,
-		MaxWait:  100 * time.Millisecond,
+		KafkaUrl:  config.KafkaUrl,
+		GroupId:   "test_client",
+		Topic:     setServiceTopic,
+		MinBytes:  1000,
+		MaxBytes:  1000000,
+		MaxWait:   100 * time.Millisecond,
+		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
 		consumedRespEvents = append(consumedRespEvents, msg)
 		return nil
