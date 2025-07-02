@@ -282,6 +282,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 	config.Log = "stdout"
 	config.MqttErrorOnEventValidationError = true
 	config.ForceCommandSubscriptionServiceSingleLevelWildcard = false
+	config.InitTopics = false
 
 	var brokerUrlForClients string
 	config, brokerUrlForClients, err = server.New(ctx, wg, config, client.MQTT4)
