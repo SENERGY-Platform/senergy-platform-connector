@@ -17,11 +17,13 @@
 package fog
 
 import (
-	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
-	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"log"
 	"reflect"
 	"testing"
+	"time"
+
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 )
 
 type MockProducerProvider struct {
@@ -171,6 +173,15 @@ func (this *KafkaMock) Produce(topic string, message string) (err error) {
 }
 
 func (this *KafkaMock) ProduceWithKey(topic string, message string, key string) (err error) {
+	this.Published = append(this.Published, KafkaMockMessage{
+		Topic:   topic,
+		Key:     key,
+		Message: message,
+	})
+	return nil
+}
+
+func (this *KafkaMock) ProduceWithTimestamp(topic string, message string, key string, timestamp time.Time) (err error) {
 	this.Published = append(this.Published, KafkaMockMessage{
 		Topic:   topic,
 		Key:     key,

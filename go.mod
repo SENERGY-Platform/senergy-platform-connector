@@ -10,8 +10,8 @@ require (
 	github.com/SENERGY-Platform/api-docs-provider/lib/client v0.0.3
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2
 	github.com/SENERGY-Platform/converter v0.0.10
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250702103132-b906bb46e9f3
-	github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250909121408-f0cb60f24270
+	github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa
 	github.com/eclipse/paho.golang v0.21.0
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/google/uuid v1.6.0
