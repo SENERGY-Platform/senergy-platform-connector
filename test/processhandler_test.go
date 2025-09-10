@@ -18,15 +18,16 @@ package test
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
-	paho "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
+	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
 func TestProcessHandler(t *testing.T) {
@@ -56,7 +57,7 @@ func TestProcessHandler(t *testing.T) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "user", "user", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return

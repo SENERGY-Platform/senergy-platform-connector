@@ -20,15 +20,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/vernemqtt"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	"io"
 	"net/http"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/vernemqtt"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 )
 
 func TestDisconnectCommand(t *testing.T) {
@@ -54,19 +55,19 @@ func TestDisconnectCommand(t *testing.T) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	c2, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault)
+	c2, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	c3, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "admin", "admin", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault)
+	c3, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "admin", "admin", "", "testname", []client.DeviceRepresentation{}, "password", client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return

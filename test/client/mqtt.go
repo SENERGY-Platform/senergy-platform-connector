@@ -19,12 +19,13 @@ package client
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"time"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"log"
-	"time"
 )
 
 type MqttVersion int
@@ -113,6 +114,11 @@ func (this *Client) Unsubscribe(deviceUri string, serviceUri string) (err error)
 }
 
 func (this *Client) SendEvent(deviceUri string, serviceUri string, msg platform_connector_lib.EventMsg) (err error) {
+	timestamp := time.Now()
+	if this.timeProvider != nil {
+		timestamp = this.timeProvider()
+	}
+	msg["timestamp_rfc3339nano"] = timestamp.Format(time.RFC3339Nano)
 	return this.SendEventWithQos(deviceUri, serviceUri, msg, 2)
 }
 

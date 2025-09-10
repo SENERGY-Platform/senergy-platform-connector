@@ -18,10 +18,6 @@ package test
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
-	_ "github.com/lib/pq"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -30,6 +26,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
+	_ "github.com/lib/pq"
 )
 
 func TestIgnore4(t *testing.T) {
@@ -79,7 +80,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		return
 	}
 
-	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault)
+	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -89,7 +90,7 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	clientId = c.HubId
 
-	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault)
+	adminClient, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, mqttVersion, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return

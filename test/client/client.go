@@ -34,7 +34,7 @@ var Secret = "d61daec4-40d6-4d3e-98c9-f3b515696fc6"
 
 const OwnerInTopicDefault = true
 
-func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion, ownerInTopic bool) (client *Client, err error) {
+func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl string, userName string, password string, hubId string, hubName string, devices []DeviceRepresentation, authenticationMethod string, mqttVersion MqttVersion, ownerInTopic bool, timeProvider func() time.Time) (client *Client, err error) {
 	client = &Client{
 		ownerInTopic:         ownerInTopic,
 		authUrl:              authUrl,
@@ -52,6 +52,7 @@ func New(mqttUrl string, deviceManagerUrl string, deviceRepoUrl string, authUrl 
 		subscriptions:        map[string]Subscription{},
 		authenticationMethod: authenticationMethod,
 		mqttVersion:          mqttVersion,
+		timeProvider:         timeProvider,
 	}
 	token, err := client.login()
 	if err != nil {
@@ -126,7 +127,8 @@ type Client struct {
 
 	authenticationMethod string
 
-	ConnLog []string
+	ConnLog      []string
+	timeProvider func() time.Time
 }
 
 func (this *Client) Stop() {

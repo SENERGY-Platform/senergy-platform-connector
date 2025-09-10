@@ -19,6 +19,7 @@ package test
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/SENERGY-Platform/converter/lib/converter/characteristics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 
@@ -85,7 +86,7 @@ func TestMultipleProtocolSegments(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault)
+	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return

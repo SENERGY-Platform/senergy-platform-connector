@@ -20,15 +20,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	_ "github.com/lib/pq"
-	"log"
-	"sync"
-	"testing"
-	"time"
 )
 
 func TestWithPProf(t *testing.T) {
@@ -95,7 +96,7 @@ func TestWithPProf(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return

@@ -3,7 +3,7 @@ module asyncapi-gen
 go 1.24.0
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250702103132-b906bb46e9f3
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250909121408-f0cb60f24270
 	github.com/SENERGY-Platform/senergy-platform-connector v0.2.8
 	github.com/swaggest/go-asyncapi v0.8.0
 )
@@ -21,7 +21,7 @@ require (
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20241007061544-de7132ae94e4 // indirect
 	github.com/SENERGY-Platform/permissions-v2 v0.0.38 // indirect
-	github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0 // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

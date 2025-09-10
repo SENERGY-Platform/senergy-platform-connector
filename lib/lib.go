@@ -18,7 +18,6 @@ package lib
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -43,10 +42,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 )
 
-type Metadata struct {
-	Timestamp string `json:"timestamp_rfc3339nano"`
-}
-
 func Start(ctx context.Context, config configuration.Config) (err error) {
 	asyncFlushFrequency, err := time.ParseDuration(config.AsyncFlushFrequency)
 	if err != nil {
@@ -65,25 +60,22 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 	correlationservice := correlation.New(int32(config.CorrelationExpiration), int(config.CorrelationMaxIdleConns), correlationTimeout, memcaacheUrls...)
 
 	connector, err := platform_connector_lib.New(platform_connector_lib.Config{
-		EventTimeProvider: func(msg platform_connector_lib.EventMsg) time.Time {
-			metadataStr, ok := msg["metadata"]
+		EventTimeProvider: func(msg platform_connector_lib.EventMsg) (platform_connector_lib.EventMsg, time.Time) {
+			field := "timestamp_rfc3339nano"
+			timestampStr, ok := msg[field]
 			if !ok {
-				return time.Now()
+				return msg, time.Now()
 			}
-			metadata := Metadata{}
-			err = json.Unmarshal([]byte(metadataStr), &metadata)
+			timestampStr = strings.TrimSpace(timestampStr)
+			delete(msg, field)
+			if timestampStr == "" {
+				return msg, time.Now()
+			}
+			timestamp, err := time.Parse(time.RFC3339Nano, timestampStr)
 			if err != nil {
-				log.Println("WARNING: unable to parse metadata", err)
-				return time.Now()
+				return msg, time.Now()
 			}
-			if metadata.Timestamp != "" {
-				return time.Now()
-			}
-			timestamp, err := time.Parse(time.RFC3339Nano, metadata.Timestamp)
-			if err != nil {
-				return time.Now()
-			}
-			return timestamp
+			return msg, timestamp
 		},
 
 		PartitionsNum:            config.KafkaPartitionNum,

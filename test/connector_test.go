@@ -87,6 +87,8 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	expectedTime := time.Date(2006, time.August, 3, 11, 4, 5, 0, time.UTC)
+
 	config, err := createConf(authenticationMethod)
 	if err != nil {
 		t.Error(err)
@@ -126,14 +128,14 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault)
+	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault, func() time.Time { return expectedTime })
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault, func() time.Time { return expectedTime })
 	if err != nil {
 		t.Error(err)
 		return
@@ -194,16 +196,25 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 
 	t.Log("start kafka consumer")
 	consumedEvents := [][]byte{}
+	receivedExpectedTimestampsCount := 0
+	receivedOtherTimestampsCount := 0
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
-		KafkaUrl:  config.KafkaUrl,
-		GroupId:   "test_client",
-		Topic:     getServiceTopic,
-		MinBytes:  1000,
-		MaxBytes:  1000000,
-		MaxWait:   100 * time.Millisecond,
-		InitTopic: true,
-	}, func(topic string, msg []byte, t time.Time) error {
+		KafkaUrl:         config.KafkaUrl,
+		GroupId:          "test_client",
+		Topic:            getServiceTopic,
+		MinBytes:         1000,
+		MaxBytes:         1000000,
+		MaxWait:          100 * time.Millisecond,
+		InitTopic:        true,
+		AllowOldMessages: true,
+	}, func(topic string, msg []byte, timestamp time.Time) error {
 		consumedEvents = append(consumedEvents, msg)
+		if timestamp != expectedTime {
+			t.Log("unexpected timestamp", timestamp, expectedTime)
+			receivedOtherTimestampsCount++
+		} else {
+			receivedExpectedTimestampsCount++
+		}
 		return nil
 	}, func(err error) {
 		t.Error(err)
@@ -353,6 +364,14 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
+	time.Sleep(2 * time.Second)
+
+	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 43, "title": "event", "updateTime": 0}`})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	time.Sleep(20 * time.Second) //wait for command to finish
 
 	t.Log("check state")
@@ -365,11 +384,18 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
 	}
 
-	if len(consumedEvents) != 2 {
+	if len(consumedEvents) != 3 {
 		t.Error("unexpected event result len", len(consumedEvents))
 		for _, event := range consumedEvents {
 			t.Log(string(event))
 		}
+	}
+
+	if receivedExpectedTimestampsCount != 2 {
+		t.Error("unexpected number of expected timestamps", receivedExpectedTimestampsCount)
+	}
+	if receivedOtherTimestampsCount != 1 {
+		t.Error("unexpected number of other timestamps", receivedOtherTimestampsCount)
 	}
 
 	if len(consumedResponses) != 2 {

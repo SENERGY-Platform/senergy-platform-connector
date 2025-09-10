@@ -21,6 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/httpcommand"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
@@ -29,12 +36,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
 	_ "github.com/lib/pq"
-	"io"
-	"net/http"
-	"reflect"
-	"sync"
-	"testing"
-	"time"
 )
 
 func TestHttpCommand(t *testing.T) {
@@ -90,14 +91,14 @@ func TestHttpCommand(t *testing.T) {
 			Uri:     "test1",
 			IotType: deviceTypeId,
 		},
-	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
+	}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//will later be used for faulty event
-	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault)
+	cerr, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{}, config.MqttAuthMethod, client.MQTT4, client.OwnerInTopicDefault, nil)
 	if err != nil {
 		t.Error(err)
 		return
