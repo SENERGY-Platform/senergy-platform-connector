@@ -19,7 +19,6 @@ package server
 import (
 	"context"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
-	"github.com/testcontainers/testcontainers-go"
 	"log"
 	"net"
 	"runtime/debug"
@@ -33,6 +32,18 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
 )
+
+func getOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "9.9.9.9:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
 
 func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config, mqttVersion client.MqttVersion) (config configuration.Config, brokerUrlForClients string, err error) {
 	config = startConfig
@@ -53,15 +64,10 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		log.Println("unable to find free port", err)
 		return config, "", err
 	}
-	_, zk, err := docker.Zookeeper(ctx, wg)
-	if err != nil {
-		log.Println("ERROR:", err)
-		debug.PrintStack()
-		return config, "", err
-	}
-	zookeeperUrl := zk + ":2181"
 
-	config.KafkaUrl, err = docker.Kafka(ctx, wg, zookeeperUrl)
+	hostIp := getOutboundIP().String()
+
+	config.KafkaUrl, err = docker.Kafka(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -73,24 +79,15 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		return config, "", err
 	}
 
-	_, memcacheIp, err := docker.Memcached(ctx, wg)
+	memcachePort, memcacheIp, err := docker.Memcached(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		return config, "", err
 	}
-	config.MemcachedUrl = memcacheIp + ":11211"
-	config.IotCacheUrls = memcacheIp + ":11211"
-	config.TokenCacheUrls = memcacheIp + ":11211"
-
-	provider, err := testcontainers.NewDockerProvider(testcontainers.DefaultNetwork("bridge"))
-	if err != nil {
-		return config, "", err
-	}
-	hostIp, err := provider.GetGatewayIP(ctx)
-	if err != nil {
-		return config, "", err
-	}
+	config.MemcachedUrl = memcacheIp + ":" + memcachePort
+	config.IotCacheUrls = memcacheIp + ":" + memcachePort
+	config.TokenCacheUrls = memcacheIp + ":" + memcachePort
 
 	if mqttVersion == client.MQTT5 {
 		config.MqttVersion = "5"

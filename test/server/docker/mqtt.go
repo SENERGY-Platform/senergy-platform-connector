@@ -18,7 +18,7 @@ import (
 
 func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, apiUrl string, err error) {
 	log.Println("start mqtt")
-	ports := []string{"1883/tcp"}
+	ports := []string{"1883/tcp", "8888/tcp"}
 	env := map[string]string{}
 	var files []testcontainers.ContainerFile
 	if config.MqttAuthMethod == "certificate" {
@@ -167,17 +167,25 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		log.Println("DEBUG: remove container mqtt", c.Terminate(context.Background()))
 	}()
 
-	ipAddress, err := c.ContainerIP(ctx)
+	ipAddress := "localhost"
+	if config.MqttAuthMethod == "certificate" {
+		port, err := c.MappedPort(ctx, "8883/tcp")
+		if err != nil {
+			return "", "", "", err
+		}
+		brokerUrlForClients = "ssl://" + ipAddress + ":" + port.Port()
+	} else {
+		port, err := c.MappedPort(ctx, "1883/tcp")
+		if err != nil {
+			return "", "", "", err
+		}
+		brokerUrlForClients = "tcp://" + ipAddress + ":" + port.Port()
+	}
+	port, err := c.MappedPort(ctx, "1883/tcp")
 	if err != nil {
 		return "", "", "", err
 	}
-
-	if config.MqttAuthMethod == "certificate" {
-		brokerUrlForClients = "ssl://" + ipAddress + ":8883"
-	} else {
-		brokerUrlForClients = "tcp://" + ipAddress + ":1883"
-	}
-	brokerUrlForConnector = "tcp://" + ipAddress + ":1883"
+	brokerUrlForConnector = "tcp://" + ipAddress + ":" + port.Port()
 
 	time.Sleep(2 * time.Second)
 	_, out, err := c.Exec(ctx, []string{"vmq-admin", "api-key", "add", "key=testkey"})
@@ -187,7 +195,11 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	_, err = io.Copy(os.Stdout, out)
 	log.Println("print cmt out:", err)
 
-	apiUrl = "http://testkey@" + ipAddress + ":8888"
+	port, err = c.MappedPort(ctx, "8888/tcp")
+	if err != nil {
+		return "", "", "", err
+	}
+	apiUrl = "http://testkey@" + ipAddress + ":" + port.Port()
 
 	return brokerUrlForConnector, brokerUrlForClients, apiUrl, err
 }
