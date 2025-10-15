@@ -18,11 +18,14 @@ import (
 	"sync"
 )
 
-func Mock(config configuration.Config, ctx context.Context) (err error) {
+func Mock(config configuration.Config, ctx context.Context, useKafka bool) (err error) {
 	log.Println("start iot mock")
-	kafkaProducer, err := kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1, true)
-	if err != nil {
-		return err
+	var kafkaProducer kafka.ProducerInterface
+	if useKafka {
+		kafkaProducer, err = kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1, true)
+		if err != nil {
+			return err
+		}
 	}
 	//kafkaProducer.Log(log.New(os.Stdout, "[KAFKA-IOT-MOCK] ", 0))
 	router, err := getRouter(&Controller{

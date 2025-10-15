@@ -17,6 +17,7 @@
 package event
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -64,5 +65,6 @@ func NewTestWaitingRoom() WaitingRoomIf {
 }
 
 func (this *TestWaitingRoom) EnsureWaitingRoom(token security.JwtToken, stub DeviceStub) (res DeviceStub, err error) {
+	log.Printf("DEBUG: TestDeviceWaitingRoom ensured device %+v\n", stub)
 	return stub, nil
 }

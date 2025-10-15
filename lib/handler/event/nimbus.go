@@ -81,6 +81,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	localDeviceId := strings.ReplaceAll(msg.Manufacturer+"_"+msg.Type+"_"+msg.MeterId+"_"+msg.Version, " ", "_")
 	localDeviceId = strings.ReplaceAll(localDeviceId, "(", "")
 	localDeviceId = strings.ReplaceAll(localDeviceId, ")", "")
+	localDeviceId = strings.ReplaceAll(localDeviceId, ",", "")
 	key := "messages." + user + "." + localDeviceId
 	oldMsg, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[[]byte])
 	if err != nil && err != cache.ErrNotFound {

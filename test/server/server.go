@@ -76,7 +76,7 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		return config, "", err
 	}
 
-	err = iot.Mock(config, ctx)
+	err = iot.Mock(config, ctx, true)
 	if err != nil {
 		return config, "", err
 	}

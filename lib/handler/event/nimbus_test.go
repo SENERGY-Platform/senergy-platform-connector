@@ -17,9 +17,16 @@
 package event
 
 import (
+	"context"
 	"log"
 	"strings"
 	"testing"
+
+	"github.com/SENERGY-Platform/models/go/models"
+	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
 )
 
 func TestDecryptAndDecodeTelegram(t *testing.T) {
@@ -38,4 +45,43 @@ func TestDecryptAndDecodeTelegram(t *testing.T) {
 		t.Fatal(err)
 	}
 	log.Printf("%v\n", m)
+}
+
+func TestHandleWmbusEvent(t *testing.T) {
+	config, err := configuration.LoadConfig("../../../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = auth.Mock(config, context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = iot.Mock(config, context.Background(), false)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	connector, err := platform_connector_lib.New(platform_connector_lib.Config{
+		AuthEndpoint:     config.AuthEndpoint,
+		DeviceManagerUrl: config.DeviceManagerUrl,
+		DeviceRepoUrl:    config.DeviceRepoUrl,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	handler := New(config, connector, NewTestWaitingRoom())
+
+	err = handler.handleWmbusEvent("sepl", "", platform_connector_lib.EventMsg{"data": "{\"telegram\":\"A944FA120795133002077A02009025D6464C67E51DA564BBF470979ABE832CEE7270F72AE24D3432CCF6B22BB772E8F85ADE5C4506C2F45B7C4BA6031B2A5068438A1DC312481612004C3AA57598BC91E14C68FA043D13B21A92E51660C327A9A7C5E77147BCAD863C0573E41560E1293258F4ECA7E6AFB1E9AB28F36C488EDEA3D3AD2C9A70B40009D44D2AC9D66CAAFB6B4B18C532A72758E2B2390268D103FD0C08000002FD0B0111\",\"manufacturer\":\"(DWZ) Lorenz, Germany (0x12fa)\",\"meter_id\":\"30139507\",\"type\":\"Water meter (0x07) encrypted\",\"version\":\"0x02\",\"rssi\":137,\"rssi_unit\":\"dBm\",\"device\":\"rtlwmbus[47848770]\",\"driver\":\"waterstarm\"}", "timestamp_rfc3339nano": "2025-10-15T11:06:00.269695138Z"}, 2, models.Device{})
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 }
