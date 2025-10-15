@@ -19,14 +19,15 @@ package lib
 import (
 	"context"
 	"errors"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/eclipse/paho.golang/autopaho"
-	"github.com/eclipse/paho.golang/paho"
-	"github.com/google/uuid"
 	"log"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/eclipse/paho.golang/autopaho"
+	"github.com/eclipse/paho.golang/paho"
+	"github.com/google/uuid"
 
 	paho4 "github.com/eclipse/paho.mqtt.golang"
 )
@@ -82,7 +83,7 @@ func (this *Mqtt4) Publish(topic, msg string) (err error) {
 	}
 	token := this.client.Publish(topic, 2, false, msg)
 	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Publish(): ", token.Error())
+		log.Println("Error on Client.Publish() (Mqtt4): ", token.Error())
 		return token.Error()
 	}
 	return err
@@ -123,8 +124,7 @@ func Mqtt5Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt5, 
 
 	c.SetUsernamePassword(config.AuthClientId, []byte(config.AuthClientSecret))
 
-	timeout, _ := context.WithTimeout(ctx, time.Minute)
-	mqtt.client, err = autopaho.NewConnection(timeout, c)
+	mqtt.client, err = autopaho.NewConnection(ctx, c)
 	if err != nil {
 		return mqtt, err
 	}
@@ -133,6 +133,7 @@ func Mqtt5Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt5, 
 		disconnecttimeout, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		log.Println("disconnect:", mqtt.client.Disconnect(disconnecttimeout))
 	}()
+	timeout, _ := context.WithTimeout(ctx, time.Minute)
 	return mqtt, mqtt.client.AwaitConnection(timeout)
 }
 
@@ -148,7 +149,7 @@ func (this *Mqtt5) Publish(topic, msg string) (err error) {
 		Payload: []byte(msg),
 	})
 	if err != nil {
-		log.Println("Error on Client.Publish(): ", err)
+		log.Println("Error on Client.Publish() (Mqtt5): ", err)
 		return err
 	}
 	return err

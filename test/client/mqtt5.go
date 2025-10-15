@@ -19,15 +19,16 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
-	"github.com/eclipse/paho.golang/autopaho"
-	"github.com/eclipse/paho.golang/paho"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/eclipse/paho.golang/autopaho"
+	"github.com/eclipse/paho.golang/paho"
 )
 
 func (this *Client) startMqtt5() (err error) {
@@ -80,12 +81,12 @@ func (this *Client) startMqtt5() (err error) {
 		config.ConnectPassword = []byte(this.password)
 	}
 
-	timeout, _ := context.WithTimeout(context.Background(), time.Minute)
-	this.mqtt5, err = autopaho.NewConnection(timeout, config)
+	this.mqtt5, err = autopaho.NewConnection(context.Background(), config)
 	if err != nil {
 		return err
 	}
 	this.mqtt5router = config.Router
+	timeout, _ := context.WithTimeout(context.Background(), time.Minute)
 	return this.mqtt5.AwaitConnection(timeout)
 }
 
@@ -138,7 +139,7 @@ func (this *Client) PublishMqtt5(topic string, msg interface{}, qos byte) (err e
 		Payload: payload,
 	})
 	if err != nil {
-		log.Println("Error on Client.Publish(): ", err)
+		log.Println("Error on Client.PublishMqtt5(): ", err)
 		return err
 	}
 	return err

@@ -117,7 +117,7 @@ func (this *Client) PublishMqtt4(topic string, msg interface{}, qos byte) (err e
 	}
 	token := this.mqtt.Publish(topic, qos, false, string(payload))
 	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Publish(): ", token.Error())
+		log.Println("Error on Client.PublishMqtt4(): ", token.Error())
 		return token.Error()
 	}
 	return err
