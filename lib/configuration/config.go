@@ -153,6 +153,13 @@ type ConfigStruct struct {
 	DisconnectCommandDelay string
 
 	InitTopics bool
+
+	NimbusDeviceTypeId       string
+	WmbusDeviceTypeNamespace string
+	WmbusDeviceClassId       string
+	SenergyProtocolId        string
+	WaitingRoomUrl           string
+	WmbusmetersExecutable    string
 }
 
 type Config = *ConfigStruct

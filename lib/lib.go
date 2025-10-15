@@ -42,7 +42,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 )
 
-func Start(ctx context.Context, config configuration.Config) (err error) {
+func Start(ctx context.Context, config configuration.Config, waitingRoom event.WaitingRoomIf) (err error) {
 	asyncFlushFrequency, err := time.ParseDuration(config.AsyncFlushFrequency)
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func Start(ctx context.Context, config configuration.Config) (err error) {
 	}
 
 	handlers := []handler.Handler{
-		event.New(config, connector),
+		event.New(config, connector, waitingRoom),
 		response.New(config, connector, correlationservice),
 		command.New(config, connector, logger),
 		process.New(connector),

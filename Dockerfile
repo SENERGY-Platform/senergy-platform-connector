@@ -11,6 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o app
 RUN git log -1 --oneline > version.txt
 
 FROM alpine:latest
+RUN apk add rtl-sdr gcc libxml2
 WORKDIR /root/
 COPY --from=builder /go/src/app/app .
 COPY --from=builder /go/src/app/config.json .

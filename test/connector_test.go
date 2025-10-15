@@ -27,12 +27,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/SENERGY-Platform/mgw-wmbus-dc/pkg/util"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -114,19 +116,47 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		t.Error(err)
 		return
 	}
-	deviceTypeId, _, getServiceTopic, _, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
+	deviceTypeId, _, getServiceTopic, _, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	deviceTypeIdNimbus, _, _, _, _, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	config.NimbusDeviceTypeId = deviceTypeIdNimbus
+
 	//time.Sleep(10 * time.Second)
+
+	wmbusTypeId, err := util.DeviceTypeId("(TCH) (0x6850)", "type (0x80)", "0x69", uuid.MustParse(config.WmbusDeviceTypeNamespace))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, _, _, _, _, err = createDeviceType(config, config.DeviceManagerUrl, characteristicId, &wmbusTypeId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	c, err := client.New(brokerUrlForClients, config.DeviceManagerUrl, config.DeviceRepoUrl, config.AuthEndpoint, "sepl", "sepl", "", "testname", []client.DeviceRepresentation{
 		{
 			Name:    "test1",
 			Uri:     "test1",
 			IotType: deviceTypeId,
+		},
+		{
+			Name:    "nimbus",
+			Uri:     "nimbus",
+			IotType: deviceTypeIdNimbus,
+		},
+		{
+			Name:    "WmbusTest",
+			Uri:     "TCH_0x6850_type_0x80_93231141_0x69",
+			IotType: wmbusTypeId,
 		},
 	}, authenticationMethod, mqttVersion, client.OwnerInTopicDefault, func() time.Time { return expectedTime })
 	if err != nil {
@@ -292,6 +322,18 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	}
 
 	err = c.SendEvent("test1", "sepl_get", map[platform_connector_lib.ProtocolSegmentName]string{"metrics": `{"level": 42, "title": "event", "updateTime": 0}`})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = c.SendEvent("nimbus", "encrypted", map[platform_connector_lib.ProtocolSegmentName]string{"data": `{
+	"telegram":"32446850411123936980F219A0019F29FA04702FBF02D808DB080000D40D0100000000000000001E348069253E234B472A0000000000000000611B",
+	"manufacturer":"(TCH) (0x6850)",
+	"meter_id":"93231141",
+	"type":"type (0x80)",
+	"version":"0x69"
+	}`})
 	if err != nil {
 		t.Error(err)
 		return

@@ -77,7 +77,7 @@ func TestHttpCommand(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deviceTypeId, _, getServiceTopic, _, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
+	deviceTypeId, _, getServiceTopic, _, setServiceTopic, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId, nil)
 	if err != nil {
 		t.Error(err)
 		return

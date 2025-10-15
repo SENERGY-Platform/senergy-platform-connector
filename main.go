@@ -19,16 +19,18 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/SENERGY-Platform/api-docs-provider/lib/client"
-	"github.com/SENERGY-Platform/senergy-platform-connector/docs"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/SENERGY-Platform/api-docs-provider/lib/client"
+	"github.com/SENERGY-Platform/senergy-platform-connector/docs"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 )
 
 type VoidWriter struct{}
@@ -68,7 +70,7 @@ func main() {
 		log.SetOutput(f)
 	}
 
-	err = lib.Start(ctx, config)
+	err = lib.Start(ctx, config, event.NewWaitingRoom(config.WaitingRoomUrl))
 	if err != nil {
 		log.Fatal(err)
 	}

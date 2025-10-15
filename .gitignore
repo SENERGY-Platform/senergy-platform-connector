@@ -4,3 +4,4 @@ platform-connector
 senergy-platform-connector
 test/trace/
 .vscode
+__debug*

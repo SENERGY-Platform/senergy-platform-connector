@@ -84,7 +84,7 @@ func TestWithPProf(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deviceTypeId, _, _, _, _, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId)
+	deviceTypeId, _, _, _, _, err := createDeviceType(config, config.DeviceManagerUrl, characteristicId, nil)
 	if err != nil {
 		t.Error(err)
 		return

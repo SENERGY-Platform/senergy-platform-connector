@@ -19,6 +19,9 @@ package event
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/marshalling"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
@@ -28,20 +31,23 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"strings"
+	"github.com/google/uuid"
 )
 
-func New(config configuration.Config, connector *platform_connector_lib.Connector) *Handler {
+func New(config configuration.Config, connector *platform_connector_lib.Connector, waitingRoom WaitingRoomIf) *Handler {
 	return &Handler{
-		connector: connector,
-		config:    config,
+		connector:                connector,
+		config:                   config,
+		wmbusDeviceTypeNamespace: uuid.MustParse(config.WmbusDeviceTypeNamespace),
+		waitingRoom:              waitingRoom,
 	}
 }
 
 type Handler struct {
-	connector *platform_connector_lib.Connector
-	config    configuration.Config
+	connector                *platform_connector_lib.Connector
+	config                   configuration.Config
+	wmbusDeviceTypeNamespace uuid.UUID
+	waitingRoom              WaitingRoomIf
 }
 
 func (this *Handler) Subscribe(clientId string, user string, topic string) (result handler.Result, err error) {
@@ -111,29 +117,47 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	}
 	if !this.config.MqttPublishAuthOnly {
 		var info platform_connector_lib.HandledDeviceInfo
+
+		device, err := this.connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
+		if err != nil {
+			log.Println("ERROR: cant handle device event: GetDeviceByLocalId", err)
+			return this.handleErr(err, size, user, info)
+		}
+		if device.DeviceTypeId == this.config.NimbusDeviceTypeId {
+			err = this.handleWmbusEvent(user, token, event, qos, device)
+			if err != nil {
+				log.Println("ERROR: cant handle wmbus device event", err)
+				// no return, nimbus event should still be processed
+			}
+		}
+
 		info, err = this.connector.HandleDeviceRefEventWithAuthToken(token, deviceUri, serviceUri, event, platform_connector_lib.Qos(qos))
 		if info.DeviceId != "" && info.DeviceTypeId != "" {
 			statistics.DeviceMsgReceive(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
 		}
 		if err != nil {
-			if this.config.Debug {
-				log.Println("DEBUG: cant handle device event", err)
-			}
-			if errors.Is(err, security.ErrorNotFound) ||
-				errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
-				return handler.Rejected, err
-			} else if !this.config.MqttErrorOnEventValidationError &&
-				(marshalling.IsMarshallingErr(err) ||
-					errors.Is(err, msgvalidation.ErrUnexpectedField) ||
-					errors.Is(err, msgvalidation.ErrMissingField) ||
-					errors.Is(err, msgvalidation.ErrUnexpectedType)) {
-				statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
-				return handler.Accepted, nil
-			} else {
-				return handler.Error, err
-			}
+			return this.handleErr(err, size, user, info)
 		}
 		statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
 	}
 	return handler.Accepted, nil
+}
+
+func (this *Handler) handleErr(err error, size float64, user string, info platform_connector_lib.HandledDeviceInfo) (handler.Result, error) {
+	if this.config.Debug {
+		log.Println("DEBUG: cant handle device event", err)
+	}
+	if errors.Is(err, security.ErrorNotFound) ||
+		errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
+		return handler.Rejected, err
+	} else if !this.config.MqttErrorOnEventValidationError &&
+		(marshalling.IsMarshallingErr(err) ||
+			errors.Is(err, msgvalidation.ErrUnexpectedField) ||
+			errors.Is(err, msgvalidation.ErrMissingField) ||
+			errors.Is(err, msgvalidation.ErrUnexpectedType)) {
+		statistics.DeviceMsgHandled(size, user, info.DeviceId, info.DeviceTypeId, info.ServiceIds)
+		return handler.Accepted, nil
+	} else {
+		return handler.Error, err
+	}
 }

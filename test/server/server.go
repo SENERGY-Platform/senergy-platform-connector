@@ -18,7 +18,6 @@ package server
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
 	"log"
 	"net"
 	"runtime/debug"
@@ -26,8 +25,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/SENERGY-Platform/senergy-platform-connector/test/client"
+
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/docker"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
@@ -106,7 +108,7 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 	deviceManagerUrl := "http://" + hostIp + ":" + deviceManagerUrlStruct[len(deviceManagerUrlStruct)-1]
 	log.Println("DEBUG: semantic url transformation:", config.DeviceManagerUrl, "-->", deviceManagerUrl)
 
-	err = lib.Start(ctx, config)
+	err = lib.Start(ctx, config, event.NewTestWaitingRoom())
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
