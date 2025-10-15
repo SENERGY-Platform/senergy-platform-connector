@@ -158,6 +158,7 @@ type ConfigStruct struct {
 	WmbusDeviceTypeNamespace string
 	WmbusDeviceClassId       string
 	SenergyProtocolId        string
+	SenergyProtoclSegment    string
 	WaitingRoomUrl           string
 	WmbusmetersExecutable    string
 }

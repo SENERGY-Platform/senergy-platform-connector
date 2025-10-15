@@ -214,6 +214,7 @@
     "NimbusDeviceTypeId": "urn:infai:ses:device-type:ae92bb03-fa0d-467e-8c4f-1892dd8494de",
     "WmbusDeviceTypeNamespace": "dc40425d-aa63-44f4-ad09-96a37d3c9dc8",
     "SenergyProtocolId": "urn:infai:ses:protocol:f3a63aeb-187e-4dd9-9ef5-d97a6eb6292b",
+    "SenergyProtoclSegment": "urn:infai:ses:protocol-segment:0d211842-cef8-41ec-ab6b-9dbc31bc3a65",
     "WmbusDeviceClassId": "urn:infai:ses:device-class:fea0ad69-3ef2-4332-9afb-ba5885fa7045",
     "WaitingRoomUrl": "http://api.device-waiting-room:8080",
     "WmbusmetersExecutable": "wmbusmeters"

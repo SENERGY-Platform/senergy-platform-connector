@@ -8,7 +8,7 @@ require (
 	github.com/SENERGY-Platform/api-docs-provider/lib/client v0.0.3
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2
 	github.com/SENERGY-Platform/converter v0.0.10
-	github.com/SENERGY-Platform/mgw-wmbus-dc v0.0.6
+	github.com/SENERGY-Platform/mgw-wmbus-dc v0.0.7
 	github.com/SENERGY-Platform/models/go v0.0.0-20250417103129-d12164244f83
 	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250910072300-48527091b65e
 	github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa
@@ -34,7 +34,12 @@ require (
 	github.com/SENERGY-Platform/developer-notifications v0.0.4 // indirect
 	github.com/SENERGY-Platform/device-repository v0.2.8 // indirect
 	github.com/SENERGY-Platform/go-base-http-client v0.1.0 // indirect
+	github.com/SENERGY-Platform/go-env-loader v0.5.3 // indirect
+	github.com/SENERGY-Platform/go-service-base/config-hdl v1.2.0 // indirect
+	github.com/SENERGY-Platform/go-service-base/srv-info-hdl v0.2.0 // indirect
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 // indirect
+	github.com/SENERGY-Platform/go-service-base/util v1.1.0 // indirect
+	github.com/SENERGY-Platform/mgw-dc-lib-go v0.0.0-20221129060713-55138534c03c // indirect
 	github.com/SENERGY-Platform/permissions-v2 v0.0.27 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
@@ -55,6 +60,7 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -99,6 +105,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -133,16 +140,17 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
-	golang.org/x/crypto v0.42.0 // indirect
-	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b // indirect
+	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
-	golang.org/x/tools v0.36.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/go-playground/colors.v1 v1.2.0 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
