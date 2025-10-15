@@ -8,7 +8,7 @@ require (
 	github.com/SENERGY-Platform/api-docs-provider/lib/client v0.0.3
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2
 	github.com/SENERGY-Platform/converter v0.0.10
-	github.com/SENERGY-Platform/mgw-wmbus-dc v0.0.7
+	github.com/SENERGY-Platform/mgw-wmbus-dc v0.0.8
 	github.com/SENERGY-Platform/models/go v0.0.0-20250417103129-d12164244f83
 	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250910072300-48527091b65e
 	github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa
