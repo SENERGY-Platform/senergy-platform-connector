@@ -21,7 +21,6 @@ import (
 	"errors"
 	"log"
 	"os/exec"
-	"reflect"
 	"regexp"
 
 	"strings"
@@ -45,6 +44,9 @@ const (
 // the decoded message will be published.
 func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, event platform_connector_lib.EventMsg, qos int, nimbus models.Device) (err error) {
 	// decode nimbus JSON message
+	if this.config.Debug {
+		log.Printf("handleWmbusEvent, event: %+v", event)
+	}
 	eventData, ok := event[wmbusDataProtocolSegment]
 	if !ok {
 		return errors.New("invalid message: missing protocol segment " + wmbusDataProtocolSegment)
@@ -83,16 +85,11 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	localDeviceId = strings.ReplaceAll(localDeviceId, ")", "")
 	localDeviceId = strings.ReplaceAll(localDeviceId, ",", "")
 	key := "messages." + user + "." + localDeviceId
-	oldMsg, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[[]byte])
+	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[[]byte])
 	if err != nil && err != cache.ErrNotFound {
 		return err
 	} else if err == nil {
-		var oldTelegram string
-		err = json.Unmarshal(oldMsg, &oldTelegram)
-		if err != nil {
-			return err
-		}
-		if reflect.DeepEqual(oldTelegram, msg.Telegram) {
+		if string(oldTelegram) == msg.Telegram {
 			log.Println("INFO: handleWmbusEvent: Filtered duplicate message of device " + localDeviceId + " from nimbus " + nimbus.Id)
 			return nil // msg is duplicate
 		}
@@ -175,8 +172,11 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 		return err
 	}
 
-	event[wmbusDataProtocolSegment] = string(reEncodedMsg)
-	_, err = this.connector.HandleDeviceRefEventWithAuthToken(token, localDeviceId, wmbusDecryptedService, event, platform_connector_lib.Qos(qos))
+	wmbusEvent := platform_connector_lib.EventMsg{
+		wmbusDataProtocolSegment: string(reEncodedMsg),
+		"timestamp_rfc3339nano":  event["timestamp_rfc3339nano"],
+	}
+	_, err = this.connector.HandleDeviceRefEventWithAuthToken(token, localDeviceId, wmbusDecryptedService, wmbusEvent, platform_connector_lib.Qos(qos))
 	return err
 }
 
