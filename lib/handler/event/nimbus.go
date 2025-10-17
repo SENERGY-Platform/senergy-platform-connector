@@ -38,6 +38,8 @@ const (
 	wmbusDecryptedService    = "decrypted"
 )
 
+var hexRex = regexp.MustCompile(`0x([0-9a-fA-F]+)`)
+
 // Ensure device type exists.
 // If the device does not already exist, a new device is created in the device waiting room.
 // If the device exists, decoding (and decrypting) is attempted using wmbusmeters. If decoding is successful,
@@ -80,10 +82,10 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	}
 
 	// deduplication
-	localDeviceId := strings.ReplaceAll(msg.Manufacturer+"_"+msg.Type+"_"+msg.MeterId+"_"+msg.Version, " ", "_")
-	localDeviceId = strings.ReplaceAll(localDeviceId, "(", "")
-	localDeviceId = strings.ReplaceAll(localDeviceId, ")", "")
-	localDeviceId = strings.ReplaceAll(localDeviceId, ",", "")
+	localDeviceId, err := localDeviceId(msg)
+	if err != nil {
+		return err
+	}
 	key := "messages." + user + "." + localDeviceId
 	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[[]byte])
 	if err != nil && err != cache.ErrNotFound {
@@ -241,4 +243,29 @@ func decryptAndDecodeTelegram(executable string, key *string, telegram string) (
 		return nil, err
 	}
 	return m, nil
+}
+
+func localDeviceId(msg model.EncryptedMessage) (string, error) {
+	localDeviceId := "wmbus"
+
+	p := hexRex.FindStringSubmatch(msg.Manufacturer)
+	if len(p) != 2 {
+		return "", errors.New("invalid manufacturer data")
+	}
+	localDeviceId += "_" + p[1]
+
+	p = hexRex.FindStringSubmatch(msg.Version)
+	if len(p) != 2 {
+		return "", errors.New("invalid version data")
+	}
+	localDeviceId += "_" + p[1]
+
+	p = hexRex.FindStringSubmatch(msg.Type)
+	if len(p) != 2 {
+		return "", errors.New("invalid type data")
+	}
+	localDeviceId += "_" + p[1]
+	localDeviceId += "_" + msg.MeterId
+
+	return localDeviceId, nil
 }
