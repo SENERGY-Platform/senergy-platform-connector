@@ -126,7 +126,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		if device.DeviceTypeId == this.config.NimbusDeviceTypeId {
 			err = this.handleWmbusEvent(user, token, event, qos, device)
 			if err != nil {
-				log.Println("ERROR: cant handle wmbus device event", err)
+				log.Println("ERROR: cant handle wmbus device event", err, event)
 				// no return, nimbus event should still be processed
 			}
 		}
