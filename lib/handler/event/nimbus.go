@@ -276,6 +276,9 @@ func localDeviceId(msg model.EncryptedMessage) (string, error) {
 	if len(p) != 2 {
 		return "", errors.New("invalid manufacturer data")
 	}
+	if len(p[1])%2 != 0 {
+		p[1] = "0" + p[1]
+	}
 	localDeviceId += "_" + p[1]
 
 	p = hexRex.FindStringSubmatch(msg.Version)
