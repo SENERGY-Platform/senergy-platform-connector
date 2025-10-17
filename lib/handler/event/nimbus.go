@@ -93,17 +93,19 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 		return err
 	}
 	key := "messages." + user + "." + localDeviceId
-	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[[]byte])
+	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[string])
 	if err != nil && err != cache.ErrNotFound {
-		log.Println("wmbus: unable to get old telegram from cache", err)
-		return err
+		log.Println("WARN: wmbus: unable to get old telegram from cache", err)
 	} else if err == nil {
-		if string(oldTelegram) == msg.Telegram {
+		if oldTelegram == msg.Telegram {
 			log.Println("INFO: handleWmbusEvent: Filtered duplicate message of device " + localDeviceId + " from nimbus " + nimbus.Id)
 			return nil // msg is duplicate
 		}
 	}
-	this.connector.IotCache.GetCache().Set(key, msg.Telegram, 30) //cache for 30 seconds
+	err = this.connector.IotCache.GetCache().Set(key, msg.Telegram, 30) //cache for 30 seconds
+	if err != nil {
+		log.Println("WARN: wmbus: unable to set old telegram in cache", err)
+	}
 
 	// ensure device exists
 	device, err := this.connector.IotCache.GetDeviceByLocalId(token, localDeviceId)
