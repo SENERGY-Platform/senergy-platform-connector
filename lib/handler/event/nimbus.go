@@ -17,11 +17,13 @@
 package event
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"log"
 	"os/exec"
 	"regexp"
+	"slices"
 
 	"strings"
 
@@ -311,16 +313,24 @@ func wmbusDeviceTypeNeedsUpdate(existing models.DeviceType, current models.Devic
 		return false
 	}
 
-	existingCV := existing.Services[0].Outputs[0].ContentVariable
-	currentCV := current.Services[0].Outputs[0].ContentVariable
-	if len(existingCV.SubContentVariables) != len(currentCV.SubContentVariables) {
+	existingCV := existing.Services[0].Outputs[0].ContentVariable.SubContentVariables
+	currentCV := current.Services[0].Outputs[0].ContentVariable.SubContentVariables
+	if len(existingCV) > len(currentCV) {
+		return false
+	}
+	if len(existingCV) < len(currentCV) {
 		return true
 	}
-	for i := range len(existingCV.SubContentVariables) {
-		if existingCV.SubContentVariables[i].Name != currentCV.SubContentVariables[i].Name {
+	cmpCVName := func(a models.ContentVariable, b models.ContentVariable) int {
+		return cmp.Compare(a.Name, b.Name)
+	}
+	slices.SortFunc(existingCV, cmpCVName)
+	slices.SortFunc(currentCV, cmpCVName)
+	for i := range len(existingCV) {
+		if existingCV[i].Name != currentCV[i].Name {
 			return true
 		}
-		if existingCV.SubContentVariables[i].Type != currentCV.SubContentVariables[i].Type {
+		if existingCV[i].Type != currentCV[i].Type {
 			return true
 		}
 	}
