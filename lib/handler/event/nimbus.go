@@ -21,7 +21,6 @@ import (
 	"errors"
 	"log"
 	"os/exec"
-	"reflect"
 	"regexp"
 
 	"strings"
@@ -220,7 +219,7 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 
 	deviceType = util.DeviceType(deviceTypeId, msg.Manufacturer, msg.Type, msg.Version, this.config.WmbusDeviceClassId, this.config.SenergyProtocolId, this.config.SenergyProtoclSegment, decoded)
 
-	if !reflect.DeepEqual(existingDeviceType, deviceType) {
+	if wmbusDeviceTypeNeedsUpdate(existingDeviceType, deviceType) {
 		deviceType, err = this.connector.IotCache.UpdateDeviceType(adminToken, deviceType)
 		return deviceType, err
 	} else {
@@ -296,4 +295,34 @@ func localDeviceId(msg model.EncryptedMessage) (string, error) {
 	localDeviceId += "_" + msg.MeterId
 
 	return localDeviceId, nil
+}
+
+func wmbusDeviceTypeNeedsUpdate(existing models.DeviceType, current models.DeviceType) bool {
+	if len(existing.Services) != len(current.Services) {
+		return true
+	}
+	if len(existing.Services) == 0 {
+		return false
+	}
+	if len(existing.Services[0].Outputs) != len(current.Services[0].Outputs) {
+		return true
+	}
+	if len(existing.Services[0].Outputs) == 0 {
+		return false
+	}
+
+	existingCV := existing.Services[0].Outputs[0].ContentVariable
+	currentCV := current.Services[0].Outputs[0].ContentVariable
+	if len(existingCV.SubContentVariables) != len(currentCV.SubContentVariables) {
+		return true
+	}
+	for i := range len(existingCV.SubContentVariables) {
+		if existingCV.SubContentVariables[i].Name != currentCV.SubContentVariables[i].Name {
+			return true
+		}
+		if existingCV.SubContentVariables[i].Type != currentCV.SubContentVariables[i].Type {
+			return true
+		}
+	}
+	return false
 }
