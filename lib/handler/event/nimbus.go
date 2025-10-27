@@ -21,6 +21,7 @@ import (
 	"errors"
 	"log"
 	"os/exec"
+	"reflect"
 	"regexp"
 
 	"strings"
@@ -219,7 +220,7 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 
 	deviceType = util.DeviceType(deviceTypeId, msg.Manufacturer, msg.Type, msg.Version, this.config.WmbusDeviceClassId, this.config.SenergyProtocolId, this.config.SenergyProtoclSegment, decoded)
 
-	if len(existingDeviceType.Services) == 0 || len(existingDeviceType.Services[0].Outputs) == 0 || (len(deviceType.Services) > 0 && len(deviceType.Services[0].Outputs) > 0 && len(existingDeviceType.Services[0].Outputs[0].ContentVariable.SubContentVariables) < len(deviceType.Services[0].Outputs[0].ContentVariable.SubContentVariables)) {
+	if !reflect.DeepEqual(existingDeviceType, deviceType) {
 		deviceType, err = this.connector.IotCache.UpdateDeviceType(adminToken, deviceType)
 		return deviceType, err
 	} else {
