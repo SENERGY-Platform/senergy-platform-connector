@@ -169,7 +169,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 			}
 			keyOkValue = "true"
 		}
-		if keyOk.Value != keyOkValue {
+		if keyOk.Value != keyOkValue || keyOkIdx == -1 {
 			keyOk.Value = keyOkValue
 			device, err = this.updateDeviceDecryptionStatus(device, keyOk, keyOkIdx, token)
 			if err != nil {
