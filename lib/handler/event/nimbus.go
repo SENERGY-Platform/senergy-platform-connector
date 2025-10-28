@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"regexp"
 	"slices"
+	"time"
 
 	"strings"
 
@@ -104,7 +105,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 			return nil // msg is duplicate
 		}
 	}
-	err = this.connector.IotCache.GetCache().Set(key, msg.Telegram, 30) //cache for 30 seconds
+	err = this.connector.IotCache.GetCache().Set(key, msg.Telegram, 30*time.Second) //cache for 30 seconds
 	if err != nil {
 		log.Println("WARN: wmbus: unable to set old telegram in cache", err)
 	}
