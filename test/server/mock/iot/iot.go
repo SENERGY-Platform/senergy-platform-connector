@@ -128,9 +128,11 @@ func (this *Controller) PublishDeviceCreate(device model.Device) (result interfa
 	if err != nil {
 		return nil, err, http.StatusInternalServerError
 	}
-	err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
-	if err != nil {
-		return nil, err, http.StatusInternalServerError
+	if this.kafkaProducer != nil {
+		err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
+		if err != nil {
+			return nil, err, http.StatusInternalServerError
+		}
 	}
 	return device, nil, 200
 }
@@ -149,9 +151,11 @@ func (this *Controller) PublishDeviceUpdate(id string, device model.Device) (res
 	if err != nil {
 		return nil, err, http.StatusInternalServerError
 	}
-	err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
-	if err != nil {
-		return nil, err, http.StatusInternalServerError
+	if this.kafkaProducer != nil {
+		err = this.kafkaProducer.ProduceWithKey("devices", string(msg), device.Id)
+		if err != nil {
+			return nil, err, http.StatusInternalServerError
+		}
 	}
 	return device, nil, 200
 }

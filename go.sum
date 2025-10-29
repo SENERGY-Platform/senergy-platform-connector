@@ -30,6 +30,8 @@ github.com/SENERGY-Platform/developer-notifications v0.0.4 h1:SmblhfWavNhE1mDxzr
 github.com/SENERGY-Platform/developer-notifications v0.0.4/go.mod h1:8yJrYnAYMtPEPy89ULw8ivgG8orVhSnaLgyfDt0bdgg=
 github.com/SENERGY-Platform/device-repository v0.2.8 h1:qqHIj/8LH986HB33wEoKjDU8sD1Mvmw2JnmElmAM2Wk=
 github.com/SENERGY-Platform/device-repository v0.2.8/go.mod h1:2pA9lMSyZ6D4in0MkIFXAUKNV8bQEXkO2L/GEYxglZI=
+github.com/SENERGY-Platform/device-repository v0.2.27 h1:sGCco3fgLFYzMDxatAMznuDqAy+cMVNOpNguEv3oMEs=
+github.com/SENERGY-Platform/device-repository v0.2.27/go.mod h1:hTyeOF0Bg8n1OKQMv5DThRQE7idqVapSvOwIgSpaMBE=
 github.com/SENERGY-Platform/go-base-http-client v0.1.0 h1:PUiZVEj7/cMSZJ0g5G611tjY9bSh1Eby+tcktrgpiZ0=
 github.com/SENERGY-Platform/go-base-http-client v0.1.0/go.mod h1:NfKW/relIVTkMXhz4OqZlzJXYPQUYEKxwqou8D0B/Kw=
 github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 h1:FF4jhIpxYbXkBQRm4oV/1KiTq1U7a5EQ0x5jqGhZDoY=
@@ -40,6 +42,8 @@ github.com/SENERGY-Platform/models/go v0.0.0-20250417103129-d12164244f83 h1:tV0g
 github.com/SENERGY-Platform/models/go v0.0.0-20250417103129-d12164244f83/go.mod h1:bCREPNRN4P8oxLgpC3/ZKK4jXSy4MSPXoiomhohE+aw=
 github.com/SENERGY-Platform/permissions-v2 v0.0.27 h1:4Sf5zNW0KMrSSJrv90MmyKD5RMnS8CT26yE7W9Za/x0=
 github.com/SENERGY-Platform/permissions-v2 v0.0.27/go.mod h1:w5AghpFIQ2Hi+HKfcuqXcizR4pCYuMLXcWAdAmOPAF4=
+github.com/SENERGY-Platform/permissions-v2 v0.0.35 h1:MGlpAODe3HfIwVPUrQHQkUwVHacrS6mMa/71m/UMqoU=
+github.com/SENERGY-Platform/permissions-v2 v0.0.35/go.mod h1:AvaBgIMYADHvbeHhwT9marWxWiCEwNInpKytEYrSGr0=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250910072300-48527091b65e h1:fqm9FNbmGzMYnQp+vZGo3UjmnQ/ngGJq7VUFHbLV6Zk=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20250910072300-48527091b65e/go.mod h1:/gvfqiaCsdBAqE7r4VCr+JTW4j5eTIMKChRHV0lX5jY=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa h1:M2zfxq28OMVM8CbVNYYfpjiFant7GeucJ8Kdb1FE5Oo=

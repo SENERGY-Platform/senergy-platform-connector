@@ -254,7 +254,7 @@ func decryptAndDecodeTelegram(executable string, key *string, telegram string) (
 	if err != nil {
 		return nil, err
 	}
-	if key == nil && strings.Contains(string(out), "encrypted") {
+	if key == nil && (strings.Contains(string(out), "encrypted") || strings.Contains(string(out), "failed decryption")) {
 		return nil, errorEncrypted
 	} else if key != nil && strings.Contains(string(out), "failed decryption") {
 		return nil, errorWrongKey
@@ -304,13 +304,13 @@ func wmbusDeviceTypeNeedsUpdate(existing models.DeviceType, current models.Devic
 	if len(existing.Services) != len(current.Services) {
 		return true
 	}
-	if len(existing.Services) == 0 {
+	if len(existing.Services) == 0 { // both are len 0
 		return false
 	}
 	if len(existing.Services[0].Outputs) != len(current.Services[0].Outputs) {
 		return true
 	}
-	if len(existing.Services[0].Outputs) == 0 {
+	if len(existing.Services[0].Outputs) == 0 { // both are len 0
 		return false
 	}
 
