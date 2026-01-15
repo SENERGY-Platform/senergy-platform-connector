@@ -20,15 +20,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/helper"
-	"github.com/swaggo/swag"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/helper"
+	"github.com/swaggo/swag"
 
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
@@ -126,7 +127,7 @@ func sendSubscriptionResult(writer http.ResponseWriter, ok []WebhookmsgTopic, re
 func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, connectionLogger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
 	router := http.NewServeMux()
 
-	logger := GetLogger()
+	logger := config.GetLogger().With("snrgy-log-type", "connector-webhook")
 
 	router.HandleFunc("GET /doc", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -145,9 +146,9 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/health", func(writer http.ResponseWriter, request *http.Request) {
-		log.Println("INFO: /health received")
+		config.GetLogger().Info("/health received")
 		msg, err := io.ReadAll(request.Body)
-		log.Println("INFO: /health body =", err, string(msg))
+		config.GetLogger().Info("/health body", "error", err, "msg", string(msg))
 		writer.WriteHeader(http.StatusOK)
 	})
 
@@ -185,12 +186,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 			TimeoutHandler: func() {
 				f, err := os.OpenFile("timeouts.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 				if err != nil {
-					go log.Println("ERROR:", err)
+					go config.GetLogger().Error("ERROR", "error", err)
 					time.Sleep(1 * time.Second)
 					os.Exit(1)
 					return
 				}
-				go log.Println("ERROR: webhook response timeout")
+				go config.GetLogger().Error("webhook response timeout")
 				fmt.Fprintln(f, time.Now().String())
 				f.Sync()
 				time.Sleep(1 * time.Second)
@@ -203,12 +204,12 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 
 	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: httpHandler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
 	server.RegisterOnShutdown(func() {
-		log.Println("DEBUG: server shutdown")
+		config.GetLogger().Debug("server shutdown")
 	})
 	go func() {
-		log.Println("Listening on ", server.Addr)
+		config.GetLogger().Info("start server", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil {
-			log.Println("ERROR: unable to start server", err)
+			config.GetLogger().Error("unable to start server", "error", err)
 			log.Fatal(err)
 		}
 	}()

@@ -19,8 +19,8 @@ package lib
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 )
 
@@ -41,14 +41,14 @@ func CreateTLSConfig(ClientCertificatePath string, PrivateKeyPath string, RootCA
 	var cer tls.Certificate
 	cer, err = tls.LoadX509KeyPair(ClientCertificatePath, PrivateKeyPath)
 	if err != nil {
-		log.Println("Error on TLS: cant read client certificate", err)
+		slog.Default().Error("Error on TLS: cant read client certificate", "error", err)
 		return nil, err
 	}
 
 	// Load CA cert
-	caCert, err := ioutil.ReadFile(RootCACertificatePath)
+	caCert, err := os.ReadFile(RootCACertificatePath)
 	if err != nil {
-		log.Println("Error on TLS: cant read CA certificate", err)
+		slog.Default().Error("Error on TLS: cant read CA certificate", "error", err)
 		return nil, err
 	}
 

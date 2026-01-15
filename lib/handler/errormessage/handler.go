@@ -18,6 +18,8 @@ package errormessage
 
 import (
 	"errors"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
@@ -26,8 +28,6 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"strings"
 )
 
 func New(config configuration.Config, connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService, metrics *metrics.Metrics) *Handler {
@@ -63,7 +63,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 
 	token, err := this.connector.Security().GetCachedUserToken(user, model.RemoteInfo{})
 	if err != nil {
-		log.Println("ERROR: unable to get user token", err)
+		this.config.GetLogger().Error("unable to get user token", "error", err)
 		return
 	}
 
@@ -109,7 +109,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 func (this *Handler) handleGeneralError(user string, clientId string, payload []byte) {
 	userId, err := this.connector.Security().GetUserId(user)
 	if err != nil {
-		log.Println("ERROR: unable to get user id", err)
+		this.config.GetLogger().Error("unable to get user id", "error", err)
 		return
 	}
 	this.connector.HandleClientError(userId, clientId, string(payload))
@@ -118,7 +118,7 @@ func (this *Handler) handleGeneralError(user string, clientId string, payload []
 func (this *Handler) handleDeviceError(token security.JwtToken, userId string, deviceId string, payload []byte) {
 	device, err := this.connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceId)
 	if err != nil {
-		log.Println("ERROR: unable to get user device", err)
+		this.config.GetLogger().Error("unable to get user device", "error", err)
 		return
 	}
 	this.connector.HandleDeviceError(userId, device, string(payload))
@@ -127,7 +127,7 @@ func (this *Handler) handleDeviceError(token security.JwtToken, userId string, d
 func (this *Handler) handleCommandError(userId string, correlationId string, payload []byte) {
 	protocolMsg, err := this.correlation.Get(correlationId)
 	if err != nil {
-		log.Println("ERROR: unable to use correlationId", err)
+		this.config.GetLogger().Error("unable to get correlation", "error", err)
 		return
 	}
 	this.connector.HandleCommandError(userId, protocolMsg, string(payload))

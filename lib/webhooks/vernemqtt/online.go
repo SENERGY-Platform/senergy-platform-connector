@@ -19,12 +19,12 @@ package vernemqtt
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"runtime/debug"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"log"
-	"net/http"
-	"runtime/debug"
 )
 
 // online godoc
@@ -54,24 +54,24 @@ func online(writer http.ResponseWriter, request *http.Request, config configurat
 		sendError(writer, err.Error(), true)
 		return
 	}
-	log.Println("/online", msg.ClientId)
+	config.GetLogger().Info("online", "clientId", msg.ClientId)
 
 	token, err := connector.Security().Access()
 	if err != nil {
-		log.Println("WARNING: /online", err)
+		config.GetLogger().Warn("/online", "error", err)
 		return
 	}
 
 	exists, err := connector.Iot().ExistsHub(msg.ClientId, token)
 	if err != nil {
-		log.Println("WARNING: /online", err)
+		config.GetLogger().Warn("/online", "error", err)
 		return
 	}
 
 	if exists {
 		err = logger.LogHubConnect(msg.ClientId)
 		if err != nil {
-			log.Println("WARNING: /online", err)
+			config.GetLogger().Warn("/online", "error", err)
 			return
 		}
 	}

@@ -20,8 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
-	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -361,7 +359,6 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		t.Error(err)
 		return
 	}
-	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{

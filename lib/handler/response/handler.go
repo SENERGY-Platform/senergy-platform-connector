@@ -19,14 +19,14 @@ package response
 import (
 	"encoding/json"
 	"errors"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"strings"
 )
 
 func New(config configuration.Config, connector *platform_connector_lib.Connector, correlation *correlation.CorrelationService) *Handler {
@@ -60,7 +60,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	}
 	if prefix != "response" {
 		//may happen if topic is something like "responsehandling/foo/bar"
-		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is response:", topic)
+		this.config.GetLogger().Warn("handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is response", "topic", topic)
 		return handler.Unhandled, nil
 	}
 
@@ -93,7 +93,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 		}
 		request, err := this.correlation.Get(msg.CorrelationId)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish::response::correlation.Get", err)
+			this.config.GetLogger().Error("ERROR: InitWebhooks::publish::response::correlation.Get", "error", err, "correlationId", msg.CorrelationId)
 			return handler.Accepted, nil //potentially old message; may be ignored; but dont cut connection
 		}
 		request.Trace = append(request.Trace, msg.Trace...) // merge traces

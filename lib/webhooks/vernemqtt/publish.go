@@ -20,15 +20,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"runtime/debug"
+	"time"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/statistics"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
-	"io"
-	"log"
-	"net/http"
-	"runtime/debug"
-	"time"
 )
 
 // publish godoc
@@ -54,7 +54,7 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 	if config.Debug {
 		now := time.Now()
 		defer func(start time.Time) {
-			log.Println("DEBUG: /publish in ", time.Now().Sub(start))
+			config.GetLogger().Debug("/publish in", "duration", time.Now().Sub(start))
 		}(now)
 	}
 	buf, err := io.ReadAll(request.Body)
@@ -69,13 +69,11 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 		sendError(writer, err.Error(), true)
 		return
 	}
-	if config.Debug {
-		log.Println("DEBUG: /publish", msg)
-	}
+	config.GetLogger().Debug("/publish", "clientId", msg.ClientId, "topic", msg.Topic, "msg", msg)
 	if msg.Username == config.AuthClientId {
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+			config.GetLogger().Error("ERROR: InitWebhooks::publish unable to fprint", "error", err)
 		}
 		return
 	} else {
@@ -87,14 +85,14 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 		statistics.SourceReceive(msgSize, msg.Username)
 		for _, h := range handlers {
 			handlerResult, err := h.Publish(msg.ClientId, msg.Username, msg.Topic, payload, msg.Qos, msgSize)
-			if err != nil && config.Debug {
-				log.Println("DEBUG:", err)
+			if err != nil {
+				config.GetLogger().Debug("InitWebhooks::publish handler error", "error", err)
 			}
 			switch handlerResult {
 			case handler.Accepted:
 				_, err = fmt.Fprint(writer, `{"result": "ok"}`)
 				if err != nil {
-					log.Println("ERROR: InitWebhooks::publish unable to fprint:", err)
+					config.GetLogger().Error("InitWebhooks::publish unable to fprint", "error", err)
 				}
 				statistics.SourceReceiveHandled(msgSize, msg.Username)
 				return
@@ -107,11 +105,11 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 			case handler.Unhandled:
 				continue
 			default:
-				log.Println("WARNING: unknown handler result", handlerResult)
+				config.GetLogger().Warn("unknown handler result", "handlerResult", handlerResult)
 				continue
 			}
 		}
-		log.Println("WARNING: no matching topic handler found", msg.Topic)
+		config.GetLogger().Warn("no matching topic handler found", "topic", msg.Topic)
 		sendIgnoreRedirectAndNotification(writer, connector, msg.Username, msg.ClientId, msg.Topic, "no matching topic handler found")
 		return
 	}

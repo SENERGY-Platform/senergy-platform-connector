@@ -78,14 +78,14 @@ func main() {
 	if config.ApiDocsProviderBaseUrl != "" && config.ApiDocsProviderBaseUrl != "-" {
 		err = PublishAsyncApiDoc(config)
 		if err != nil {
-			log.Fatal(err)
+			config.GetLogger().Error("unable to publish async api docs", "error", err.Error())
 		}
 	}
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	sig := <-shutdown
-	log.Println("received shutdown signal", sig)
+	config.GetLogger().Info("received shutdown signal", "signal", sig)
 	cancel()
 	log.Println("shutdown in 1s")
 	time.Sleep(1 * time.Second)

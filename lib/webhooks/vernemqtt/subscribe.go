@@ -19,11 +19,11 @@ package vernemqtt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
-	"log"
 	"net/http"
 	"runtime/debug"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 )
 
 // subscribe godoc
@@ -52,9 +52,7 @@ func subscribe(writer http.ResponseWriter, request *http.Request, config configu
 		sendError(writer, err.Error(), true)
 		return
 	}
-	if config.Debug {
-		log.Println("DEBUG: /subscribe", msg)
-	}
+	config.GetLogger().Debug("/subscribe", "clientId", msg.ClientId, "msg", msg)
 	ok := []WebhookmsgTopic{}
 	rejected := []WebhookmsgTopic{}
 	if msg.Username == config.AuthClientId {
@@ -63,8 +61,8 @@ func subscribe(writer http.ResponseWriter, request *http.Request, config configu
 	} else {
 		for _, topic := range msg.Topics {
 			handlerResult, err := handler.HandleTopicSubscribe(msg.ClientId, msg.Username, prepareTopic(topic.Topic), handlers)
-			if err != nil && config.Debug {
-				log.Println("DEBUG:", err)
+			if err != nil {
+				config.GetLogger().Debug("InitWebhooks::subscribe handler error", "error", err)
 			}
 			switch handlerResult {
 			case handler.Accepted:
@@ -75,7 +73,7 @@ func subscribe(writer http.ResponseWriter, request *http.Request, config configu
 				sendError(writer, err.Error(), config.Debug)
 				return
 			default:
-				log.Println("WARNING: unknown handler result", handlerResult)
+				config.GetLogger().Warn("InitWebhooks::subscribe unknown handler result", "handlerResult", handlerResult)
 				rejected = append(rejected, topic)
 			}
 		}

@@ -19,15 +19,15 @@ package vernemqtt
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"runtime/debug"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
-	"log"
-	"net/http"
-	"runtime/debug"
-	"strings"
 )
 
 // unsubscribe godoc
@@ -55,15 +55,13 @@ func unsubscribe(writer http.ResponseWriter, request *http.Request, config confi
 		sendError(writer, err.Error(), true)
 		return
 	}
-	if config.Debug {
-		log.Println("DEBUG: /unsubscribe", msg)
-	}
+	config.GetLogger().Debug("/unsubscribe", "msg", msg)
 	//defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 	defer json.NewEncoder(writer).Encode(UnsubResponse{Result: "ok", Topics: msg.Topics})
 	if msg.Username != config.AuthClientId {
 		token, err := connector.Security().GetCachedUserToken(msg.Username, model.RemoteInfo{})
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::unsubscribe::GenerateUserToken", err)
+			config.GetLogger().Error("InitWebhooks::unsubscribe::GenerateUserToken", "error", err, "username", msg.Username)
 			return
 		}
 		for _, topic := range msg.Topics {
@@ -72,7 +70,7 @@ func unsubscribe(writer http.ResponseWriter, request *http.Request, config confi
 			}
 			prefix, _, deviceUri, _, err := handler.ParseTopic(topic)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::unsubscribe::parseTopic", err)
+				config.GetLogger().Error("InitWebhooks::unsubscribe::parseTopic", "error", err, "topic", topic)
 				return
 			}
 			if prefix != "command" {
@@ -80,12 +78,12 @@ func unsubscribe(writer http.ResponseWriter, request *http.Request, config confi
 			}
 			device, err := connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::unsubscribe::DeviceUrlToIotDevice", err)
+				config.GetLogger().Error("InitWebhooks::unsubscribe::DeviceUrlToIotDevice", "error", err, "deviceLocalId", deviceUri)
 				continue
 			}
 			err = logger.LogDeviceDisconnect(device.Id)
 			if err != nil {
-				log.Println("ERROR: InitWebhooks::unsubscribe::CheckEndpointAuth", err)
+				config.GetLogger().Error("InitWebhooks::unsubscribe::LogDeviceDisconnect", "error", err, "deviceId", device.Id)
 				continue
 			}
 		}

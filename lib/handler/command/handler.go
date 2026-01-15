@@ -18,14 +18,14 @@ package command
 
 import (
 	"errors"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"strings"
 )
 
 func New(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger) *Handler {
@@ -56,7 +56,7 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 
 	if prefix != "command" {
 		//may happen if topic is something like "commandhandling/foo/bar"
-		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is command:", topic)
+		this.config.GetLogger().Warn("handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is command", "topic", topic)
 		return handler.Unhandled, nil
 	}
 	if this.config.ForceCommandSubscriptionServiceSingleLevelWildcard && serviceUri != "+" {
@@ -83,16 +83,12 @@ func (this *Handler) Subscribe(clientId string, user string, topic string) (resu
 	}
 	device, err := this.connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 	if err != nil {
-		if this.config.Debug {
-			log.Println("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", err)
-		}
+		this.config.GetLogger().Debug("WARNING: InitWebhooks::subscribe::DeviceUrlToIotDevice", "error", err, "deviceLocalId", deviceUri)
 		return handler.Rejected, err
 	}
 	err = this.logger.LogDeviceConnect(device.Id)
 	if err != nil {
-		if this.config.Debug {
-			log.Println("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", err)
-		}
+		this.config.GetLogger().Debug("ERROR: InitWebhooks::subscribe::CheckEndpointAuth", "error", err)
 	}
 	return handler.Accepted, nil
 }

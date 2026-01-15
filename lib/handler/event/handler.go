@@ -19,7 +19,6 @@ package event
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"strings"
 
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
@@ -67,7 +66,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	}
 	if prefix != "event" {
 		//may happen if topic is something like "eventhandling/foo/bar"
-		log.Println("WARNING: handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is event:", topic)
+		this.config.GetLogger().Warn("handler.ParseTopic() returned '"+prefix+"' while the topic string prefix is event", "topic", topic)
 		return handler.Unhandled, nil
 	}
 
@@ -94,19 +93,15 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 	event := platform_connector_lib.EventMsg{}
 	err = json.Unmarshal(payload, &event)
 	if err != nil {
-		log.Println("DEBUG:", string(payload))
+		this.config.GetLogger().Debug("error parsing event payload", "error", err, "payload", string(payload))
 		return handler.Rejected, err
 	}
 	if !this.config.CheckHub {
 		if err := handler.CheckEvent(this.connector, token, deviceUri, serviceUri); err != nil {
-			if this.config.Debug {
-				log.Println("DEBUG: check event was not successful: ", err)
-			}
+			this.config.GetLogger().Debug("error checking event", "error", err, "deviceLoacalId", deviceUri, "serviceLocalId", serviceUri)
 
 			if errors.Is(err, handler.ServiceNotFound) {
-				if this.config.Debug {
-					log.Println("DEBUG: got event for unknown service of known device", deviceUri, serviceUri)
-				}
+				this.config.GetLogger().Debug("ignoring event for unknown service", "deviceLocalId", deviceUri, "serviceLocalId", serviceUri)
 				return handler.Accepted, nil
 			}
 			if errors.Is(err, security.ErrorNotFound) || errors.Is(err, security.ErrorAccessDenied) {
@@ -120,13 +115,13 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 
 		device, err := this.connector.IotCache.WithToken(token).GetDeviceByLocalId(deviceUri)
 		if err != nil {
-			log.Println("ERROR: cant handle device event: GetDeviceByLocalId", err)
+			this.config.GetLogger().Error("cant handle device event: GetDeviceByLocalId", "error", err, "deviceLocalId", deviceUri)
 			return this.handleErr(err, size, user, info)
 		}
 		if device.DeviceTypeId == this.config.NimbusDeviceTypeId {
 			err = this.handleWmbusEvent(user, token, event, qos, device)
 			if err != nil {
-				log.Println("ERROR: cant handle wmbus device event", err, event)
+				this.config.GetLogger().Error("cant handle wmbus device event", "error", err, "deviceLocalId", deviceUri)
 				// no return, nimbus event should still be processed
 			}
 		}
@@ -144,9 +139,7 @@ func (this *Handler) Publish(clientId string, user string, topic string, payload
 }
 
 func (this *Handler) handleErr(err error, size float64, user string, info platform_connector_lib.HandledDeviceInfo) (handler.Result, error) {
-	if this.config.Debug {
-		log.Println("DEBUG: cant handle device event", err)
-	}
+	this.config.GetLogger().Debug("cant handle device event", "error", err)
 	if errors.Is(err, security.ErrorNotFound) ||
 		errors.Is(err, platform_connector_lib.ErrorUnknownLocalServiceId) {
 		return handler.Rejected, err

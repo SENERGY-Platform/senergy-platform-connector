@@ -19,6 +19,7 @@ package lib
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -43,6 +44,7 @@ import (
 )
 
 func Start(ctx context.Context, config configuration.Config, waitingRoom event.WaitingRoomIf) (err error) {
+	slog.SetDefault(config.GetLogger())
 	asyncFlushFrequency, err := time.ParseDuration(config.AsyncFlushFrequency)
 	if err != nil {
 		return err
@@ -50,7 +52,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 
 	correlationTimeout := 200 * time.Millisecond
 	if timeout, err := time.ParseDuration(config.CorrelationTimeout); err != nil {
-		log.Println("WARNING: invalid CorrelationTimeout; use default 200ms")
+		config.GetLogger().Warn("invalid CorrelationTimeout; use default 200ms")
 	} else {
 		correlationTimeout = timeout
 	}
@@ -144,20 +146,21 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 		MutedUserNotificationTitles:          config.MutedUserNotificationTitles,
 
 		InitTopics: config.InitTopics,
+
+		LogLevel: config.LogLevel,
 	})
 	if err != nil {
-		log.Println("ERROR: lib init", err)
+		config.GetLogger().Error("unable to lib init", "error", err)
 		return err
 	}
 
 	if config.Debug {
-		connector.SetKafkaLogger(log.New(log.Writer(), "[CONNECTOR-KAFKA] ", 0))
 		connector.IotCache.Debug = true
 	}
 
 	err = connector.InitProducer(ctx, []platform_connector_lib.Qos{platform_connector_lib.Async, platform_connector_lib.Sync, platform_connector_lib.SyncIdempotent})
 	if err != nil {
-		log.Println("ERROR: producer ", err)
+		config.GetLogger().Error("unable to init producer", "error", err)
 		return err
 	}
 
@@ -172,7 +175,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 		var httpTimeout time.Duration
 		httpTimeout, err = time.ParseDuration(config.ConnectionCheckHttpTimeout)
 		if err != nil && config.ConnectionCheckHttpTimeout != "" {
-			log.Println("WARNING: invalid ConnectionCheckHttpTimeout; use default 15s")
+			config.GetLogger().Warn("invalid ConnectionCheckHttpTimeout; use default 15s")
 			httpTimeout = 15 * time.Second
 		}
 		logger, err = connectionlog.NewWithProducerAndConnCheck(logProducer, connection_check_lib.New(&http.Client{Timeout: httpTimeout}, config.ConnectionCheckUrl), config.DeviceLogTopic, config.GatewayLogTopic)
@@ -180,13 +183,13 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 		logger, err = connectionlog.NewWithProducer(logProducer, config.DeviceLogTopic, config.GatewayLogTopic)
 	}
 	if err != nil {
-		log.Println("ERROR: logger ", err)
+		config.GetLogger().Error("unable to init connection logger", "error", err)
 		return err
 	}
 
 	m, err := metrics.NewMetrics()
 	if err != nil {
-		log.Println("ERROR: metrics ", err)
+		config.GetLogger().Error("unable to init metrics", "error", err)
 		return err
 	}
 
@@ -223,7 +226,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 		time.Sleep(5 * time.Second)
 	}
 	if err != nil {
-		log.Println("ERROR: unable to start mqtt connection ", err)
+		config.GetLogger().Error("unable to start mqtt connection", "error", err)
 		return err
 	}
 
@@ -235,7 +238,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 
 	err = connector.StartConsumer(ctx)
 	if err != nil {
-		log.Println("ERROR: logger ", err)
+		config.GetLogger().Error("unable to start consumer", "error", err)
 		return err
 	}
 	return nil
@@ -254,6 +257,6 @@ func getKafkaCompression(compression string) sarama.CompressionCodec {
 	case "snappy":
 		return sarama.CompressionSnappy
 	}
-	log.Println("WARNING: unknown compression", compression, "fallback to none")
+	slog.Default().Warn("unknown compression --> fallback to none", "compression", compression)
 	return sarama.CompressionNone
 }

@@ -18,10 +18,11 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
+	"strings"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
-	"log"
-	"strings"
 )
 
 func ParseTopic(topic string) (prefix string, ownerId string, deviceUri string, serviceUri string, err error) {
@@ -81,10 +82,10 @@ func HandleTopicSubscribe(clientId string, username string, topic string, handle
 		case Unhandled:
 			continue
 		default:
-			log.Println("WARNING: unknown handler result", handlerResult)
+			slog.Default().Warn("unknown handler result", "handlerResult", handlerResult)
 			continue
 		}
 	}
-	log.Println("WARNING: no matching topic handler found", topic)
+	slog.Default().Warn("no matching topic handler found", "topic", topic)
 	return Rejected, errors.New("no matching topic handler found")
 }

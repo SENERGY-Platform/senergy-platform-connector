@@ -3,16 +3,17 @@ package test
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/SENERGY-Platform/converter/lib/converter/characteristics"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"time"
 )
 
 func createTestCommandMsg(config configuration.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.ProtocolMsg, err error) {
-	sec, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0)
+	sec, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0, config.GetLogger())
 	if err != nil {
 		return result, err
 	}
@@ -20,7 +21,7 @@ func createTestCommandMsg(config configuration.Config, deviceUri string, service
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "")
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "", config.GetLogger())
 	device, err := iot.GetDeviceByLocalId(deviceUri, token)
 	if err != nil {
 		return result, err
@@ -60,7 +61,7 @@ func createTestCommandMsg(config configuration.Config, deviceUri string, service
 }
 
 func createOptimisticTestCommandMsg(config configuration.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.ProtocolMsg, err error) {
-	sec, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0)
+	sec, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0, config.GetLogger())
 	if err != nil {
 		return result, err
 	}
@@ -68,7 +69,7 @@ func createOptimisticTestCommandMsg(config configuration.Config, deviceUri strin
 	if err != nil {
 		return result, err
 	}
-	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "")
+	iot := iot.New(config.DeviceManagerUrl, config.DeviceRepoUrl, "", config.GetLogger())
 	device, err := iot.GetDeviceByLocalId(deviceUri, token)
 	if err != nil {
 		return result, err

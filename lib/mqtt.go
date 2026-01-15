@@ -19,9 +19,8 @@ package lib
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -47,10 +46,11 @@ func MqttStart(ctx context.Context, config configuration.Config) (mqtt Mqtt, err
 type Mqtt4 struct {
 	client paho4.Client
 	Debug  bool
+	config configuration.Config
 }
 
 func Mqtt4Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt4, err error) {
-	mqtt = &Mqtt4{Debug: config.MqttDebug}
+	mqtt = &Mqtt4{Debug: config.MqttDebug, config: config}
 	options := paho4.NewClientOptions().
 		SetPassword(config.AuthClientSecret).
 		SetUsername(config.AuthClientId).
@@ -61,7 +61,7 @@ func Mqtt4Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt4, 
 
 	mqtt.client = paho4.NewClient(options)
 	if token := mqtt.client.Connect(); token.Wait() && token.Error() != nil {
-		log.Println("Error on MqttStart.Connect(): ", token.Error())
+		config.GetLogger().Error("unable to start mqtt connection", "error", token.Error())
 		return mqtt, token.Error()
 	}
 
@@ -75,15 +75,13 @@ func Mqtt4Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt4, 
 
 func (this *Mqtt4) Publish(topic, msg string) (err error) {
 	if !this.client.IsConnected() {
-		log.Println("WARNING: mqtt client not connected")
+		this.config.GetLogger().Warn("mqtt client not connected")
 		return errors.New("mqtt client not connected")
 	}
-	if this.Debug {
-		log.Println("DEBUG: publish ", topic, msg)
-	}
+	this.config.GetLogger().Debug("publish to mqtt", "topic", topic, "msg", msg)
 	token := this.client.Publish(topic, 2, false, msg)
 	if token.Wait() && token.Error() != nil {
-		log.Println("Error on Client.Publish() (Mqtt4): ", token.Error())
+		this.config.GetLogger().Error("unable to publish to mqtt", "topic", topic, "msg", msg, "error", token.Error())
 		return token.Error()
 	}
 	return err
@@ -92,32 +90,37 @@ func (this *Mqtt4) Publish(topic, msg string) (err error) {
 type Mqtt5 struct {
 	client *autopaho.ConnectionManager
 	Debug  bool
+	config configuration.Config
 }
 
 func Mqtt5Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt5, err error) {
-	mqtt = &Mqtt5{Debug: config.MqttDebug}
+	mqtt = &Mqtt5{Debug: config.MqttDebug, config: config}
 
 	broker, err := url.Parse(config.MqttBroker)
 	if err != nil {
 		return mqtt, err
 	}
+
+	mqttLogger := slog.NewLogLogger(config.GetLogger().Handler(), slog.LevelError)
+	mqttLogger.SetPrefix("[PAHO-ERR] ")
+
 	c := autopaho.ClientConfig{
 		BrokerUrls: []*url.URL{broker},
 		OnConnectionUp: func(manager *autopaho.ConnectionManager, connack *paho.Connack) {
-			log.Println("mqtt (re)connected")
+			config.GetLogger().Info("mqtt (re)connected")
 		},
 		OnConnectError: func(err error) {
-			log.Println("mqtt connection error:", err)
+			config.GetLogger().Error("mqtt connection error", "error", err)
 		},
-		PahoErrors: log.New(os.Stderr, "[PAHO-ERR] ", log.LstdFlags),
+		PahoErrors: mqttLogger,
 		KeepAlive:  30,
 		ClientConfig: paho.ClientConfig{
 			ClientID: config.AuthClientId + "_" + uuid.NewString(),
 			OnServerDisconnect: func(disconnect *paho.Disconnect) {
-				log.Println("mqtt servicer disconnect")
+				config.GetLogger().Info("mqtt server disconnect")
 			},
 			OnClientError: func(err error) {
-				log.Println("mqtt client error:", err)
+				config.GetLogger().Error("mqtt client error", "error", err)
 			},
 		},
 	}
@@ -131,16 +134,14 @@ func Mqtt5Start(ctx context.Context, config configuration.Config) (mqtt *Mqtt5, 
 	go func() {
 		<-ctx.Done()
 		disconnecttimeout, _ := context.WithTimeout(context.Background(), 10*time.Second)
-		log.Println("disconnect:", mqtt.client.Disconnect(disconnecttimeout))
+		config.GetLogger().Info("disconnecting mqtt client", "result", mqtt.client.Disconnect(disconnecttimeout))
 	}()
 	timeout, _ := context.WithTimeout(ctx, time.Minute)
 	return mqtt, mqtt.client.AwaitConnection(timeout)
 }
 
 func (this *Mqtt5) Publish(topic, msg string) (err error) {
-	if this.Debug {
-		log.Println("DEBUG: publish ", topic, msg)
-	}
+	this.config.GetLogger().Debug("publish to mqtt", "topic", topic, "msg", msg)
 	timeout, _ := context.WithTimeout(context.Background(), time.Minute)
 	_, err = this.client.Publish(timeout, &paho.Publish{
 		QoS:     2,
@@ -149,7 +150,7 @@ func (this *Mqtt5) Publish(topic, msg string) (err error) {
 		Payload: []byte(msg),
 	})
 	if err != nil {
-		log.Println("Error on Client.Publish() (Mqtt5): ", err)
+		this.config.GetLogger().Error("unable to publish to mqtt", "topic", topic, "error", err)
 		return err
 	}
 	return err

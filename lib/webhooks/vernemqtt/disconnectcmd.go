@@ -19,14 +19,14 @@ package vernemqtt
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 )
 
 // disconnectCommand godoc
@@ -81,8 +81,8 @@ func disconnectCommand(writer http.ResponseWriter, request *http.Request, config
 	}
 
 	_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-	if err != nil && config.Debug {
-		log.Println("ERROR: InitWebhooks::disconnectCommand unable to fprint:", err)
+	if err != nil {
+		config.GetLogger().Debug("ERROR: InitWebhooks::disconnectCommand unable to fprint", "error", err)
 	}
 }
 

@@ -18,14 +18,16 @@ package client
 
 import (
 	"errors"
-	"github.com/SENERGY-Platform/platform-connector-lib/iot"
-	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"hash/fnv"
 	"log"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/SENERGY-Platform/platform-connector-lib/iot"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/platform-connector-lib/security"
 )
 
 func getHash(representations []DeviceRepresentation) string {
@@ -40,7 +42,7 @@ func getHash(representations []DeviceRepresentation) string {
 }
 
 func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error) {
-	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "", slog.Default())
 	hash := getHash(this.devices)
 	exists := false
 	deviceUris := []string{}
@@ -80,7 +82,7 @@ func (this *Client) provisionHub(token security.JwtToken) (isNew bool, err error
 }
 
 func (this *Client) provisionDevices(token security.JwtToken) (newDevices bool, err error) {
-	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "")
+	iotClient := iot.New(this.deviceManagerUrl, this.deviceRepoUrl, "", slog.Default())
 	for _, device := range this.devices {
 		_, err := iotClient.GetDeviceByLocalId(device.Uri, token)
 		if err != nil && !errors.Is(err, security.ErrorNotFound) {

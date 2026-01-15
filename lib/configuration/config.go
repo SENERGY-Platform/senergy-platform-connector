@@ -19,12 +19,16 @@ package configuration
 import (
 	"encoding/json"
 	"log"
+	"log/slog"
 	"os"
 	"reflect"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
+	struct_logger "github.com/SENERGY-Platform/go-service-base/struct-logger"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -161,6 +165,9 @@ type ConfigStruct struct {
 	SenergyProtoclSegment    string
 	WaitingRoomUrl           string
 	WmbusmetersExecutable    string
+
+	LogLevel string
+	logger   *slog.Logger
 }
 
 type Config = *ConfigStruct
@@ -243,4 +250,37 @@ func HandleEnvironmentVars(config Config) {
 			}
 		}
 	}
+}
+
+func (this *ConfigStruct) GetLogger() *slog.Logger {
+	if this.logger == nil {
+		if this.Debug {
+			this.LogLevel = "debug"
+		}
+		if this.LogLevel == "" {
+			this.LogLevel = "info"
+		}
+		info, ok := debug.ReadBuildInfo()
+		project := ""
+		org := ""
+		if ok {
+			if parts := strings.Split(info.Main.Path, "/"); len(parts) > 2 {
+				project = strings.Join(parts[2:], "/")
+				org = strings.Join(parts[:2], "/")
+			}
+		}
+		this.logger = struct_logger.New(
+			struct_logger.Config{
+				Handler:    struct_logger.JsonHandlerSelector,
+				Level:      this.LogLevel,
+				TimeFormat: time.RFC3339Nano,
+				TimeUtc:    true,
+				AddMeta:    true,
+			},
+			os.Stdout,
+			org,
+			project,
+		)
+	}
+	return this.logger
 }

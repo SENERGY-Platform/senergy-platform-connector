@@ -19,16 +19,16 @@ package vernemqtt
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"runtime/debug"
+	"strconv"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"log"
-	"log/slog"
-	"net/http"
-	"runtime/debug"
-	"strconv"
 )
 
 // login godoc
@@ -120,7 +120,7 @@ func login(writer http.ResponseWriter, request *http.Request, config configurati
 	}
 
 	_, err = fmt.Fprint(writer, `{"result": "ok"}`)
-	if err != nil && config.Debug {
-		log.Println("ERROR: InitWebhooks::login unable to fprint:", err)
+	if err != nil {
+		config.GetLogger().Debug("ERROR: InitWebhooks::login unable to fprint", "error", err)
 	}
 }

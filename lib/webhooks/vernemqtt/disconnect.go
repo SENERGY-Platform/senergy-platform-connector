@@ -20,16 +20,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"runtime/debug"
+
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
 	"github.com/SENERGY-Platform/platform-connector-lib/iot/options"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"log"
-	"log/slog"
-	"net/http"
-	"runtime/debug"
 )
 
 // disconnect godoc
@@ -56,44 +56,44 @@ func disconnect(writer http.ResponseWriter, request *http.Request, config config
 	msg := DisconnectWebhookMsg{}
 	err := json.NewDecoder(request.Body).Decode(&msg)
 	if err != nil {
-		log.Println("ERROR: InitWebhooks::disconnect::jsondecoding", err)
+		config.GetLogger().Error("InitWebhooks::disconnect::jsondecoding", "error", err)
 		return
 	}
 
 	logger.Info("disconnect", "action", "disconnect", "clientId", msg.ClientId)
 	token, err := connector.Security().Access()
 	if err != nil {
-		log.Println("ERROR: InitWebhooks::disconnect::connector.Security().Access", err)
+		config.GetLogger().Error("InitWebhooks::disconnect::connector.Security().Access", "error", err)
 		return
 	}
 	hub, err := connector.Iot().GetHub(msg.ClientId, token, options.Silent)
 	if err != nil {
 		if errors.Is(err, security.ErrorNotFound) {
-			log.Println("WARNING: no hub found")
+			config.GetLogger().Warn("no hub found", "error", err, "clientId", msg.ClientId)
 			return
 		}
-		log.Println("ERROR:", err)
+		config.GetLogger().Error("InitWebhooks::disconnect::connector.Iot().GetHub", "error", err, "clientId", msg.ClientId)
 		return
 	}
 	userToken, err := connector.Security().GetCachedUserToken(hub.OwnerId, model.RemoteInfo{})
 	if err != nil {
-		log.Println("ERROR: InitWebhooks::disconnect::connector.Security().GetCachedUserToken", err)
+		config.GetLogger().Error("InitWebhooks::disconnect::connector.Security().GetCachedUserToken", "error", err, "clientId", msg.ClientId)
 		return
 	}
 	err = connectionLogger.LogHubDisconnect(msg.ClientId)
 	if err != nil {
-		log.Println("ERROR: InitWebhooks::disconnect::LogGatewayDisconnect", err)
+		config.GetLogger().Error("InitWebhooks::disconnect::LogHubDisconnect", "error", err, "clientId", msg.ClientId)
 		return
 	}
 	for _, localId := range hub.DeviceLocalIds {
 		device, err := connector.IotCache.WithToken(userToken).GetDeviceByLocalId(localId)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::disconnect::GetDeviceByLocalId", err)
+			config.GetLogger().Error("InitWebhooks::disconnect::GetDeviceByLocalId", "error", err, "localId", localId)
 			continue
 		}
 		err = connectionLogger.LogDeviceDisconnect(device.Id)
 		if err != nil {
-			log.Println("ERROR: InitWebhooks::disconnect::LogDeviceDisconnect", err)
+			config.GetLogger().Error("InitWebhooks::disconnect::LogDeviceDisconnect", "error", err, "deviceId", device.Id)
 		}
 	}
 }

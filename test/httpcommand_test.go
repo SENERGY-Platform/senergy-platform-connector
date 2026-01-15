@@ -195,7 +195,7 @@ func TestHttpCommand(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = httpcommand.StartConsumer(ctx, responsePort, func(msg []byte) error {
+	err = httpcommand.StartConsumer(ctx, config.GetLogger(), responsePort, func(msg []byte) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	})

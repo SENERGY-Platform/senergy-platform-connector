@@ -22,10 +22,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -176,7 +174,6 @@ func TestWithErrorClient(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{
@@ -492,7 +489,6 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	producer.Log(log.New(os.Stdout, "[TEST-KAFKA] ", 0))
 
 	time.Sleep(5 * time.Second) //wait for creation of devices
 	testCommand, err := createTestCommandMsg(config, "test1", "exact", map[string]interface{}{
@@ -788,7 +784,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = httpcommand.StartConsumer(ctx, responsePort, func(msg []byte) error {
+	err = httpcommand.StartConsumer(ctx, config.GetLogger(), responsePort, func(msg []byte) error {
 		consumedResponses = append(consumedResponses, msg)
 		return nil
 	})

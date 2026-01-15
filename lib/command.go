@@ -21,12 +21,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/correlation"
 	"github.com/SENERGY-Platform/platform-connector-lib/model"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"log"
-	"time"
 )
 
 type commandQueueValue struct {
@@ -43,7 +43,7 @@ func GetQueuedCommandHandler(ctx context.Context, correlationservice *correlatio
 			for msg := range queue {
 				err := handler(msg.commandRequest, msg.requestMsg, msg.t)
 				if err != nil {
-					log.Println("ERROR: ", err)
+					config.GetLogger().Error("unable to handle command", "error", err)
 				}
 			}
 		}()
@@ -74,32 +74,28 @@ func GetCommandHandler(correlationservice *correlation.CorrelationService, mqtt 
 			TimeUnit:  "unix_nano",
 			Location:  "github.com/SENERGY-Platform/senergy-platform-connector GetCommandHandler()",
 		})
-		if config.Debug {
-			log.Println("DEBUG: receive command", commandRequest.Metadata.Device.Id, commandRequest.Metadata.Service.Id, commandRequest.Request.Input)
-		}
+		config.GetLogger().Debug("received command", "device_id", commandRequest.Metadata.Device.Id, "service_id", commandRequest.Metadata.Service.Id, "input", commandRequest.Request.Input)
 		correlationId, err := correlationservice.Save(commandRequest)
 		if err != nil {
-			log.Println("ERROR: unable to save correlation", err)
+			config.GetLogger().Error("unable to save correlation", "error", err)
 			return err
 		}
 		envelope := RequestEnvelope{Payload: requestMsg, CorrelationId: correlationId, Time: t.Unix(), CompletionStrategy: commandRequest.TaskInfo.CompletionStrategy}
 		b, err := json.Marshal(envelope)
 		if err != nil {
-			log.Println("ERROR: unable to marshal envelope", err)
+			config.GetLogger().Error("unable to marshal envelope", "error", err)
 			return err
 		}
-		if config.Debug {
-			log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
-		}
-		err = mqtt.Publish("command/"+commandRequest.Metadata.Device.OwnerId+"/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+		topic := "command/" + commandRequest.Metadata.Device.OwnerId + "/" + commandRequest.Metadata.Device.LocalId + "/" + commandRequest.Metadata.Service.LocalId
+		config.GetLogger().Debug("send command to mqtt", "topic", topic)
+		err = mqtt.Publish(topic, string(b))
 		if err != nil {
 			return err
 		}
 		if !config.ForceTopicsWithOwner {
-			if config.Debug {
-				log.Println("DEBUG: send command to mqtt", "command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, envelope)
-			}
-			err = mqtt.Publish("command/"+commandRequest.Metadata.Device.LocalId+"/"+commandRequest.Metadata.Service.LocalId, string(b))
+			topic := "command/" + commandRequest.Metadata.Device.LocalId + "/" + commandRequest.Metadata.Service.LocalId
+			config.GetLogger().Debug("send command to mqtt", "topic", topic)
+			err = mqtt.Publish(topic, string(b))
 			if err != nil {
 				return err
 			}
