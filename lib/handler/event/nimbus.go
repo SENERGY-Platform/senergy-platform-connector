@@ -127,7 +127,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 				DeviceTypeId: deviceType.Id,
 			},
 		}
-		stub, err = cache.Use(this.connector.IotCache.GetCache(), "deviceIdentWaitingRoom."+stub.LocalId, func() (DeviceStub, error) { return this.waitingRoom.EnsureWaitingRoom(token, stub) }, cache.NoValidation[DeviceStub], 600) //cache for 10 minutes
+		stub, err = cache.Use(this.connector.IotCache.GetCache(), "deviceIdentWaitingRoom."+stub.LocalId, func() (DeviceStub, error) { return this.waitingRoom.EnsureWaitingRoom(token, stub) }, cache.NoValidation[DeviceStub], 60*time.Second) //cache for 1 minutes
 		if err != nil {
 			this.config.GetLogger().Error("wmbus: unable to cache deviceIdentWaitingRoom", "error", err)
 		}
