@@ -66,10 +66,9 @@ func TestDecryptAndDecodeTelegram(t *testing.T) {
 }
 
 func TestHandleWmbusEvent(t *testing.T) {
-	t.Skip("expects 'wmbusmeters' in $PATH")
-	key := ""
+	key := "0102030405060708090A0B0C0D0E0F11"
 	msg := model.EncryptedMessage{
-		Telegram:     "23442D2C051623771B168D20EB413C5721EFBAB5600E96E19562497A618E9C945AEB5B3F",
+		Telegram:     "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A",
 		Manufacturer: "(KAM) Kamstrup Energi (0x2c2d)",
 		MeterId:      "77231605",
 		Type:         "Cold water meter (0x16) encrypted",
@@ -88,7 +87,7 @@ func TestHandleWmbusEvent(t *testing.T) {
 		return
 	}
 
-	err = iot.Mock(config, context.Background(), false)
+	iotMock, err := iot.Mock(config, context.Background(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -159,10 +158,27 @@ func TestHandleWmbusEvent(t *testing.T) {
 		return
 	}
 
-	err = handler.handleWmbusEvent("sepl", token, platform_connector_lib.EventMsg{"data": string(bytes), "timestamp_rfc3339nano": "2025-10-15T11:06:00.269695138Z"}, 2, models.Device{})
+	c := iotMock.GetDeviceTypeUpdateChan()
+	deviceTypeUpdateCounter := 0
+	go func() {
+		for {
+			<-c
+			deviceTypeUpdateCounter++
+		}
+	}()
 
-	if err != nil && err.Error() != "no matching producer for qos=2 found" {
-		t.Error(err)
-		return
+	for range 3 {
+		err = handler.handleWmbusEvent("sepl", token, platform_connector_lib.EventMsg{"data": string(bytes), "timestamp_rfc3339nano": "2025-10-15T11:06:00.269695138Z"}, 2, models.Device{})
+
+		if err != nil && err.Error() != "no matching producer for qos=2 found" {
+			if strings.Contains(err.Error(), "executable file not found in $PATH") {
+				t.Skip("wmbusmeters not avilable")
+			}
+			t.Error(err)
+			return
+		}
+	}
+	if deviceTypeUpdateCounter != 1 {
+		t.Errorf("number of wmbus device type updates incorrect, want 1, have %d", deviceTypeUpdateCounter)
 	}
 }

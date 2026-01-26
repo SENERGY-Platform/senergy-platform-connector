@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func DeviceTypesEndpoints(control *Controller, router *httprouter.Router) {
+func DeviceTypesEndpoints(control *Controller, router *httprouter.Router, m *MockType) {
 	resource := "/device-types"
 
 	router.GET(resource+"/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -58,6 +58,9 @@ func DeviceTypesEndpoints(control *Controller, router *httprouter.Router) {
 		if err != nil {
 			http.Error(writer, err.Error(), errCode)
 			return
+		}
+		if m.deviceTypeUpdateChan != nil {
+			m.deviceTypeUpdateChan <- devicetype
 		}
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = json.NewEncoder(writer).Encode(result)

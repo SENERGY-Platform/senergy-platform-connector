@@ -215,6 +215,7 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 	deviceType = util.DeviceType(deviceTypeId, msg.Manufacturer, msg.Type, msg.Version, this.config.WmbusDeviceClassId, this.config.SenergyProtocolId, this.config.SenergyProtoclSegment, decoded)
 
 	if wmbusDeviceTypeNeedsUpdate(existingDeviceType, deviceType) {
+		this.config.GetLogger().Info("Updating wmbus device type " + deviceType.Id)
 		deviceType, err = this.connector.IotCache.UpdateDeviceType(adminToken, deviceType)
 		return deviceType, err
 	} else {
@@ -292,22 +293,25 @@ func localDeviceId(msg model.EncryptedMessage) (string, error) {
 	return localDeviceId, nil
 }
 
-func wmbusDeviceTypeNeedsUpdate(existing models.DeviceType, current models.DeviceType) bool {
-	if len(existing.Services) != len(current.Services) {
+func wmbusDeviceTypeNeedsUpdate(existing models.DeviceType, new models.DeviceType) bool {
+	if len(existing.Services) != len(new.Services) {
 		return true
 	}
 	if len(existing.Services) == 0 { // both are len 0
 		return false
 	}
-	if len(existing.Services[0].Outputs) != len(current.Services[0].Outputs) {
+	if len(existing.Services[0].Outputs) < len(new.Services[0].Outputs) {
 		return true
 	}
-	if len(existing.Services[0].Outputs) == 0 { // both are len 0
+	if len(existing.Services[0].Outputs) > len(new.Services[0].Outputs) {
+		return false
+	}
+	if len(existing.Services[0].Outputs) == 0 {
 		return false
 	}
 
 	existingCV := existing.Services[0].Outputs[0].ContentVariable.SubContentVariables
-	currentCV := current.Services[0].Outputs[0].ContentVariable.SubContentVariables
+	currentCV := new.Services[0].Outputs[0].ContentVariable.SubContentVariables
 	if len(existingCV) > len(currentCV) {
 		return false
 	}

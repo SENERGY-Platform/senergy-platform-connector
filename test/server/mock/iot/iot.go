@@ -5,30 +5,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
-	"github.com/SENERGY-Platform/platform-connector-lib/model"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/google/uuid"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"runtime/debug"
 	"sync"
+
+	"github.com/SENERGY-Platform/models/go/models"
+	"github.com/SENERGY-Platform/platform-connector-lib/kafka"
+	"github.com/SENERGY-Platform/platform-connector-lib/model"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 )
 
-func Mock(config configuration.Config, ctx context.Context, useKafka bool) (err error) {
+type MockType struct {
+	deviceTypeUpdateChan chan models.DeviceType
+	mux                  sync.Mutex
+}
+
+func Mock(config configuration.Config, ctx context.Context, useKafka bool) (m *MockType, err error) {
 	log.Println("start iot mock")
+	m = &MockType{}
 	var kafkaProducer kafka.ProducerInterface
 	if useKafka {
 		kafkaProducer, err = kafka.PrepareProducer(ctx, config.KafkaUrl, false, false, 1, 1, true)
 		if err != nil {
-			return err
+			return m, err
 		}
 	}
 	//kafkaProducer.Log(log.New(os.Stdout, "[KAFKA-IOT-MOCK] ", 0))
-	router, err := getRouter(&Controller{
+	router, err := getRouter(m, &Controller{
 		mux:              sync.Mutex{},
 		devices:          map[string]model.Device{},
 		characteristics:  map[string]model.Characteristic{},
@@ -39,7 +47,7 @@ func Mock(config configuration.Config, ctx context.Context, useKafka bool) (err 
 		kafkaProducer:    kafkaProducer,
 	})
 	if err != nil {
-		return err
+		return m, err
 	}
 
 	server := &httptest.Server{
@@ -47,7 +55,7 @@ func Mock(config configuration.Config, ctx context.Context, useKafka bool) (err 
 	}
 	server.Listener, err = net.Listen("tcp", ":")
 	if err != nil {
-		return err
+		return m, err
 	}
 	server.Start()
 	config.DeviceManagerUrl = server.URL
@@ -56,10 +64,10 @@ func Mock(config configuration.Config, ctx context.Context, useKafka bool) (err 
 		<-ctx.Done()
 		server.Close()
 	}()
-	return nil
+	return m, err
 }
 
-func getRouter(controller *Controller) (router *httprouter.Router, err error) {
+func getRouter(m *MockType, controller *Controller) (router *httprouter.Router, err error) {
 	defer func() {
 		if r := recover(); r != nil && err == nil {
 			log.Printf("%s: %s", r, debug.Stack())
@@ -69,7 +77,7 @@ func getRouter(controller *Controller) (router *httprouter.Router, err error) {
 	router = httprouter.New()
 	DevicesEndpoints(controller, router)
 	LocalDevicesEndpoints(controller, router)
-	DeviceTypesEndpoints(controller, router)
+	DeviceTypesEndpoints(controller, router, m)
 	HubsEndpoints(controller, router)
 	ProtocolsEndpoints(controller, router)
 	CharacteristicsEndpoints(controller, router)
@@ -330,4 +338,13 @@ func (this *Controller) PublishCharacteristicDelete(id string) (err error, code 
 	defer this.mux.Unlock()
 	delete(this.characteristics, id)
 	return nil, 200
+}
+
+func (this *MockType) GetDeviceTypeUpdateChan() chan models.DeviceType {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	if this.deviceTypeUpdateChan == nil {
+		this.deviceTypeUpdateChan = make(chan models.DeviceType)
+	}
+	return this.deviceTypeUpdateChan
 }
