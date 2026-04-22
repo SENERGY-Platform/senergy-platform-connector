@@ -2,9 +2,6 @@ package docker
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"io"
 	"io/fs"
 	"log"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, apiUrl string, err error) {
@@ -113,25 +114,23 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		}
 	}
 
-	if config.MqttVersion != "" && config.MqttVersion != "3,4" {
-		env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_PROTOCOL_VERSIONS"] = config.MqttVersion
-		env["DOCKER_VERNEMQ_LISTENER.tcp.allowed_protocol_versions"] = config.MqttVersion
-		env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_protocol_versions"] = config.MqttVersion
+	mqttBroker := "3,4,5"
 
-		env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_PROTOCOL_VERSIONS"] = config.MqttVersion
-		env["DOCKER_VERNEMQ_LISTENER.ssl.allowed_protocol_versions"] = config.MqttVersion
-		env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_protocol_versions"] = config.MqttVersion
-	}
-	if strings.Contains(config.MqttVersion, "5") {
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__HOOK"] = "auth_on_subscribe_m5"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__ENDPOINT"] = "http://" + connecorUrl + "/subscribe"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__HOOK"] = "auth_on_publish_m5"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__ENDPOINT"] = "http://" + connecorUrl + "/publish"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__HOOK"] = "auth_on_register_m5"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__ENDPOINT"] = "http://" + connecorUrl + "/login"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__HOOK"] = "on_unsubscribe_m5"
-		env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__ENDPOINT"] = "http://" + connecorUrl + "/unsubscribe"
-	}
+	env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_PROTOCOL_VERSIONS"] = mqttBroker
+	env["DOCKER_VERNEMQ_LISTENER.tcp.allowed_protocol_versions"] = mqttBroker
+	env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_protocol_versions"] = mqttBroker
+
+	env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_PROTOCOL_VERSIONS"] = mqttBroker
+	env["DOCKER_VERNEMQ_LISTENER.ssl.allowed_protocol_versions"] = mqttBroker
+	env["DOCKER_VERNEMQ_LISTENER__SSL__ALLOWED_protocol_versions"] = mqttBroker
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__HOOK"] = "auth_on_subscribe_m5"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLSUBSCRIBE5__ENDPOINT"] = "http://" + connecorUrl + "/subscribe"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__HOOK"] = "auth_on_publish_m5"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLPUBLISH5__ENDPOINT"] = "http://" + connecorUrl + "/publish"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__HOOK"] = "auth_on_register_m5"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLREG5__ENDPOINT"] = "http://" + connecorUrl + "/login"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__HOOK"] = "on_unsubscribe_m5"
+	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__ENDPOINT"] = "http://" + connecorUrl + "/unsubscribe"
 
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{

@@ -1,9 +1,9 @@
 module asyncapi-gen
 
-go 1.25
+go 1.25.0
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20251218071208-0c4d789e51e8
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260115075539-7983058e105b
 	github.com/SENERGY-Platform/senergy-platform-connector v0.2.8
 	github.com/swaggest/go-asyncapi v0.8.0
 )
@@ -17,11 +17,11 @@ require (
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2 // indirect
 	github.com/SENERGY-Platform/converter v0.0.10 // indirect
 	github.com/SENERGY-Platform/developer-notifications v0.0.4 // indirect
-	github.com/SENERGY-Platform/device-repository v0.2.32 // indirect
-	github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 // indirect
+	github.com/SENERGY-Platform/device-repository v0.2.36 // indirect
+	github.com/SENERGY-Platform/go-service-base/struct-logger v0.6.0 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20251202070403-e7e5579f7111 // indirect
-	github.com/SENERGY-Platform/permissions-v2 v0.0.38 // indirect
-	github.com/SENERGY-Platform/service-commons v0.0.0-20251120132821-0c66860f211e // indirect
+	github.com/SENERGY-Platform/permissions-v2 v0.0.40 // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20260106114257-16bca4ba28e7 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
-	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pierrec/lz4/v4 v4.1.23 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
