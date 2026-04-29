@@ -148,6 +148,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 		InitTopics: config.InitTopics,
 
 		LogLevel: config.LogLevel,
+		Logger:   config.GetLogger(),
 	})
 	if err != nil {
 		config.GetLogger().Error("unable to lib init", "error", err)

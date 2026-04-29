@@ -281,6 +281,8 @@ func (this *ConfigStruct) GetLogger() *slog.Logger {
 			org,
 			project,
 		)
+		slog.SetDefault(this.logger)
+		slog.SetLogLoggerLevel(slog.LevelInfo)
 	}
 	return this.logger
 }
