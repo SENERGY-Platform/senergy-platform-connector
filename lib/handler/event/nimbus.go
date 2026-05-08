@@ -46,31 +46,31 @@ var hexRex = regexp.MustCompile(`0x([0-9a-fA-F]+)`)
 // If the device does not already exist, a new device is created in the device waiting room.
 // If the device exists, decoding (and decrypting) is attempted using wmbusmeters. If decoding is successful,
 // the decoded message will be published.
-func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, event platform_connector_lib.EventMsg, qos int, nimbus models.Device) (err error) {
+func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, event platform_connector_lib.EventMsg, qos int, nimbus models.Device) (err error, shouldPrintErr bool) {
 	// decode nimbus JSON message
 	this.config.GetLogger().Debug("handleWmbusEvent", "event", event)
 	eventData, ok := event[wmbusDataProtocolSegment]
 	if !ok {
-		return errors.New("invalid message: missing protocol segment " + wmbusDataProtocolSegment)
+		return errors.New("invalid message: missing protocol segment " + wmbusDataProtocolSegment), true
 	}
 	var msg model.EncryptedMessage
 	err = json.Unmarshal([]byte(eventData), &msg)
 	if err != nil {
 		this.config.GetLogger().Error("wmbus: unable to unmarshal eventData", "error", err)
-		return err
+		return err, false
 	}
 
 	// ensure device type exists
 	deviceTypeId, err := util.DeviceTypeId(msg.Manufacturer, msg.Type, msg.Version, this.wmbusDeviceTypeNamespace)
 	if err != nil {
 		this.config.GetLogger().Error("wmbus: unable to calculcate device type id", "error", err)
-		return err
+		return err, false
 	}
 
 	decoded, err := decryptAndDecodeTelegram(this.config.WmbusmetersExecutable, nil, msg.Telegram)
 	if err != nil && !errors.Is(err, errorEncrypted) {
-		this.config.GetLogger().Error("wmbus: unable to decryptAndDecodeTelegram 1", "error", err)
-		return err
+		this.config.GetLogger().Warn("wmbus: unable to decryptAndDecodeTelegram #1", "error", err, "telegram", msg.Telegram)
+		return err, false
 	}
 	keyRequired := errors.Is(err, errorEncrypted)
 	var deviceType models.DeviceType
@@ -81,14 +81,14 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 		deviceType, err = this.ensureWmbusDeviceType(deviceTypeId, msg, decoded)
 	}
 	if err != nil {
-		this.config.GetLogger().Error("wmbus: unable to ensureWmbusDeviceType 1", "error", err)
-		return err
+		this.config.GetLogger().Error("wmbus: unable to ensureWmbusDeviceType #1", "error", err)
+		return err, false
 	}
 
 	// deduplication
 	localDeviceId, err := localDeviceId(msg)
 	if err != nil {
-		return err
+		return err, true
 	}
 	key := "messages." + user + "." + localDeviceId
 	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[string])
@@ -97,7 +97,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	} else if err == nil {
 		if oldTelegram == msg.Telegram {
 			this.config.GetLogger().Info("wmbus: duplicate message of device " + localDeviceId + " from nimbus " + nimbus.Id)
-			return nil // msg is duplicate
+			return nil, false // msg is duplicate
 		}
 	}
 	err = this.connector.IotCache.GetCache().Set(key, msg.Telegram, 30*time.Second) //cache for 30 seconds
@@ -109,7 +109,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	device, err := this.connector.IotCache.GetDeviceByLocalId(token, localDeviceId)
 	if err != nil && !errors.Is(err, security.ErrorNotFound) {
 		this.config.GetLogger().Error("wmbus: unable to get device", "error", err)
-		return err
+		return err, false
 	} else if errors.Is(err, security.ErrorNotFound) {
 		err = nil
 		attr := []models.Attribute{}
@@ -131,7 +131,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 		if err != nil {
 			this.config.GetLogger().Error("wmbus: unable to cache deviceIdentWaitingRoom", "error", err)
 		}
-		return err // done                                                                                                                                                                                                                    // done
+		return err, false // done                                                                                                                                                                                                                    // done
 	}
 
 	if keyRequired {
@@ -159,8 +159,8 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 			if errors.Is(err, errorWrongKey) {
 				continue
 			} else if err != nil {
-				this.config.GetLogger().Error("wmbus: unable to decryptAndDecodeTelegram 2", "error", err)
-				return err
+				this.config.GetLogger().Warn("wmbus: unable to decryptAndDecodeTelegram #2", "error", err, "telegram", msg.Telegram)
+				return err, false
 			}
 			keyOkValue = "true"
 		}
@@ -168,26 +168,26 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 			keyOk.Value = keyOkValue
 			device, err = this.updateDeviceDecryptionStatus(device, keyOk, keyOkIdx, token)
 			if err != nil {
-				this.config.GetLogger().Error("wmbus: unable to updateDeviceDecryptionStatus 1", "error", err)
-				return err
+				this.config.GetLogger().Error("wmbus: unable to updateDeviceDecryptionStatus #1", "error", err)
+				return err, false
 			}
 		}
 		if keyOkValue == "false" {
-			return nil // no error
+			return nil, false // no error
 		}
 		// device type can be updated with (potentially) new fields
 		deviceType, err = this.ensureWmbusDeviceType(deviceTypeId, msg, decoded)
 
 		if err != nil {
-			this.config.GetLogger().Error("wmbus: unable to ensureWmbusDeviceType 2", "error", err)
-			return err
+			this.config.GetLogger().Error("wmbus: unable to ensureWmbusDeviceType #2", "error", err)
+			return err, false
 		}
 	}
 
 	reEncodedMsg, err := json.Marshal(decoded)
 	if err != nil {
 		this.config.GetLogger().Error("wmbus: unable to marshal decoded message", "error", err)
-		return err
+		return err, false
 	}
 
 	wmbusEvent := platform_connector_lib.EventMsg{
@@ -198,7 +198,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	if err != nil {
 		this.config.GetLogger().Error("wmbus: unable to HandleDeviceRefEventWithAuthToken", "error", err)
 	}
-	return err
+	return err, false
 }
 
 func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.EncryptedMessage, decoded map[string]any) (deviceType models.DeviceType, err error) {
