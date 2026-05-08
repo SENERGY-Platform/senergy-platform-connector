@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -36,6 +37,11 @@ import (
 )
 
 func TestDecryptAndDecodeTelegram(t *testing.T) {
+	_, err := exec.Command("wmbusmeters").CombinedOutput()
+	if err != nil && strings.Contains(err.Error(), "executable file not found in $PATH") {
+		t.Skip("wmbusmeters not avilable")
+	}
+
 	m, err := decryptAndDecodeTelegram("wmbusmeters", nil, "5E442515070201020C1A7A0D005025E58F45E5533A65032652BA4D310CE37BF26D2309CBD25F8C3949BC3BDA701E36F52B38B410595E357DA5346BC645E370CF184B8690613213ECBF5F57C01DA8698F16A03A7A4AF5A1E1778A0DA4D8D7D3")
 	if err == nil || !errors.Is(err, errorEncrypted) {
 		t.Fatal(err)
@@ -49,9 +55,6 @@ func TestDecryptAndDecodeTelegram(t *testing.T) {
 	key := "0102030405060708090A0B0C0D0E0F11"
 	m, err = decryptAndDecodeTelegram("wmbusmeters", &key, "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A")
 	if err != nil {
-		if strings.Contains(err.Error(), "executable file not found in $PATH") {
-			t.Skip("wmbusmeters not avilable")
-		}
 		t.Fatal(err)
 	}
 	log.Printf("%v\n", m)
