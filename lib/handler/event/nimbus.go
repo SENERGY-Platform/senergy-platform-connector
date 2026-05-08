@@ -239,13 +239,13 @@ var errorEncrypted = errors.New("encrypted content")
 var errorWrongKey = errors.New("decryption failed")
 
 func decryptAndDecodeTelegram(executable string, key *string, telegram string) (map[string]any, error) {
-	telegram = strings.ToLower(regexp.MustCompile(`[^a-z0-9]`).ReplaceAllString(telegram, "")) // sanitize telegram for command line usage
+	telegram = strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(telegram, "")) // sanitize telegram for command line usage
 	analyze := "--analyze"
 	if key != nil {
 		sanitizedKey := regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(*key, "") // sanitize key for command line usage
 		analyze += "=" + sanitizedKey
 	}
-	out, err := exec.Command(executable, analyze, telegram).Output()
+	out, err := exec.Command(executable, analyze, telegram).CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
