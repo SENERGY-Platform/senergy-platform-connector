@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IBM/sarama"
 	connection_check_lib "github.com/SENERGY-Platform/connection-check-v2/lib"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
@@ -41,6 +40,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/metrics"
+	"github.com/segmentio/kafka-go/compress"
 )
 
 func Start(ctx context.Context, config configuration.Config, waitingRoom event.WaitingRoomIf) (err error) {
@@ -245,19 +245,19 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 	return nil
 }
 
-func getKafkaCompression(compression string) sarama.CompressionCodec {
+func getKafkaCompression(compression string) compress.Compression {
 	switch strings.ToLower(compression) {
 	case "":
-		return sarama.CompressionNone
+		return compress.None
 	case "-":
-		return sarama.CompressionNone
+		return compress.None
 	case "none":
-		return sarama.CompressionNone
+		return compress.None
 	case "gzip":
-		return sarama.CompressionGZIP
+		return compress.Gzip
 	case "snappy":
-		return sarama.CompressionSnappy
+		return compress.Snappy
 	}
 	slog.Default().Warn("unknown compression --> fallback to none", "compression", compression)
-	return sarama.CompressionNone
+	return compress.None
 }
