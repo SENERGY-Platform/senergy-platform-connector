@@ -3,6 +3,7 @@ package test
 import (
 	"encoding/json"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/SENERGY-Platform/converter/lib/converter/characteristics"
@@ -11,6 +12,109 @@ import (
 	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 )
+
+// waitFor polls until condition holds or the timeout expires. The tests used to
+// wait for the asynchronous mqtt and kafka pipeline with a fixed sleep, which
+// fails whenever the machine is slower than the sleep was long. Polling passes as
+// soon as the expected state is reached and only gives up after the timeout.
+func waitFor(timeout time.Duration, condition func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for {
+		if condition() {
+			return true
+		}
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// settleTime is waited after waitFor reported the expected message count, so that
+// a surplus message still arrives before the assertions compare exact counts. The
+// fixed sleeps this replaces kept that window open for 20s; 5s keeps most of it
+// while no longer paying it when nothing is late.
+const settleTime = 5 * time.Second
+
+// collector collects messages that arrive on consumer goroutines. The tests used
+// plain slices for this, appended to from the kafka consumer callbacks while the
+// test body read them, which is a data race and can report a count that is short
+// even though every message arrived.
+type collector struct {
+	mux      sync.Mutex
+	messages [][]byte
+}
+
+func (this *collector) Add(msg []byte) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	this.messages = append(this.messages, msg)
+}
+
+func (this *collector) Len() int {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	return len(this.messages)
+}
+
+func (this *collector) Get() [][]byte {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	return append([][]byte{}, this.messages...)
+}
+
+// counter is the collector equivalent for the tests that only count messages.
+type counter struct {
+	mux   sync.Mutex
+	value int
+}
+
+func (this *counter) Inc() {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	this.value++
+}
+
+func (this *counter) Get() int {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	return this.value
+}
+
+// stringsByKey collects the request bodies of the notification and ignore-message
+// mocks. Their handlers and callbacks each run on their own goroutine, so an
+// unguarded map is not only a data race but can crash the process with a
+// concurrent map write.
+type stringsByKey struct {
+	mux    sync.Mutex
+	values map[string][]string
+}
+
+func newStringsByKey() *stringsByKey {
+	return &stringsByKey{values: map[string][]string{}}
+}
+
+func (this *stringsByKey) Add(key string, value string) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	this.values[key] = append(this.values[key], value)
+}
+
+func (this *stringsByKey) Get(key string) []string {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	return append([]string{}, this.values[key]...)
+}
+
+func (this *stringsByKey) All() map[string][]string {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	result := map[string][]string{}
+	for key, values := range this.values {
+		result[key] = append([]string{}, values...)
+	}
+	return result
+}
 
 func createTestCommandMsg(config configuration.Config, deviceUri string, serviceUri string, msg map[string]interface{}) (result model.ProtocolMsg, err error) {
 	sec, err := security.New(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, config.JwtIssuer, config.JwtPrivateKey, config.JwtExpiration, config.AuthExpirationTimeBuffer, 0, []string{}, 0, 0, config.GetLogger())

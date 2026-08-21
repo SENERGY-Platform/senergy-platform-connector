@@ -23,7 +23,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"time"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib"
@@ -43,8 +42,8 @@ func (this *Client) startMqtt5() (err error) {
 			log.Println("mqtt (re)connected")
 			err := this.loadOldSubscriptions()
 			if err != nil {
-				debug.PrintStack()
-				log.Fatal("FATAL: ", err)
+				//see startMqtt4 for why this must not end the process
+				log.Println("ERROR: unable to load old subscriptions:", err)
 			}
 		},
 		OnConnectError: func(err error) {

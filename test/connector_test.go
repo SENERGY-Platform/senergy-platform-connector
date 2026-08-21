@@ -223,9 +223,9 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 	}
 
 	t.Log("start kafka consumer")
-	consumedEvents := [][]byte{}
-	receivedExpectedTimestampsCount := 0
-	receivedOtherTimestampsCount := 0
+	consumedEvents := &collector{}
+	receivedExpectedTimestamps := &counter{}
+	receivedOtherTimestamps := &counter{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:         config.KafkaUrl,
 		GroupId:          "test_client",
@@ -236,15 +236,18 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		InitTopic:        true,
 		AllowOldMessages: true,
 	}, func(topic string, msg []byte, timestamp time.Time) error {
-		consumedEvents = append(consumedEvents, msg)
+		consumedEvents.Add(msg)
 		if timestamp != expectedTime {
 			t.Log("unexpected timestamp", timestamp, expectedTime)
-			receivedOtherTimestampsCount++
+			receivedOtherTimestamps.Inc()
 		} else {
-			receivedExpectedTimestampsCount++
+			receivedExpectedTimestamps.Inc()
 		}
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -252,7 +255,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
-	consumedAnalytics := [][]byte{}
+	consumedAnalytics := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -262,9 +265,12 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedAnalytics = append(consumedAnalytics, msg)
+		consumedAnalytics.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //see above
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -272,7 +278,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
-	consumedRespEvents := [][]byte{}
+	consumedRespEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -282,9 +288,12 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedRespEvents = append(consumedRespEvents, msg)
+		consumedRespEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //see above
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -292,7 +301,7 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
-	consumedResponses := [][]byte{}
+	consumedResponses := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -302,9 +311,12 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedResponses = append(consumedResponses, msg)
+		consumedResponses.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //see above
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -411,39 +423,54 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		return
 	}
 
-	time.Sleep(20 * time.Second) //wait for command to finish
+	//wait for the command and event pipeline to deliver what the assertions below
+	//expect, instead of sleeping long enough for the slowest machine
+	waitFor(60*time.Second, func() bool {
+		mux.Lock()
+		defer mux.Unlock()
+		return testState == 9 &&
+			consumedAnalytics.Len() >= 1 &&
+			consumedEvents.Len() >= 3 &&
+			consumedResponses.Len() >= 2 &&
+			consumedRespEvents.Len() >= 1
+	})
+	//settle, so that a surplus message is still caught by the exact counts below
+	time.Sleep(settleTime)
 
 	t.Log("check state")
 
-	if testState != 9 {
-		t.Error("unexpected command result", testState)
+	mux.Lock()
+	currentState := testState
+	mux.Unlock()
+	if currentState != 9 {
+		t.Error("unexpected command result", currentState)
 	}
 
-	if len(consumedAnalytics) != 1 {
-		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
+	if consumedAnalytics.Len() != 1 {
+		t.Error("unexpected consumedAnalytics result len", consumedAnalytics.Len())
 	}
 
-	if len(consumedEvents) != 3 {
-		t.Error("unexpected event result len", len(consumedEvents))
-		for _, event := range consumedEvents {
+	if consumedEvents.Len() != 3 {
+		t.Error("unexpected event result len", consumedEvents.Len())
+		for _, event := range consumedEvents.Get() {
 			t.Log(string(event))
 		}
 	}
 
-	if receivedExpectedTimestampsCount != 2 {
-		t.Error("unexpected number of expected timestamps", receivedExpectedTimestampsCount)
+	if receivedExpectedTimestamps.Get() != 2 {
+		t.Error("unexpected number of expected timestamps", receivedExpectedTimestamps.Get())
 	}
-	if receivedOtherTimestampsCount != 1 {
-		t.Error("unexpected number of other timestamps", receivedOtherTimestampsCount)
+	if receivedOtherTimestamps.Get() != 1 {
+		t.Error("unexpected number of other timestamps", receivedOtherTimestamps.Get())
 	}
 
-	if len(consumedResponses) != 2 {
-		t.Error("unexpected response result len", len(consumedResponses))
+	if consumedResponses.Len() != 2 {
+		t.Error("unexpected response result len", consumedResponses.Len())
 		return
 	}
 
-	if len(consumedRespEvents) != 1 {
-		t.Error("unexpected response event result len", len(consumedRespEvents))
+	if consumedRespEvents.Len() != 1 {
+		t.Error("unexpected response event result len", consumedRespEvents.Len())
 	}
 
 	type EventTestType struct {
@@ -451,36 +478,38 @@ func testClient(authenticationMethod string, mqttVersion client.MqttVersion, t *
 		ServiceId string                            `json:"service_id"`
 		Value     map[string]map[string]interface{} `json:"value"`
 	}
-	if len(consumedEvents) == 0 {
+	events := consumedEvents.Get()
+	if len(events) == 0 {
 		t.Error("no events consumed")
 		return
 	}
 
 	eventResult := EventTestType{}
-	err = json.Unmarshal(consumedEvents[0], &eventResult)
+	err = json.Unmarshal(events[0], &eventResult)
 	if err != nil {
-		t.Error("unable to unbarshal event msg", err, string(consumedEvents[0]))
+		t.Error("unable to unbarshal event msg", err, string(events[0]))
 		return
 	}
 	if eventResult.ServiceId == "" || eventResult.DeviceId == "" {
-		t.Error("missing envelope values", eventResult, string(consumedEvents[0]))
+		t.Error("missing envelope values", eventResult, string(events[0]))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level"].(float64) != float64(42) {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
+	responses := consumedResponses.Get()
 	var respResult model.ProtocolMsg
-	err = json.Unmarshal(consumedResponses[1], &respResult)
+	err = json.Unmarshal(responses[1], &respResult)
 	if err != nil {
-		t.Error("unable to unbarshal response msg", string(consumedResponses[1]))
+		t.Error("unable to unbarshal response msg", string(responses[1]))
 		return
 	}
 	respResult.Trace = nil

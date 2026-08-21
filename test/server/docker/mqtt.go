@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -186,13 +187,25 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	}
 	brokerUrlForConnector = "tcp://" + ipAddress + ":" + port.Port()
 
-	time.Sleep(2 * time.Second)
-	_, out, err := c.Exec(ctx, []string{"vmq-admin", "api-key", "add", "key=testkey"})
+	//the open port does not mean the node answers vmq-admin yet; retry instead of
+	//sleeping for a guessed duration
+	err = retry(30*time.Second, func() error {
+		code, out, err := c.Exec(ctx, []string{"vmq-admin", "api-key", "add", "key=testkey"})
+		if err != nil {
+			return err
+		}
+		if out != nil {
+			_, copyErr := io.Copy(os.Stdout, out)
+			log.Println("print cmt out:", copyErr)
+		}
+		if code != 0 {
+			return fmt.Errorf("vmq-admin api-key add returned %v", code)
+		}
+		return nil
+	})
 	if err != nil {
 		return "", "", "", err
 	}
-	_, err = io.Copy(os.Stdout, out)
-	log.Println("print cmt out:", err)
 
 	port, err = c.MappedPort(ctx, "8888/tcp")
 	if err != nil {

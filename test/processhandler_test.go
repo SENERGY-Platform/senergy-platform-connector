@@ -177,17 +177,28 @@ func TestProcessHandler(t *testing.T) {
 		return
 	}
 
-	time.Sleep(10 * time.Second)
+	//wait for both publishes to reach all three subscribers, then settle so a
+	//surplus message is still caught by the comparisons below
+	expected := map[string][]string{"processes/" + c.HubId + "/deployment": {"client publish", "admin publish"}}
+	waitFor(60*time.Second, func() bool {
+		mux.Lock()
+		defer mux.Unlock()
+		return len(adminSyncAll["processes/"+c.HubId+"/deployment"]) >= 2 &&
+			len(sharedAdminAll["processes/"+c.HubId+"/deployment"]) >= 2 &&
+			len(clientSyncAll["processes/"+c.HubId+"/deployment"]) >= 2
+	})
+	time.Sleep(settleTime)
+
 	mux.Lock()
 	defer mux.Unlock()
 
-	if !reflect.DeepEqual(adminSyncAll, map[string][]string{"processes/" + c.HubId + "/deployment": {"client publish", "admin publish"}}) {
+	if !reflect.DeepEqual(adminSyncAll, expected) {
 		t.Error(adminSyncAll)
 	}
-	if !reflect.DeepEqual(sharedAdminAll, map[string][]string{"processes/" + c.HubId + "/deployment": {"client publish", "admin publish"}}) {
+	if !reflect.DeepEqual(sharedAdminAll, expected) {
 		t.Error(sharedAdminAll)
 	}
-	if !reflect.DeepEqual(clientSyncAll, map[string][]string{"processes/" + c.HubId + "/deployment": {"client publish", "admin publish"}}) {
+	if !reflect.DeepEqual(clientSyncAll, expected) {
 		t.Error(clientSyncAll)
 	}
 }

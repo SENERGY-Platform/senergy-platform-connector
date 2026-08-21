@@ -127,8 +127,23 @@ type Client struct {
 
 	authenticationMethod string
 
-	ConnLog      []string
+	connLogMux   sync.Mutex
+	connLog      []string
 	timeProvider func() time.Time
+}
+
+func (this *Client) appendConnLog(entry string) {
+	this.connLogMux.Lock()
+	defer this.connLogMux.Unlock()
+	this.connLog = append(this.connLog, entry)
+}
+
+// ConnLog returns a copy, because the entries are appended from the mqtt
+// callbacks while the test reads them.
+func (this *Client) ConnLog() []string {
+	this.connLogMux.Lock()
+	defer this.connLogMux.Unlock()
+	return append([]string{}, this.connLog...)
 }
 
 func (this *Client) Stop() {

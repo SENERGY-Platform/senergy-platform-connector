@@ -35,16 +35,18 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
 )
 
-func getOutboundIP() net.IP {
+func getOutboundIP() (net.IP, error) {
 	conn, err := net.Dial("udp", "9.9.9.9:80")
 	if err != nil {
-		log.Fatal(err)
+		//no log.Fatal: server.New can report this, while ending the process takes
+		//every remaining test of the package with it
+		return nil, err
 	}
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	return localAddr.IP
+	return localAddr.IP, nil
 }
 
 func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config, mqttVersion client.MqttVersion) (config configuration.Config, brokerUrlForClients string, err error) {
@@ -67,7 +69,12 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		return config, "", err
 	}
 
-	hostIp := getOutboundIP().String()
+	outboundIp, err := getOutboundIP()
+	if err != nil {
+		log.Println("unable to determine outbound ip", err)
+		return config, "", err
+	}
+	hostIp := outboundIp.String()
 
 	config.KafkaUrl, err = docker.Kafka(ctx, wg)
 	if err != nil {

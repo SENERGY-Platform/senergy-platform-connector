@@ -100,18 +100,26 @@ func TestDisconnectCommand(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
+	expectedReconnect := []string{"mqtt (re)connected", "mqtt connection lost", "mqtt (re)connected"}
 
-	if !reflect.DeepEqual(c.ConnLog, []string{"mqtt (re)connected", "mqtt connection lost", "mqtt (re)connected"}) {
-		t.Error(c.ConnLog)
+	//the reconnect is driven by paho's backoff, so how long it takes is not ours to
+	//predict; wait for it instead of sleeping and hoping it already happened
+	waitFor(30*time.Second, func() bool {
+		return reflect.DeepEqual(c.ConnLog(), expectedReconnect) && reflect.DeepEqual(c2.ConnLog(), expectedReconnect)
+	})
+	//settle, so that an unexpected disconnect of c3 is still seen
+	time.Sleep(settleTime)
+
+	if !reflect.DeepEqual(c.ConnLog(), expectedReconnect) {
+		t.Error(c.ConnLog())
 		return
 	}
-	if !reflect.DeepEqual(c2.ConnLog, []string{"mqtt (re)connected", "mqtt connection lost", "mqtt (re)connected"}) {
-		t.Error(c.ConnLog)
+	if !reflect.DeepEqual(c2.ConnLog(), expectedReconnect) {
+		t.Error(c2.ConnLog())
 		return
 	}
-	if !reflect.DeepEqual(c3.ConnLog, []string{"mqtt (re)connected"}) {
-		t.Error(c.ConnLog)
+	if !reflect.DeepEqual(c3.ConnLog(), []string{"mqtt (re)connected"}) {
+		t.Error(c3.ConnLog())
 		return
 	}
 

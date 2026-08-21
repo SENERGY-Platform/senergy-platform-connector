@@ -64,10 +64,10 @@ func TestWithErrorClient(t *testing.T) {
 	config.MutedUserNotificationTitles = nil
 	config.InitTopics = true
 
-	notifyCalls := map[string][]string{}
+	notifyCalls := newStringsByKey()
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		temp, _ := io.ReadAll(request.Body)
-		notifyCalls[request.URL.Path] = append(notifyCalls[request.URL.Path], string(temp))
+		notifyCalls.Add(request.URL.Path, string(temp))
 	}))
 	defer notifyServer.Close()
 	config.NotificationUrl = notifyServer.URL
@@ -140,7 +140,7 @@ func TestWithErrorClient(t *testing.T) {
 		return
 	}
 
-	consumedErrors := [][]byte{}
+	consumedErrors := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -150,9 +150,12 @@ func TestWithErrorClient(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedErrors = append(consumedErrors, msg)
+		consumedErrors.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -222,14 +225,19 @@ func TestWithErrorClient(t *testing.T) {
 		return
 	}
 
-	time.Sleep(20 * time.Second) //wait for command to finish
+	//wait for the error pipeline instead of sleeping long enough for the slowest
+	//machine, then settle so a surplus message is still caught by the exact counts
+	waitFor(60*time.Second, func() bool {
+		return consumedErrors.Len() >= 2 && len(notifyCalls.Get("/notifications")) >= 4
+	})
+	time.Sleep(settleTime)
 
-	if len(consumedErrors) != 2 {
-		t.Error("unexpected consumedErrors result len", len(consumedErrors))
+	if consumedErrors.Len() != 2 {
+		t.Error("unexpected consumedErrors result len", consumedErrors.Len())
 		return
 	}
 
-	for _, consumedError := range consumedErrors {
+	for _, consumedError := range consumedErrors.Get() {
 		var errMsg model.ProtocolMsg
 		err := json.Unmarshal(consumedError, &errMsg)
 		if err != nil {
@@ -245,11 +253,11 @@ func TestWithErrorClient(t *testing.T) {
 
 	}
 
-	if len(notifyCalls["/notifications"]) != 4 {
-		t.Error(notifyCalls["/notifications"])
+	if len(notifyCalls.Get("/notifications")) != 4 {
+		t.Error(notifyCalls.Get("/notifications"))
 		return
 	}
-	for _, notification := range notifyCalls["/notifications"] {
+	for _, notification := range notifyCalls.Get("/notifications") {
 		if !strings.HasPrefix(notification, `{"userId":"sepl","title":`) {
 			t.Error(notification)
 			return
@@ -380,7 +388,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedEvents := [][]byte{}
+	consumedEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -390,9 +398,12 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedEvents = append(consumedEvents, msg)
+		consumedEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -400,7 +411,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedAnalytics := [][]byte{}
+	consumedAnalytics := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -410,9 +421,12 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedAnalytics = append(consumedAnalytics, msg)
+		consumedAnalytics.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -420,7 +434,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedRespEvents := [][]byte{}
+	consumedRespEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -430,9 +444,12 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedRespEvents = append(consumedRespEvents, msg)
+		consumedRespEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -440,7 +457,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedResponses := [][]byte{}
+	consumedResponses := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -450,9 +467,12 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedResponses = append(consumedResponses, msg)
+		consumedResponses.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -533,33 +553,45 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	time.Sleep(20 * time.Second) //wait for command to finish
+	waitFor(60*time.Second, func() bool {
+		mux.Lock()
+		defer mux.Unlock()
+		return testState == 9 &&
+			consumedAnalytics.Len() >= 1 &&
+			consumedEvents.Len() >= 2 &&
+			consumedResponses.Len() >= 2 &&
+			consumedRespEvents.Len() >= 1
+	})
+	time.Sleep(settleTime)
 
-	if testState != 9 {
-		t.Error("unexpected command result", testState)
+	mux.Lock()
+	currentState := testState
+	mux.Unlock()
+	if currentState != 9 {
+		t.Error("unexpected command result", currentState)
 		return
 	}
 
-	if len(consumedAnalytics) != 1 {
-		t.Error("unexpected consumedAnalytics result len", len(consumedAnalytics))
+	if consumedAnalytics.Len() != 1 {
+		t.Error("unexpected consumedAnalytics result len", consumedAnalytics.Len())
 		return
 	}
 
-	if len(consumedEvents) != 2 {
-		t.Error("unexpected event result len", len(consumedEvents))
-		for _, event := range consumedEvents {
+	if consumedEvents.Len() != 2 {
+		t.Error("unexpected event result len", consumedEvents.Len())
+		for _, event := range consumedEvents.Get() {
 			t.Log(string(event))
 		}
 		return
 	}
 
-	if len(consumedResponses) != 2 {
-		t.Error("unexpected response result len", len(consumedResponses))
+	if consumedResponses.Len() != 2 {
+		t.Error("unexpected response result len", consumedResponses.Len())
 		return
 	}
 
-	if len(consumedRespEvents) != 1 {
-		t.Error("unexpected response event result len", len(consumedRespEvents))
+	if consumedRespEvents.Len() != 1 {
+		t.Error("unexpected response event result len", consumedRespEvents.Len())
 		return
 	}
 
@@ -569,30 +601,32 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		Value     map[string]map[string]interface{} `json:"value"`
 	}
 	eventResult := EventTestType{}
-	err = json.Unmarshal(consumedEvents[0], &eventResult)
+	events := consumedEvents.Get()
+	err = json.Unmarshal(events[0], &eventResult)
 	if err != nil {
-		t.Error("unable to unbarshal event msg", err, string(consumedEvents[0]))
+		t.Error("unable to unbarshal event msg", err, string(events[0]))
 		return
 	}
 	if eventResult.ServiceId == "" || eventResult.DeviceId == "" {
-		t.Error("missing envelope values", eventResult, string(consumedEvents[0]))
+		t.Error("missing envelope values", eventResult, string(events[0]))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level"].(float64) != float64(42) {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
+	responses := consumedResponses.Get()
 	var respResult model.ProtocolMsg
-	err = json.Unmarshal(consumedResponses[1], &respResult)
+	err = json.Unmarshal(responses[1], &respResult)
 	if err != nil {
-		t.Error("unable to unbarshal response msg", string(consumedResponses[1]))
+		t.Error("unable to unbarshal response msg", string(responses[1]))
 		return
 	}
 	respResult.Trace = nil
@@ -619,7 +653,7 @@ func TestWithClientMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
+		t.Error("unexpected response ", "Got:\n", string(responses[1]), "\n\n\nExpected:\n", string(b))
 		return
 	}
 }
@@ -737,7 +771,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedEvents := [][]byte{}
+	consumedEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -747,9 +781,12 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedEvents = append(consumedEvents, msg)
+		consumedEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 
@@ -758,7 +795,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedRespEvents := [][]byte{}
+	consumedRespEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -768,9 +805,12 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedRespEvents = append(consumedRespEvents, msg)
+		consumedRespEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -778,14 +818,14 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	consumedResponses := [][]byte{}
+	consumedResponses := &collector{}
 	responsePort, err := server.GetFreePort()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	err = httpcommand.StartConsumer(ctx, config.GetLogger(), responsePort, func(msg []byte) error {
-		consumedResponses = append(consumedResponses, msg)
+		consumedResponses.Add(msg)
 		return nil
 	})
 	if err != nil {
@@ -858,28 +898,39 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 
-	time.Sleep(20 * time.Second) //wait for command to finish
+	waitFor(60*time.Second, func() bool {
+		mux.Lock()
+		defer mux.Unlock()
+		return testState == 9 &&
+			consumedEvents.Len() >= 2 &&
+			consumedResponses.Len() >= 2 &&
+			consumedRespEvents.Len() >= 1
+	})
+	time.Sleep(settleTime)
 
-	if testState != 9 {
-		t.Error("unexpected command result", testState)
+	mux.Lock()
+	currentState := testState
+	mux.Unlock()
+	if currentState != 9 {
+		t.Error("unexpected command result", currentState)
 		return
 	}
 
-	if len(consumedEvents) != 2 {
-		t.Error("unexpected event result len", len(consumedEvents))
-		for _, event := range consumedEvents {
+	if consumedEvents.Len() != 2 {
+		t.Error("unexpected event result len", consumedEvents.Len())
+		for _, event := range consumedEvents.Get() {
 			t.Log(string(event))
 		}
 		return
 	}
 
-	if len(consumedResponses) != 2 {
-		t.Error("unexpected response result len", len(consumedResponses))
+	if consumedResponses.Len() != 2 {
+		t.Error("unexpected response result len", consumedResponses.Len())
 		return
 	}
 
-	if len(consumedRespEvents) != 1 {
-		t.Error("unexpected response event result len", len(consumedRespEvents))
+	if consumedRespEvents.Len() != 1 {
+		t.Error("unexpected response event result len", consumedRespEvents.Len())
 		return
 	}
 
@@ -889,30 +940,32 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		Value     map[string]map[string]interface{} `json:"value"`
 	}
 	eventResult := EventTestType{}
-	err = json.Unmarshal(consumedEvents[0], &eventResult)
+	events := consumedEvents.Get()
+	err = json.Unmarshal(events[0], &eventResult)
 	if err != nil {
-		t.Error("unable to unbarshal event msg", err, string(consumedEvents[0]))
+		t.Error("unable to unbarshal event msg", err, string(events[0]))
 		return
 	}
 	if eventResult.ServiceId == "" || eventResult.DeviceId == "" {
-		t.Error("missing envelope values", eventResult, string(consumedEvents[0]))
+		t.Error("missing envelope values", eventResult, string(events[0]))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level"].(float64) != float64(42) {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
+	responses := consumedResponses.Get()
 	var respResult model.ProtocolMsg
-	err = json.Unmarshal(consumedResponses[1], &respResult)
+	err = json.Unmarshal(responses[1], &respResult)
 	if err != nil {
-		t.Error("unable to unbarshal response msg", string(consumedResponses[1]))
+		t.Error("unable to unbarshal response msg", string(responses[1]))
 		return
 	}
 	respResult.Trace = nil
@@ -940,7 +993,7 @@ func TestHttpCommandMqttErrorOnEventValidationError(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
+		t.Error("unexpected response ", "Got:\n", string(responses[1]), "\n\n\nExpected:\n", string(b))
 		return
 	}
 }

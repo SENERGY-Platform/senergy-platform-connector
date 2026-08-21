@@ -148,7 +148,7 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 
-	consumedEvents := [][]byte{}
+	consumedEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -158,9 +158,12 @@ func TestHttpCommand(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedEvents = append(consumedEvents, msg)
+		consumedEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 
@@ -169,7 +172,7 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 
-	consumedRespEvents := [][]byte{}
+	consumedRespEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -179,9 +182,12 @@ func TestHttpCommand(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedRespEvents = append(consumedRespEvents, msg)
+		consumedRespEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -189,14 +195,14 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 
-	consumedResponses := [][]byte{}
+	consumedResponses := &collector{}
 	responsePort, err := server.GetFreePort()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	err = httpcommand.StartConsumer(ctx, config.GetLogger(), responsePort, func(msg []byte) error {
-		consumedResponses = append(consumedResponses, msg)
+		consumedResponses.Add(msg)
 		return nil
 	})
 	if err != nil {
@@ -273,28 +279,39 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 
-	time.Sleep(20 * time.Second) //wait for command to finish
+	waitFor(60*time.Second, func() bool {
+		mux.Lock()
+		defer mux.Unlock()
+		return testState == 9 &&
+			consumedEvents.Len() >= 2 &&
+			consumedResponses.Len() >= 2 &&
+			consumedRespEvents.Len() >= 1
+	})
+	time.Sleep(settleTime)
 
-	if testState != 9 {
-		t.Error("unexpected command result", testState)
+	mux.Lock()
+	currentState := testState
+	mux.Unlock()
+	if currentState != 9 {
+		t.Error("unexpected command result", currentState)
 		return
 	}
 
-	if len(consumedEvents) != 2 {
-		t.Error("unexpected event result len", len(consumedEvents))
-		for _, event := range consumedEvents {
+	if consumedEvents.Len() != 2 {
+		t.Error("unexpected event result len", consumedEvents.Len())
+		for _, event := range consumedEvents.Get() {
 			t.Log(string(event))
 		}
 		return
 	}
 
-	if len(consumedResponses) != 2 {
-		t.Error("unexpected response result len", len(consumedResponses))
+	if consumedResponses.Len() != 2 {
+		t.Error("unexpected response result len", consumedResponses.Len())
 		return
 	}
 
-	if len(consumedRespEvents) != 1 {
-		t.Error("unexpected response event result len", len(consumedRespEvents))
+	if consumedRespEvents.Len() != 1 {
+		t.Error("unexpected response event result len", consumedRespEvents.Len())
 		return
 	}
 
@@ -304,30 +321,32 @@ func TestHttpCommand(t *testing.T) {
 		Value     map[string]map[string]interface{} `json:"value"`
 	}
 	eventResult := EventTestType{}
-	err = json.Unmarshal(consumedEvents[0], &eventResult)
+	events := consumedEvents.Get()
+	err = json.Unmarshal(events[0], &eventResult)
 	if err != nil {
-		t.Error("unable to unbarshal event msg", err, string(consumedEvents[0]))
+		t.Error("unable to unbarshal event msg", err, string(events[0]))
 		return
 	}
 	if eventResult.ServiceId == "" || eventResult.DeviceId == "" {
-		t.Error("missing envelope values", eventResult, string(consumedEvents[0]))
+		t.Error("missing envelope values", eventResult, string(events[0]))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level"].(float64) != float64(42) {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
 	if eventResult.Value["metrics"]["level_unit"].(string) != testCharacteristicName {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value["metrics"]["level"].(float64)))
 		return
 	}
 
+	responses := consumedResponses.Get()
 	var respResult model.ProtocolMsg
-	err = json.Unmarshal(consumedResponses[1], &respResult)
+	err = json.Unmarshal(responses[1], &respResult)
 	if err != nil {
-		t.Error("unable to unbarshal response msg", string(consumedResponses[1]))
+		t.Error("unable to unbarshal response msg", string(responses[1]))
 		return
 	}
 	respResult.Trace = nil
@@ -355,7 +374,7 @@ func TestHttpCommand(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(expectedProtocolMsg, respResult) {
-		t.Error("unexpected response ", "Got:\n", string(consumedResponses[1]), "\n\n\nExpected:\n", string(b))
+		t.Error("unexpected response ", "Got:\n", string(responses[1]), "\n\n\nExpected:\n", string(b))
 		return
 	}
 }

@@ -24,7 +24,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 )
 
 func (this *Client) startMqtt4() error {
@@ -34,16 +33,21 @@ func (this *Client) startMqtt4() error {
 		SetCleanSession(true).
 		AddBroker(this.mqttUrl).
 		SetConnectionLostHandler(func(client paho.Client, err error) {
-			this.ConnLog = append(this.ConnLog, "mqtt connection lost")
+			this.appendConnLog("mqtt connection lost")
 			log.Println("mqtt connection lost:", err)
 		}).
 		SetOnConnectHandler(func(client paho.Client) {
 			log.Println("mqtt (re)connected")
-			this.ConnLog = append(this.ConnLog, "mqtt (re)connected")
+			this.appendConnLog("mqtt (re)connected")
 			err := this.loadOldSubscriptions()
 			if err != nil {
-				debug.PrintStack()
-				log.Fatal("FATAL: ", err)
+				//no log.Fatal: the resubscribe fails whenever the connection drops
+				//again while it runs, which ends the whole test binary and takes
+				//every remaining test of the package with it. paho calls this
+				//handler again on the next reconnect, so the subscriptions are
+				//restored there; a test that really misses its messages still
+				//fails on its own assertions.
+				log.Println("ERROR: unable to load old subscriptions:", err)
 			}
 		})
 

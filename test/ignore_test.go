@@ -65,10 +65,10 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	clientId := ""
 
-	notifyCalls := map[string][]string{}
+	notifyCalls := newStringsByKey()
 	notifyServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		temp, _ := io.ReadAll(request.Body)
-		notifyCalls[request.URL.Path] = append(notifyCalls[request.URL.Path], strings.ReplaceAll(string(temp), clientId, "client-id-placeholder"))
+		notifyCalls.Add(request.URL.Path, strings.ReplaceAll(string(temp), clientId, "client-id-placeholder"))
 	}))
 	defer notifyServer.Close()
 	config.NotificationUrl = notifyServer.URL
@@ -98,12 +98,9 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 
 	defer adminClient.Stop()
 
-	ignoredMsg := map[string][]string{}
-	ignoredMux := sync.Mutex{}
+	ignoredMsg := newStringsByKey()
 	err = adminClient.Subscribe("ignored/#", 2, func(topic string, payload []byte) {
-		ignoredMux.Lock()
-		defer ignoredMux.Unlock()
-		ignoredMsg[topic] = append(ignoredMsg[topic], string(payload))
+		ignoredMsg.Add(topic, string(payload))
 	})
 	if err != nil {
 		t.Error(err)
@@ -148,7 +145,12 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		return
 	}
 
-	time.Sleep(10 * time.Second) //wait for command to finish
+	//wait for the three ignored messages and their notifications, then settle so a
+	//surplus message is still caught by the comparisons below
+	waitFor(60*time.Second, func() bool {
+		return len(notifyCalls.Get("/notifications")) >= 3 && len(ignoredMsg.All()) >= 3
+	})
+	time.Sleep(settleTime)
 
 	expectedNotifications := map[string][]string{
 		"/notifications": {
@@ -158,8 +160,8 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		},
 	}
 
-	if !reflect.DeepEqual(notifyCalls, expectedNotifications) {
-		t.Errorf("\n%#v\n%#v\n", expectedNotifications, notifyCalls)
+	if !reflect.DeepEqual(notifyCalls.All(), expectedNotifications) {
+		t.Errorf("\n%#v\n%#v\n", expectedNotifications, notifyCalls.All())
 		return
 	}
 
@@ -168,8 +170,8 @@ func testIgnore(t *testing.T, mqttVersion client.MqttVersion) {
 		"ignored/" + eventprefix + "not/msgformat": {"json: cannot unmarshal string into Go value of type map[string]string"},
 		"ignored/foo/bar":                          {"no matching topic handler found"},
 	}
-	if !reflect.DeepEqual(ignoredMsg, expectedIgnores) {
-		t.Errorf("\n%#v\n%#v\n", ignoredMsg, expectedIgnores)
+	if !reflect.DeepEqual(ignoredMsg.All(), expectedIgnores) {
+		t.Errorf("\n%#v\n%#v\n", ignoredMsg.All(), expectedIgnores)
 		return
 	}
 }

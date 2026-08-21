@@ -95,7 +95,7 @@ func TestMultipleProtocolSegments(t *testing.T) {
 	defer c.Stop()
 
 	t.Log("start kafka consumer")
-	consumedEvents := [][]byte{}
+	consumedEvents := &collector{}
 	err = kafka.NewConsumer(ctx, kafka.ConsumerConfig{
 		KafkaUrl:  config.KafkaUrl,
 		GroupId:   "test_client",
@@ -105,9 +105,12 @@ func TestMultipleProtocolSegments(t *testing.T) {
 		MaxWait:   100 * time.Millisecond,
 		InitTopic: true,
 	}, func(topic string, msg []byte, t time.Time) error {
-		consumedEvents = append(consumedEvents, msg)
+		consumedEvents.Add(msg)
 		return nil
 	}, func(err error) {
+		if ctx.Err() != nil {
+			return //the test is shutting the consumer down; t.Error() would panic after the test finished
+		}
 		t.Error(err)
 	})
 	if err != nil {
@@ -128,13 +131,17 @@ func TestMultipleProtocolSegments(t *testing.T) {
 		return
 	}
 
-	time.Sleep(20 * time.Second)
+	waitFor(60*time.Second, func() bool {
+		return consumedEvents.Len() >= 1
+	})
+	//settle, so a surplus event is still caught by the exact count below
+	time.Sleep(settleTime)
 
 	t.Log("check state")
 
-	if len(consumedEvents) != 1 {
-		t.Error("unexpected event result len", len(consumedEvents))
-		for _, event := range consumedEvents {
+	if consumedEvents.Len() != 1 {
+		t.Error("unexpected event result len", consumedEvents.Len())
+		for _, event := range consumedEvents.Get() {
 			t.Log(string(event))
 		}
 		return
@@ -149,29 +156,30 @@ func TestMultipleProtocolSegments(t *testing.T) {
 		} `json:"value"`
 	}
 	eventResult := EventTestType{}
-	err = json.Unmarshal(consumedEvents[0], &eventResult)
+	events := consumedEvents.Get()
+	err = json.Unmarshal(events[0], &eventResult)
 	if err != nil {
-		t.Error("unable to unmarshal event msg", err, string(consumedEvents[0]))
+		t.Error("unable to unmarshal event msg", err, string(events[0]))
 		return
 	}
 	if eventResult.ServiceId == "" || eventResult.DeviceId == "" {
-		t.Error("missing envelope values", eventResult, string(consumedEvents[0]))
+		t.Error("missing envelope values", eventResult, string(events[0]))
 		return
 	}
 
 	if eventResult.Value.Metrics["level"].(float64) != float64(42) {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value.Metrics["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value.Metrics["level"].(float64)))
 		return
 	}
 
 	if eventResult.Value.Metrics["level_unit"].(string) != testCharacteristicName {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value.Metrics["level"].(float64)))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value.Metrics["level"].(float64)))
 		return
 	}
 
 	t.Logf("%#v", eventResult.Value)
 	if eventResult.Value.OtherVar != "foo" {
-		t.Error("unexpected event result", eventResult.Value, string(consumedEvents[0]), reflect.TypeOf(eventResult.Value.OtherVar))
+		t.Error("unexpected event result", eventResult.Value, string(events[0]), reflect.TypeOf(eventResult.Value.OtherVar))
 		return
 	}
 }
