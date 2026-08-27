@@ -3,7 +3,7 @@ module asyncapi-gen
 go 1.26
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260821081842-1642b00cd270
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260824085938-afad12d1d4ed
 	github.com/SENERGY-Platform/senergy-platform-connector v0.2.8
 	github.com/swaggest/go-asyncapi v0.8.0
 )
@@ -17,11 +17,11 @@ require (
 	github.com/SENERGY-Platform/connection-check-v2/lib v0.0.2 // indirect
 	github.com/SENERGY-Platform/converter v0.0.11 // indirect
 	github.com/SENERGY-Platform/developer-notifications v0.0.5 // indirect
-	github.com/SENERGY-Platform/device-repository v0.2.52 // indirect
+	github.com/SENERGY-Platform/device-repository v0.2.53 // indirect
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.8.0 // indirect
 	github.com/SENERGY-Platform/models/go v0.0.0-20260710115411-5b8e00d6e038 // indirect
 	github.com/SENERGY-Platform/permissions-v2 v0.0.45 // indirect
-	github.com/SENERGY-Platform/service-commons v0.0.0-20260507090252-155b04bb4c46 // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20260821114734-3e4578ac2358 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.9.1 // indirect

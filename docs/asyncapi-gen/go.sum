@@ -32,6 +32,7 @@ github.com/SENERGY-Platform/device-repository v0.2.36/go.mod h1:iWXh+P6CRogyx/DS
 github.com/SENERGY-Platform/device-repository v0.2.43/go.mod h1:vPkyVGLbrbE4rrh7dg7EzXMDhhLNH2qvTaUiK+aPWKg=
 github.com/SENERGY-Platform/device-repository v0.2.49/go.mod h1:zr/Kbr5FAeNBiWN5DU0dqQolMxnvalswP4GOuPOGUXE=
 github.com/SENERGY-Platform/device-repository v0.2.52/go.mod h1:/qWsw+57HV+4f5Eq2tigGyTaO5ReBzYKylutgoi8uJ0=
+github.com/SENERGY-Platform/device-repository v0.2.53/go.mod h1:spl0q/hV2pIR5jJqa0/lp1wS+cNLzJebPl5p9l/dJ2o=
 github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1 h1:FF4jhIpxYbXkBQRm4oV/1KiTq1U7a5EQ0x5jqGhZDoY=
 github.com/SENERGY-Platform/go-service-base/struct-logger v0.4.1/go.mod h1:WuvuHGXhnLtXn2ry2kfTaQwco3EY3XTCefLeNqUT+jg=
 github.com/SENERGY-Platform/go-service-base/struct-logger v0.6.0/go.mod h1:z9cf8WOUMLoifRj5Tqts1MNe6QoPFq5Msxj899ZC11g=
@@ -58,6 +59,7 @@ github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260115075539-7983058
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260429113812-10648bfc301f/go.mod h1:M2+ysNIkHATxOqLzN55FABbK7Xt0lV5Mex1aniMkiKk=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260611092528-8c6cf337113c/go.mod h1:BbxPT9kTZaoJvd8/vuRce/dEDS8QLwzzLb0esHpvOho=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260821081842-1642b00cd270/go.mod h1:knaEVxDUfm1/ql5Pr0lfgJwMZ6IY52F0Ci/yPAH9MQI=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260824085938-afad12d1d4ed/go.mod h1:sbMBGfJCkxvZh6BTplbMDkX3sMPwQauFKI6ORvs+F98=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0 h1:Je0qoyHkGOfFLheha6ejD/nIVBaYo1s38of6SiLa9yw=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0/go.mod h1:1p2CQPNtler5leXqNgaOfr7DlgZUydrQlQYA97ycm4k=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa/go.mod h1:1p2CQPNtler5leXqNgaOfr7DlgZUydrQlQYA97ycm4k=
@@ -65,6 +67,7 @@ github.com/SENERGY-Platform/service-commons v0.0.0-20251120132821-0c66860f211e/g
 github.com/SENERGY-Platform/service-commons v0.0.0-20260106114257-16bca4ba28e7/go.mod h1:zPl5mBq6dpXOpgEu+CZbF3sL/9VCDjdzSC1+1ox0kLM=
 github.com/SENERGY-Platform/service-commons v0.0.0-20260423104942-3cd90b7ab170/go.mod h1:UtsgJbMIt7WDCjZ4bLVJoPaH3tEUZFLiEI7+msUGRL8=
 github.com/SENERGY-Platform/service-commons v0.0.0-20260507090252-155b04bb4c46/go.mod h1:ZPgM4x+iVHVh4YfeUS9GVMMv3v9ieec566fhzNfERpc=
+github.com/SENERGY-Platform/service-commons v0.0.0-20260821114734-3e4578ac2358/go.mod h1:k1Jia3JItpaM26/SY1ZGyoGhBE8EA5zQrkwSaiFZKGQ=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bool64/dev v0.2.20 h1:9eIRGdcg2kQW2NGza++QbOKidNNaK+KfWuUXcZFDejE=
@@ -247,6 +250,7 @@ github.com/klauspost/compress v1.18.0/go.mod h1:2Pp+KzxcywXVXMr50+X0Q/Lsb43OQHYW
 github.com/klauspost/compress v1.18.2/go.mod h1:R0h/fSBs8DE4ENlcrlib3PsXS61voFxhIs2DeRhCvJ4=
 github.com/klauspost/compress v1.18.4/go.mod h1:R0h/fSBs8DE4ENlcrlib3PsXS61voFxhIs2DeRhCvJ4=
 github.com/klauspost/compress v1.18.6/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
+github.com/klauspost/compress v1.18.7/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
