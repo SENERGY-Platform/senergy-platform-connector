@@ -3,7 +3,7 @@ module asyncapi-gen
 go 1.26
 
 require (
-	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260826082643-802ca9df203c
+	github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260827082232-c8133d0f997d
 	github.com/SENERGY-Platform/senergy-platform-connector v0.2.8
 	github.com/swaggest/go-asyncapi v0.8.0
 )

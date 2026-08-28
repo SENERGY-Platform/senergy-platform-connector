@@ -65,6 +65,7 @@ github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260611092528-8c6cf33
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260821081842-1642b00cd270/go.mod h1:knaEVxDUfm1/ql5Pr0lfgJwMZ6IY52F0Ci/yPAH9MQI=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260824085938-afad12d1d4ed/go.mod h1:sbMBGfJCkxvZh6BTplbMDkX3sMPwQauFKI6ORvs+F98=
 github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260826082643-802ca9df203c/go.mod h1:UJXPIeUhtaXd2XXRgh1OX4j434BIjThiXHKv6MCNztg=
+github.com/SENERGY-Platform/platform-connector-lib v0.0.0-20260827082232-c8133d0f997d/go.mod h1:UJXPIeUhtaXd2XXRgh1OX4j434BIjThiXHKv6MCNztg=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0 h1:Je0qoyHkGOfFLheha6ejD/nIVBaYo1s38of6SiLa9yw=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250624131956-6c08be412ea0/go.mod h1:1p2CQPNtler5leXqNgaOfr7DlgZUydrQlQYA97ycm4k=
 github.com/SENERGY-Platform/service-commons v0.0.0-20250903071414-1b34f1965afa/go.mod h1:1p2CQPNtler5leXqNgaOfr7DlgZUydrQlQYA97ycm4k=
