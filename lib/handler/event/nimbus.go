@@ -20,7 +20,9 @@ import (
 	"cmp"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"time"
@@ -38,6 +40,7 @@ import (
 const (
 	wmbusDataProtocolSegment = "data"
 	wmbusDecryptedService    = "decrypted"
+	wmbusDriverAttribute     = "wmbus/driver"
 )
 
 var hexRex = regexp.MustCompile(`0x([0-9a-fA-F]+)`)
@@ -67,7 +70,29 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 		return err, false
 	}
 
-	decoded, err := decryptAndDecodeTelegram(this.config.WmbusmetersExecutable, nil, msg.Telegram)
+	localDeviceId, err := localDeviceId(msg)
+	if err != nil {
+		return err, true
+	}
+
+	// the forced driver may be set on the device or on the device type, both of which may not exist yet
+	device, err := this.connector.IotCache.GetDeviceByLocalId(token, localDeviceId)
+	deviceFound := true
+	if errors.Is(err, security.ErrorNotFound) {
+		device = models.Device{}
+		deviceFound = false
+	} else if err != nil {
+		this.config.GetLogger().Error("wmbus: unable to get device", "error", err)
+		return err, false
+	}
+	existingDeviceType, err := this.getWmbusDeviceType(deviceTypeId)
+	if err != nil {
+		this.config.GetLogger().Error("wmbus: unable to get device type", "error", err)
+		return err, false
+	}
+	driver := wmbusDriver(device, existingDeviceType)
+
+	decoded, err := decryptAndDecodeTelegram(this.config.WmbusmetersExecutable, this.config.WmbusmetersDriversDir, driver, nil, msg.Telegram)
 	if err != nil && !errors.Is(err, errorEncrypted) {
 		this.config.GetLogger().Warn("wmbus: unable to decryptAndDecodeTelegram #1", "error", err, "telegram", msg.Telegram)
 		return err, false
@@ -86,10 +111,6 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	}
 
 	// deduplication
-	localDeviceId, err := localDeviceId(msg)
-	if err != nil {
-		return err, true
-	}
 	key := "messages." + user + "." + localDeviceId
 	oldTelegram, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[string])
 	if err != nil && !errors.Is(err, cache.ErrNotFound) {
@@ -106,12 +127,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	}
 
 	// ensure device exists
-	device, err := this.connector.IotCache.GetDeviceByLocalId(token, localDeviceId)
-	if err != nil && !errors.Is(err, security.ErrorNotFound) {
-		this.config.GetLogger().Error("wmbus: unable to get device", "error", err)
-		return err, false
-	} else if errors.Is(err, security.ErrorNotFound) {
-		err = nil
+	if !deviceFound {
 		attr := []models.Attribute{}
 		if keyRequired {
 			attr = append(attr, models.Attribute{
@@ -155,7 +171,7 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 
 		keyOkValue := "false"
 		for _, key := range keys {
-			decoded, err = decryptAndDecodeTelegram(this.config.WmbusmetersExecutable, &key, msg.Telegram)
+			decoded, err = decryptAndDecodeTelegram(this.config.WmbusmetersExecutable, this.config.WmbusmetersDriversDir, driver, &key, msg.Telegram)
 			if errors.Is(err, errorWrongKey) {
 				continue
 			} else if err != nil {
@@ -207,12 +223,13 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 		return deviceType, err
 	}
 
-	existingDeviceType, err := this.connector.IotCache.GetDeviceType(adminToken, deviceTypeId)
-	if err != nil && !errors.Is(err, security.ErrorNotFound) {
+	existingDeviceType, err := this.getWmbusDeviceType(deviceTypeId)
+	if err != nil {
 		return deviceType, err
 	}
 
 	deviceType = util.DeviceType(deviceTypeId, msg.Manufacturer, msg.Type, msg.Version, this.config.WmbusDeviceClassId, this.config.SenergyProtocolId, this.config.SenergyProtoclSegment, decoded)
+	deviceType.Attributes = keepUnmanagedAttributes(existingDeviceType.Attributes, deviceType.Attributes)
 
 	if wmbusDeviceTypeNeedsUpdate(existingDeviceType, deviceType) {
 		this.config.GetLogger().Info("Updating wmbus device type " + deviceType.Id)
@@ -222,6 +239,51 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 		return existingDeviceType, nil
 	}
 
+}
+
+// getWmbusDeviceType returns the stored wmbus device type or an empty device type, if it does not exist yet.
+func (this *Handler) getWmbusDeviceType(deviceTypeId string) (deviceType models.DeviceType, err error) {
+	adminToken, err := this.connector.Security().Access()
+	if err != nil {
+		return deviceType, err
+	}
+	deviceType, err = this.connector.IotCache.GetDeviceType(adminToken, deviceTypeId)
+	if errors.Is(err, security.ErrorNotFound) {
+		return models.DeviceType{}, nil
+	}
+	if err != nil {
+		return models.DeviceType{}, err
+	}
+	return deviceType, nil
+}
+
+// wmbusDriver returns the wmbusmeters driver forced by attribute, or an empty string, if none is forced.
+// A driver set on the device takes precedence over a driver set on the device type.
+func wmbusDriver(device models.Device, deviceType models.DeviceType) string {
+	for _, attr := range device.Attributes {
+		if attr.Key == wmbusDriverAttribute && len(attr.Value) > 0 {
+			return attr.Value
+		}
+	}
+	for _, attr := range deviceType.Attributes {
+		if attr.Key == wmbusDriverAttribute && len(attr.Value) > 0 {
+			return attr.Value
+		}
+	}
+	return ""
+}
+
+// keepUnmanagedAttributes appends those existing attributes to the generated ones, which the generator does not manage.
+// util.DeviceType() builds the attribute list from the telegram only, so attributes set by others,
+// like wmbus/driver, would be lost with the next device type update.
+func keepUnmanagedAttributes(existing []models.Attribute, generated []models.Attribute) []models.Attribute {
+	result := slices.Clone(generated)
+	for _, attr := range existing {
+		if !slices.ContainsFunc(generated, func(g models.Attribute) bool { return g.Key == attr.Key }) {
+			result = append(result, attr)
+		}
+	}
+	return result
 }
 
 func (this *Handler) updateDeviceDecryptionStatus(device models.Device, keyOk models.Attribute, keyOkIdx int, token security.JwtToken) (res models.Device, err error) {
@@ -237,15 +299,40 @@ func (this *Handler) updateDeviceDecryptionStatus(device models.Device, keyOk mo
 var jsonRegex = regexp.MustCompile(`(?s)\{.*\}`)
 var errorEncrypted = errors.New("encrypted content")
 var errorWrongKey = errors.New("decryption failed")
+var errorUnknownDriver = errors.New("unknown wmbusmeters driver")
+var errorInvalidDriversDir = errors.New("wmbusmeters drivers dir must be an absolute path")
 
-func decryptAndDecodeTelegram(executable string, key *string, telegram string) (map[string]any, error) {
+// An empty driver lets wmbusmeters detect the driver, any other value forces that driver.
+// An empty driversDir leaves wmbusmeters with its built in drivers, any other value must be an
+// absolute path to a directory containing nothing but loadable driver files. wmbusmeters exits with
+// EXIT_DRIVER_ERROR on any other directory entry, and it ignores only ".", ".." and files ending in "~".
+func decryptAndDecodeTelegram(executable string, driversDir string, driver string, key *string, telegram string) (map[string]any, error) {
 	telegram = strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(telegram, "")) // sanitize telegram for command line usage
 	analyze := "--analyze"
+	sanitizedDriver := regexp.MustCompile(`[^a-zA-Z0-9_]`).ReplaceAllString(driver, "") // sanitize driver for command line usage, must not contain the : separating driver and key
+	if len(sanitizedDriver) > 0 || key != nil {
+		analyze += "="
+	}
+	analyze += sanitizedDriver
 	if key != nil {
 		sanitizedKey := regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(*key, "") // sanitize key for command line usage
-		analyze += "=" + sanitizedKey
+		if len(sanitizedDriver) > 0 {
+			analyze += ":"
+		}
+		analyze += sanitizedKey
 	}
-	out, err := exec.Command(executable, analyze, telegram).CombinedOutput()
+	args := []string{}
+	if len(driversDir) > 0 {
+		if !filepath.IsAbs(driversDir) {
+			return nil, fmt.Errorf("%w: %s", errorInvalidDriversDir, driversDir)
+		}
+		args = append(args, "--driversdir="+driversDir) // dynamically loaded drivers take part in the driver detection of --analyze
+	}
+	args = append(args, analyze, telegram)
+	out, err := exec.Command(executable, args...).CombinedOutput()
+	if strings.Contains(string(out), "No such driver ") { // wmbusmeters exits with EXIT_DRIVER_ERROR, so check the output before the exit code
+		return nil, fmt.Errorf("%w: %s", errorUnknownDriver, sanitizedDriver)
+	}
 	if err != nil {
 		return nil, err
 	}

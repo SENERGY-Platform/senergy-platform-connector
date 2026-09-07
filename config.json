@@ -217,5 +217,6 @@
     "SenergyProtoclSegment": "urn:infai:ses:protocol-segment:0d211842-cef8-41ec-ab6b-9dbc31bc3a65",
     "WmbusDeviceClassId": "urn:infai:ses:device-class:fea0ad69-3ef2-4332-9afb-ba5885fa7045",
     "WaitingRoomUrl": "http://api.device-waiting-room:8080",
-    "WmbusmetersExecutable": "wmbusmeters"
+    "WmbusmetersExecutable": "wmbusmeters",
+    "WmbusmetersDriversDir": ""
 }

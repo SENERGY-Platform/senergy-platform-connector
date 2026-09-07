@@ -165,6 +165,7 @@ type ConfigStruct struct {
 	SenergyProtoclSegment    string
 	WaitingRoomUrl           string
 	WmbusmetersExecutable    string
+	WmbusmetersDriversDir    string
 
 	LogLevel string
 	logger   *slog.Logger

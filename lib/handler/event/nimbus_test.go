@@ -21,7 +21,10 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -42,30 +45,30 @@ func TestDecryptAndDecodeTelegram(t *testing.T) {
 		t.Skip("wmbusmeters not avilable")
 	}
 
-	m, err := decryptAndDecodeTelegram("wmbusmeters", nil, "5E442515070201020C1A7A0D005025E58F45E5533A65032652BA4D310CE37BF26D2309CBD25F8C3949BC3BDA701E36F52B38B410595E357DA5346BC645E370CF184B8690613213ECBF5F57C01DA8698F16A03A7A4AF5A1E1778A0DA4D8D7D3")
+	m, err := decryptAndDecodeTelegram("wmbusmeters", "", "", nil, "5E442515070201020C1A7A0D005025E58F45E5533A65032652BA4D310CE37BF26D2309CBD25F8C3949BC3BDA701E36F52B38B410595E357DA5346BC645E370CF184B8690613213ECBF5F57C01DA8698F16A03A7A4AF5A1E1778A0DA4D8D7D3")
 	if err == nil || !errors.Is(err, errorEncrypted) {
 		t.Fatal(err)
 	}
 
-	m, err = decryptAndDecodeTelegram("wmbusmeters", nil, "5E442515513796010C1A7AB9005025DA060CD581C61A2B0BAC6A4263F4852E77B49A2B3FF10499AAED980CA4BDBD7697380927970871B3EFC8B7B0E0D6A9CAF377338A5B81688532FCC8D07B50C183561064AE801709F3B7174A33992376BF")
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "", nil, "5E442515513796010C1A7AB9005025DA060CD581C61A2B0BAC6A4263F4852E77B49A2B3FF10499AAED980CA4BDBD7697380927970871B3EFC8B7B0E0D6A9CAF377338A5B81688532FCC8D07B50C183561064AE801709F3B7174A33992376BF")
 	if err == nil || !errors.Is(err, errorEncrypted) {
 		t.Fatal(err)
 	}
 
 	key := "0102030405060708090A0B0C0D0E0F11"
-	m, err = decryptAndDecodeTelegram("wmbusmeters", &key, "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A")
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "", &key, "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A")
 	if err != nil {
 		t.Fatal(err)
 	}
 	log.Printf("%v\n", m)
 
-	m, err = decryptAndDecodeTelegram("wmbusmeters", nil, "32446850411123936980F219A0019F29FA04702FBF02D808DB080000D40D0100000000000000001E348069253E234B472A0000000000000000611B")
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "", nil, "32446850411123936980F219A0019F29FA04702FBF02D808DB080000D40D0100000000000000001E348069253E234B472A0000000000000000611B")
 	if err != nil {
 		t.Fatal(err)
 	}
 	log.Printf("%v\n", m)
 
-	m, err = decryptAndDecodeTelegram("wmbusmeters", nil, "A944FA120795133002077A02009025D6464C67E51DA564BBF470979ABE832CEE7270F72AE24D3432CCF6B22BB772E8F85ADE5C4506C2F45B7C4BA6031B2A5068438A1DC312481612004C3AA57598BC91E14C68FA043D13B21A92E51660C327A9A7C5E77147BCAD863C0573E41560E1293258F4ECA7E6AFB1E9AB28F36C488EDEA3D3AD2C9A70B40009D44D2AC9D66CAAFB6B4B18C532A72758E2B2390268D103FD0C08000002FD0B0111")
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "", nil, "A944FA120795133002077A02009025D6464C67E51DA564BBF470979ABE832CEE7270F72AE24D3432CCF6B22BB772E8F85ADE5C4506C2F45B7C4BA6031B2A5068438A1DC312481612004C3AA57598BC91E14C68FA043D13B21A92E51660C327A9A7C5E77147BCAD863C0573E41560E1293258F4ECA7E6AFB1E9AB28F36C488EDEA3D3AD2C9A70B40009D44D2AC9D66CAAFB6B4B18C532A72758E2B2390268D103FD0C08000002FD0B0111")
 	if !errors.Is(err, errorEncrypted) {
 		t.Fatal("no error on encrypted content")
 	}
@@ -76,6 +79,143 @@ func TestDecryptAndDecodeTelegram(t *testing.T) {
 	}
 
 	log.Printf("%v\n", m)
+}
+
+func TestDecryptAndDecodeTelegramForcedDriver(t *testing.T) {
+	requireWmbusmeters(t)
+
+	// wmbusmeters detects fhkvdataiii for this telegram
+	telegram := "32446850411123936980F219A0019F29FA04702FBF02D808DB080000D40D0100000000000000001E348069253E234B472A0000000000000000611B"
+
+	m, err := decryptAndDecodeTelegram("wmbusmeters", "", "", nil, telegram)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["meter"] != "fhkvdataiii" {
+		t.Fatalf("expected detected driver fhkvdataiii, got %v", m["meter"])
+	}
+
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "izar", nil, telegram)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["meter"] != "izar" {
+		t.Fatalf("expected forced driver izar, got %v", m["meter"])
+	}
+
+	key := "0102030405060708090A0B0C0D0E0F11"
+	m, err = decryptAndDecodeTelegram("wmbusmeters", "", "multical21", &key, "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["total_m3"] == nil {
+		t.Fatalf("expected total_m3 of forced driver multical21, got %v", m)
+	}
+
+	_, err = decryptAndDecodeTelegram("wmbusmeters", "", "unknowndriver", nil, telegram)
+	if !errors.Is(err, errorUnknownDriver) {
+		t.Fatalf("expected errorUnknownDriver, got %v", err)
+	}
+
+	// the : separating driver and key must not survive sanitizing
+	_, err = decryptAndDecodeTelegram("wmbusmeters", "", "izar:0102030405060708090A0B0C0D0E0F11", nil, telegram)
+	if !errors.Is(err, errorUnknownDriver) {
+		t.Fatalf("expected errorUnknownDriver, got %v", err)
+	}
+}
+
+func TestDecryptAndDecodeTelegramDriversDir(t *testing.T) {
+	requireWmbusmeters(t)
+
+	telegram := "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A"
+	key := "0102030405060708090A0B0C0D0E0F11"
+
+	driversDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(driversDir, "testdriver.xmq"), []byte(`driver {
+    name           = testdriver
+    default_fields = name,id,total_m3,timestamp
+    meter_type     = WaterMeter
+    detect {
+        mvt = KAM,01,07
+    }
+    field {
+        name     = total
+        quantity = Volume
+        match {
+            measurement_type = Instantaneous
+            vif_range        = Volume
+        }
+    }
+}
+`), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// without the drivers dir the custom driver does not exist
+	_, err = decryptAndDecodeTelegram("wmbusmeters", "", "testdriver", &key, telegram)
+	if !errors.Is(err, errorUnknownDriver) {
+		t.Fatalf("expected errorUnknownDriver, got %v", err)
+	}
+
+	m, err := decryptAndDecodeTelegram("wmbusmeters", driversDir, "testdriver", &key, telegram)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["meter"] != "testdriver" {
+		t.Fatalf("expected driver testdriver of %v, got %v", driversDir, m["meter"])
+	}
+
+	_, err = decryptAndDecodeTelegram("wmbusmeters", "relative/drivers", "", &key, telegram)
+	if !errors.Is(err, errorInvalidDriversDir) {
+		t.Fatalf("expected errorInvalidDriversDir, got %v", err)
+	}
+}
+
+func TestWmbusDriver(t *testing.T) {
+	deviceType := models.DeviceType{Attributes: []models.Attribute{{Key: wmbusDriverAttribute, Value: "fromDeviceType"}}}
+	device := models.Device{Attributes: []models.Attribute{{Key: wmbusDriverAttribute, Value: "fromDevice"}}}
+
+	if driver := wmbusDriver(device, deviceType); driver != "fromDevice" {
+		t.Errorf("device attribute must win, got %v", driver)
+	}
+	if driver := wmbusDriver(models.Device{}, deviceType); driver != "fromDeviceType" {
+		t.Errorf("expected fromDeviceType, got %v", driver)
+	}
+	empty := models.Device{Attributes: []models.Attribute{{Key: wmbusDriverAttribute, Value: ""}}}
+	if driver := wmbusDriver(empty, deviceType); driver != "fromDeviceType" {
+		t.Errorf("empty device attribute must not force a driver, got %v", driver)
+	}
+	if driver := wmbusDriver(models.Device{}, models.DeviceType{}); driver != "" {
+		t.Errorf("expected no forced driver, got %v", driver)
+	}
+}
+
+func TestKeepUnmanagedAttributes(t *testing.T) {
+	existing := []models.Attribute{
+		{Key: "wmbus/version", Value: "0x1a"},
+		{Key: wmbusDriverAttribute, Value: "multical21"},
+	}
+	generated := []models.Attribute{
+		{Key: "wmbus/version", Value: "0x1b"},
+	}
+	result := keepUnmanagedAttributes(existing, generated)
+	if len(result) != 2 {
+		t.Fatalf("expected 2 attributes, got %v", result)
+	}
+	if result[0].Key != "wmbus/version" || result[0].Value != "0x1b" {
+		t.Errorf("generated attribute must win, got %v", result[0])
+	}
+	if result[1].Key != wmbusDriverAttribute || result[1].Value != "multical21" {
+		t.Errorf("expected kept %v, got %v", wmbusDriverAttribute, result[1])
+	}
+}
+
+func requireWmbusmeters(t *testing.T) {
+	_, err := exec.Command("wmbusmeters").CombinedOutput()
+	if err != nil && strings.Contains(err.Error(), "executable file not found in $PATH") {
+		t.Skip("wmbusmeters not avilable")
+	}
 }
 
 func TestHandleWmbusEvent(t *testing.T) {
@@ -193,5 +333,44 @@ func TestHandleWmbusEvent(t *testing.T) {
 	}
 	if deviceTypeUpdateCounter != 1 {
 		t.Errorf("number of wmbus device type updates incorrect, want 1, have %d", deviceTypeUpdateCounter)
+	}
+
+	// forcing a driver by device attribute must change the decoded fields and therefore the device type
+	device, err := connector.IotCache.GetDeviceByLocalId(token, localDeviceId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	device.Attributes = append(device.Attributes, models.Attribute{
+		Key:   wmbusDriverAttribute,
+		Value: "multical21",
+	})
+	device, err = connector.IotCache.UpdateDevice(token, device)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// a different user avoids the deduplication of the telegram sent above
+	err, _ = handler.handleWmbusEvent("sepl2", token, platform_connector_lib.EventMsg{"data": string(bytes), "timestamp_rfc3339nano": "2025-10-15T11:06:00.269695138Z"}, 2, models.Device{})
+	if err != nil && err.Error() != "no matching producer for qos=2 found" {
+		t.Error(err)
+		return
+	}
+
+	deviceType, err := connector.IotCache.GetDeviceType(token, deviceTypeId)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(deviceType.Services) != 1 || len(deviceType.Services[0].Outputs) != 1 {
+		t.Errorf("unexpected device type services %#v", deviceType.Services)
+		return
+	}
+	if !slices.ContainsFunc(deviceType.Services[0].Outputs[0].ContentVariable.SubContentVariables, func(cv models.ContentVariable) bool { return cv.Name == "total_m3" }) {
+		t.Errorf("expected total_m3 of forced driver multical21 in device type, got %#v", deviceType.Services[0].Outputs[0].ContentVariable.SubContentVariables)
+	}
+	if !slices.ContainsFunc(deviceType.Attributes, func(attr models.Attribute) bool { return attr.Key == "wmbus/version" }) {
+		t.Errorf("expected generated attributes in device type, got %#v", deviceType.Attributes)
 	}
 }
