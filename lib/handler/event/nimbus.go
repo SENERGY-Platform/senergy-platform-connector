@@ -296,7 +296,10 @@ func (this *Handler) updateDeviceDecryptionStatus(device models.Device, keyOk mo
 
 }
 
-var jsonRegex = regexp.MustCompile(`(?s)\{.*\}`)
+// wmbusmeters prints the decoded json as the last brace block of its output. Since version 3.0.0
+// the analysis of manufacturer specific data contains braced blocks of its own, which precede
+// the json, so the first block is not the json.
+var jsonRegex = regexp.MustCompile(`(?ms)^\{$.*?^\}$`)
 var errorEncrypted = errors.New("encrypted content")
 var errorWrongKey = errors.New("decryption failed")
 var errorUnknownDriver = errors.New("unknown wmbusmeters driver")
@@ -342,12 +345,12 @@ func decryptAndDecodeTelegram(executable string, driversDir string, driver strin
 		return nil, errorWrongKey
 	}
 
-	p := jsonRegex.FindSubmatch(out)
-	if len(p) != 1 {
+	blocks := jsonRegex.FindAll(out, -1)
+	if len(blocks) == 0 {
 		return nil, errors.New("unexpcted output: " + string(out))
 	}
 	m := map[string]any{}
-	err = json.Unmarshal(p[0], &m)
+	err = json.Unmarshal(blocks[len(blocks)-1], &m)
 	if err != nil {
 		return nil, err
 	}

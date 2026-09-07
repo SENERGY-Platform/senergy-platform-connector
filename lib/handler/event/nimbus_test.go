@@ -172,6 +172,43 @@ func TestDecryptAndDecodeTelegramDriversDir(t *testing.T) {
 	}
 }
 
+// wmbusmeters 3.0.0 decodes manufacturer specific data with IXML and prints that decode tree,
+// braces at column 0 included, before the json. Only the last block is the json.
+func TestJsonOfAnalysisWithBracedBlocks(t *testing.T) {
+	out := []byte(`Auto driver    : fhkvdataiii
+011 C!: 019F29 mfct specific
+decode(off = 0)
+{
+    version_01(off = 0)
+    {
+        '01'
+        PrevDate(dvk = 02FD3A
+                 off = 2) = 9F29
+    }
+}
+012 C!: *** 9F29 ("previous_date_raw_counter":10655)
+
+{
+    "_":"telegram",
+    "meter":"fhkvdataiii",
+    "id":"93231141",
+    "previous_hca":1274
+}
+`)
+
+	blocks := jsonRegex.FindAll(out, -1)
+	if len(blocks) != 2 {
+		t.Fatalf("expected the decode tree and the json, got %v blocks", len(blocks))
+	}
+	m := map[string]any{}
+	if err := json.Unmarshal(blocks[len(blocks)-1], &m); err != nil {
+		t.Fatal(err)
+	}
+	if m["meter"] != "fhkvdataiii" {
+		t.Errorf("expected meter fhkvdataiii, got %v", m["meter"])
+	}
+}
+
 func TestWmbusDriver(t *testing.T) {
 	deviceType := models.DeviceType{Attributes: []models.Attribute{{Key: wmbusDriverAttribute, Value: "fromDeviceType"}}}
 	device := models.Device{Attributes: []models.Attribute{{Key: wmbusDriverAttribute, Value: "fromDevice"}}}
