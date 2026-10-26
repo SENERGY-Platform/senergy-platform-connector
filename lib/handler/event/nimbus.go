@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -38,9 +39,14 @@ import (
 )
 
 const (
-	wmbusDataProtocolSegment = "data"
-	wmbusDecryptedService    = "decrypted"
-	wmbusDriverAttribute     = "wmbus/driver"
+	wmbusDataProtocolSegment     = "data"
+	wmbusDecryptedService        = "decrypted"
+	wmbusDriverAttribute         = "wmbus/driver"
+	wmbusKeyOkAttribute          = "wmbus/key-ok"
+	connectorOrigin              = "senergy-platform-connector"
+	defaultAttributeOrigin       = "default" // account defaults, merged into the device on read but not stored with it
+	wmbusLastSeenAttributePrefix = "wmbus/last_seen/"
+	wmbusLastSeenInterval        = time.Minute
 )
 
 var hexRex = regexp.MustCompile(`0x([0-9a-fA-F]+)`)
@@ -84,6 +90,12 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 	} else if err != nil {
 		this.config.GetLogger().Error("wmbus: unable to get device", "error", err)
 		return err, false
+	}
+	// recorded before any filtering, so duplicates and undecodable telegrams count as received
+	if deviceFound {
+		if err := this.recordWmbusReceiver(token, device, nimbus); err != nil {
+			this.config.GetLogger().Warn("wmbus: unable to record receiving nimbus", "error", err, "deviceLocalId", localDeviceId, "nimbus", nimbus.Id)
+		}
 	}
 	existingDeviceType, err := this.getWmbusDeviceType(deviceTypeId)
 	if err != nil {
@@ -152,21 +164,10 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 
 	if keyRequired {
 		keys := []string{}
-		keyOkIdx := -1
-		for i, attr := range device.Attributes {
-			switch attr.Key {
-			case "wmbus/key":
-				val := attr.Value
-				if len(val) > 0 {
-					keys = append(keys, attr.Value)
-				}
-			case "wmbus/key-ok":
-				keyOkIdx = i
+		for _, attr := range device.Attributes {
+			if attr.Key == "wmbus/key" && len(attr.Value) > 0 {
+				keys = append(keys, attr.Value)
 			}
-		}
-		keyOk := models.Attribute{Key: "wmbus/key-ok"}
-		if keyOkIdx != -1 {
-			keyOk = device.Attributes[keyOkIdx]
 		}
 
 		keyOkValue := "false"
@@ -180,13 +181,10 @@ func (this *Handler) handleWmbusEvent(user string, token security.JwtToken, even
 			}
 			keyOkValue = "true"
 		}
-		if keyOk.Value != keyOkValue || keyOkIdx == -1 {
-			keyOk.Value = keyOkValue
-			device, err = this.updateDeviceDecryptionStatus(device, keyOk, keyOkIdx, token)
-			if err != nil {
-				this.config.GetLogger().Error("wmbus: unable to updateDeviceDecryptionStatus #1", "error", err)
-				return err, false
-			}
+		err = this.updateDeviceDecryptionStatus(token, device, keyOkValue)
+		if err != nil {
+			this.config.GetLogger().Error("wmbus: unable to updateDeviceDecryptionStatus #1", "error", err)
+			return err, false
 		}
 		if keyOkValue == "false" {
 			return nil, false // no error
@@ -286,14 +284,102 @@ func keepUnmanagedAttributes(existing []models.Attribute, generated []models.Att
 	return result
 }
 
-func (this *Handler) updateDeviceDecryptionStatus(device models.Device, keyOk models.Attribute, keyOkIdx int, token security.JwtToken) (res models.Device, err error) {
-	if keyOkIdx == -1 {
-		device.Attributes = append(device.Attributes, keyOk)
-	} else {
-		device.Attributes[keyOkIdx] = keyOk
+// recordWmbusReceiver stores the time the nimbus received a telegram of the device, in one attribute per nimbus.
+// The attribute has the nimbus id as origin, so the update replaces only this attribute and keeps every other one,
+// including those changed since the device was cached. Each nimbus and device pair is written at most once per wmbusLastSeenInterval.
+func (this *Handler) recordWmbusReceiver(token security.JwtToken, device models.Device, nimbus models.Device) error {
+	if nimbus.Id == "" {
+		// an empty origin would replace all attributes without origin, like wmbus/key
+		return errors.New("missing nimbus id")
 	}
-	return this.connector.IotCache.UpdateDevice(token, device)
+	key := "wmbus.last_seen." + nimbus.Id + "." + device.Id
+	_, err := cache.Get(this.connector.IotCache.GetCache(), key, cache.NoValidation[string])
+	if err == nil {
+		return nil // recorded recently
+	}
+	if !errors.Is(err, cache.ErrNotFound) {
+		return err
+	}
+	// set before the update, so a failing update is not repeated with every telegram
+	err = this.connector.IotCache.GetCache().Set(key, nimbus.Id, wmbusLastSeenInterval)
+	if err != nil {
+		return err
+	}
+	return this.setSameOriginAttributes(token, device.Id, []string{nimbus.Id}, []models.Attribute{{
+		Key:    wmbusLastSeenAttributePrefix + nimbus.Id,
+		Value:  time.Now().UTC().Format(time.RFC3339),
+		Origin: nimbus.Id,
+	}})
+}
 
+// setSameOriginAttributes replaces the attributes of the given origins on the device and keeps all others.
+// An empty origin addresses the attributes without origin.
+func (this *Handler) setSameOriginAttributes(token security.JwtToken, deviceId string, origins []string, attributes []models.Attribute) error {
+	endpoint := this.config.DeviceManagerUrl + "/devices/" + url.PathEscape(deviceId) + "/attributes?update-only-same-origin-attributes=" + url.QueryEscape(strings.Join(origins, ","))
+	return token.PutJSON(endpoint, attributes, nil)
+}
+
+// updateDeviceDecryptionStatus sets wmbus/key-ok with the connector origin, so the update replaces no other attribute,
+// however old the cached device is. A wmbus/key-ok of another origin, as set by earlier versions, is replaced once per device.
+func (this *Handler) updateDeviceDecryptionStatus(token security.JwtToken, device models.Device, keyOkValue string) error {
+	current := slices.IndexFunc(device.Attributes, func(attr models.Attribute) bool {
+		return attr.Key == wmbusKeyOkAttribute && attr.Origin == connectorOrigin
+	})
+	legacy := slices.ContainsFunc(device.Attributes, isLegacyKeyOk)
+	if current != -1 && device.Attributes[current].Value == keyOkValue && !legacy {
+		return nil
+	}
+	// the cached device shows the old state until it expires, which would repeat the write with every telegram
+	cacheKey := "wmbus.key-ok." + device.Id
+	written, err := cache.Get(this.connector.IotCache.GetCache(), cacheKey, cache.NoValidation[string])
+	if err == nil && written == keyOkValue {
+		return nil
+	}
+	keyOk := models.Attribute{Key: wmbusKeyOkAttribute, Value: keyOkValue, Origin: connectorOrigin}
+	if legacy {
+		err = this.replaceLegacyKeyOk(token, device.Id, keyOk)
+	} else {
+		err = this.setSameOriginAttributes(token, device.Id, []string{connectorOrigin}, []models.Attribute{keyOk})
+	}
+	if err != nil {
+		return err
+	}
+	if this.config.DeviceExpiration > 0 {
+		err = this.connector.IotCache.GetCache().Set(cacheKey, keyOkValue, time.Duration(this.config.DeviceExpiration)*time.Second)
+		if err != nil {
+			this.config.GetLogger().Warn("wmbus: unable to cache written decryption status", "error", err)
+		}
+	}
+	return nil
+}
+
+// replaceLegacyKeyOk removes wmbus/key-ok of other origins and sets keyOk. The request has to carry all other attributes
+// of those origins, for the empty origin among them wmbus/key, so they are read from the device-manager instead of the
+// device cache. That leaves the delay of the device-manager in reading its own updates as window for overwriting a change.
+func (this *Handler) replaceLegacyKeyOk(token security.JwtToken, deviceId string, keyOk models.Attribute) error {
+	device := models.Device{}
+	err := token.GetJSON(this.config.DeviceManagerUrl+"/devices/"+url.PathEscape(deviceId), &device)
+	if err != nil {
+		return err
+	}
+	origins := []string{keyOk.Origin}
+	for _, attr := range device.Attributes {
+		if isLegacyKeyOk(attr) && !slices.Contains(origins, attr.Origin) {
+			origins = append(origins, attr.Origin)
+		}
+	}
+	attributes := []models.Attribute{keyOk}
+	for _, attr := range device.Attributes {
+		if attr.Key != keyOk.Key && slices.Contains(origins, attr.Origin) {
+			attributes = append(attributes, attr)
+		}
+	}
+	return this.setSameOriginAttributes(token, deviceId, origins, attributes)
+}
+
+// isLegacyKeyOk reports a stored wmbus/key-ok not written with the connector origin.
+func isLegacyKeyOk(attr models.Attribute) bool {
+	return attr.Key == wmbusKeyOkAttribute && attr.Origin != connectorOrigin && attr.Origin != defaultAttributeOrigin
 }
 
 // wmbusmeters prints the decoded json as the last brace block of its output. Since version 3.0.0

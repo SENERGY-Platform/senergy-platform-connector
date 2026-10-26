@@ -21,18 +21,21 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	device_repo "github.com/SENERGY-Platform/device-repository/lib/client"
 	"github.com/SENERGY-Platform/mgw-wmbus-dc/pkg/model"
 	"github.com/SENERGY-Platform/mgw-wmbus-dc/pkg/util"
 	"github.com/SENERGY-Platform/models/go/models"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
+	"github.com/SENERGY-Platform/platform-connector-lib/security"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/auth"
 	"github.com/SENERGY-Platform/senergy-platform-connector/test/server/mock/iot"
@@ -410,4 +413,258 @@ func TestHandleWmbusEvent(t *testing.T) {
 	if !slices.ContainsFunc(deviceType.Attributes, func(attr models.Attribute) bool { return attr.Key == "wmbus/version" }) {
 		t.Errorf("expected generated attributes in device type, got %#v", deviceType.Attributes)
 	}
+}
+
+// wmbusTestMessage returns the encrypted test telegram for a meter id of its own, so deduplication does not reach across tests.
+func wmbusTestMessage(meterId string) model.EncryptedMessage {
+	return model.EncryptedMessage{
+		Telegram:     "2E44931578563412330333637A2A0020255923C95AAA26D1B2E7493BC2AD013EC4A6F6D3529B520EDFF0EA6DEFC955B29D6D69EBF3EC8A",
+		Manufacturer: "(KAM) Kamstrup Energi (0x2c2d)",
+		MeterId:      meterId,
+		Type:         "Cold water meter (0x16) encrypted",
+		Version:      "0x1b",
+	}
+}
+
+var wmbusTestKey = models.Attribute{Key: "wmbus/key", Value: "0102030405060708090A0B0C0D0E0F11"}
+
+// newWmbusTestDevice starts the mocks and creates the meter device of msg with the given attributes.
+func newWmbusTestDevice(t *testing.T, msg model.EncryptedMessage, attributes []models.Attribute) (*Handler, security.JwtToken, models.Device, platform_connector_lib.EventMsg) {
+	t.Helper()
+	config, err := configuration.LoadConfig("../../../config.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = auth.Mock(config, context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = iot.Mock(config, context.Background(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connector, err := platform_connector_lib.New(platform_connector_lib.Config{
+		AuthEndpoint:     config.AuthEndpoint,
+		DeviceManagerUrl: config.DeviceManagerUrl,
+		DeviceRepoUrl:    config.DeviceRepoUrl,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := New(config, connector, NewTestWaitingRoom())
+
+	deviceTypeId, err := util.DeviceTypeId(msg.Manufacturer, msg.Type, msg.Version, uuid.MustParse(config.WmbusDeviceTypeNamespace))
+	if err != nil {
+		t.Fatal(err)
+	}
+	localDeviceId, err := localDeviceId(msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := connector.Security().Access()
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, err := connector.IotCache.CreateDevice(token, models.Device{
+		LocalId:      localDeviceId,
+		DeviceTypeId: deviceTypeId,
+		Attributes:   attributes,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	event := platform_connector_lib.EventMsg{"data": string(bytes), "timestamp_rfc3339nano": "2025-10-15T11:06:00.269695138Z"}
+	return handler, token, device, event
+}
+
+// readStoredAttributes reads the attributes from the device-manager mock, bypassing the device cache.
+func readStoredAttributes(t *testing.T, handler *Handler, token security.JwtToken, deviceId string) []models.Attribute {
+	t.Helper()
+	stored := models.Device{}
+	err := token.GetJSON(handler.config.DeviceManagerUrl+"/devices/"+url.PathEscape(deviceId), &stored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return stored.Attributes
+}
+
+// writeStoredAttributes replaces the attributes in the device-manager mock, bypassing the device cache.
+func writeStoredAttributes(t *testing.T, handler *Handler, token security.JwtToken, device models.Device, attributes []models.Attribute) {
+	t.Helper()
+	device.Attributes = attributes
+	err := token.PutJSON(handler.config.DeviceManagerUrl+"/devices/"+url.PathEscape(device.Id), device, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRecordWmbusReceiver(t *testing.T) {
+	requireWmbusmeters(t)
+	keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: "true", Origin: connectorOrigin}
+	handler, token, device, event := newWmbusTestDevice(t, wmbusTestMessage("77231606"), []models.Attribute{wmbusTestKey})
+	nimbusA := models.Device{Id: "urn:infai:ses:device:nimbus-a"}
+	nimbusB := models.Device{Id: "urn:infai:ses:device:nimbus-b"}
+
+	readAttributes := func() []models.Attribute {
+		return readStoredAttributes(t, handler, token, device.Id)
+	}
+	lastSeen := func(attributes []models.Attribute, nimbus models.Device) (models.Attribute, bool) {
+		i := slices.IndexFunc(attributes, func(attr models.Attribute) bool { return attr.Key == wmbusLastSeenAttributePrefix+nimbus.Id })
+		if i == -1 {
+			return models.Attribute{}, false
+		}
+		return attributes[i], true
+	}
+
+	// the receiver is recorded before decoding, so the outcome of handleWmbusEvent does not matter here
+	handler.handleWmbusEvent("sepl", token, event, 2, nimbusA)
+	attributes := readAttributes()
+	// the first decryption sets wmbus/key-ok from the cached device, which must keep the attribute recorded before
+	if !slices.Contains(attributes, keyOkAttr) {
+		t.Errorf("expected wmbus/key-ok to be set, got %#v", attributes)
+	}
+	attr, ok := lastSeen(attributes, nimbusA)
+	if !ok {
+		t.Fatalf("expected last seen attribute of nimbus a, got %#v", attributes)
+	}
+	if attr.Origin != nimbusA.Id {
+		t.Errorf("expected origin %s, got %s", nimbusA.Id, attr.Origin)
+	}
+	seen, err := time.Parse(time.RFC3339, attr.Value)
+	if err != nil || time.Since(seen) > time.Minute {
+		t.Errorf("expected recent RFC3339 timestamp, got %q", attr.Value)
+	}
+
+	// remove the attribute to observe whether the next telegram of nimbus a writes it again
+	device.Attributes = []models.Attribute{wmbusTestKey, keyOkAttr}
+	device, err = handler.connector.IotCache.UpdateDevice(token, device)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// same telegram again: a duplicate for nimbus a within the interval, a duplicate as well for nimbus b
+	handler.handleWmbusEvent("sepl", token, event, 2, nimbusA)
+	handler.handleWmbusEvent("sepl", token, event, 2, nimbusB)
+	attributes = readAttributes()
+	if _, ok = lastSeen(attributes, nimbusA); ok {
+		t.Errorf("expected nimbus a to be throttled, got %#v", attributes)
+	}
+	if _, ok = lastSeen(attributes, nimbusB); !ok {
+		t.Errorf("expected last seen attribute of duplicate telegram from nimbus b, got %#v", attributes)
+	}
+	if !slices.Contains(attributes, wmbusTestKey) {
+		t.Errorf("expected wmbus/key to be kept, got %#v", attributes)
+	}
+
+	// without nimbus id, the update would replace all attributes without origin
+	handler.handleWmbusEvent("sepl2", token, event, 2, models.Device{})
+	if after := readAttributes(); !slices.Equal(after, attributes) {
+		t.Errorf("expected unchanged attributes without nimbus id, got %#v", after)
+	}
+}
+
+func TestDecryptionStatusWrittenOnce(t *testing.T) {
+	requireWmbusmeters(t)
+	keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: "true", Origin: connectorOrigin}
+	handler, token, device, event := newWmbusTestDevice(t, wmbusTestMessage("77231607"), []models.Attribute{wmbusTestKey})
+
+	handler.handleWmbusEvent("sepl", token, event, 2, models.Device{})
+	attributes := readStoredAttributes(t, handler, token, device.Id)
+	if !slices.Contains(attributes, keyOkAttr) {
+		t.Fatalf("expected wmbus/key-ok to be set, got %#v", attributes)
+	}
+
+	// remove wmbus/key-ok in the device-manager only, to observe whether the next telegram writes it again
+	writeStoredAttributes(t, handler, token, device, slices.DeleteFunc(attributes, func(attr models.Attribute) bool { return attr.Key == keyOkAttr.Key }))
+
+	// a different user avoids the deduplication, so the decryption status is evaluated again
+	handler.handleWmbusEvent("sepl2", token, event, 2, models.Device{})
+	if attributes = readStoredAttributes(t, handler, token, device.Id); slices.Contains(attributes, keyOkAttr) {
+		t.Errorf("expected no second write of an unchanged wmbus/key-ok within the device cache expiration, got %#v", attributes)
+	}
+}
+
+// a device read from the cache before wmbus/key was changed must not write the old key back
+func TestDecryptionStatusKeepsChangedKey(t *testing.T) {
+	handler, token, cached, _ := newWmbusTestDevice(t, wmbusTestMessage("77231608"), []models.Attribute{wmbusTestKey})
+	changedKey := models.Attribute{Key: "wmbus/key", Value: "000102030405060708090A0B0C0D0E0F"}
+	writeStoredAttributes(t, handler, token, cached, []models.Attribute{changedKey})
+
+	err := handler.updateDeviceDecryptionStatus(token, cached, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	attributes := readStoredAttributes(t, handler, token, cached.Id)
+	keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: "true", Origin: connectorOrigin}
+	if len(attributes) != 2 || !slices.Contains(attributes, changedKey) || !slices.Contains(attributes, keyOkAttr) {
+		t.Errorf("expected changed wmbus/key and wmbus/key-ok of the connector, got %#v", attributes)
+	}
+}
+
+func TestDecryptionStatusReplacesLegacyKeyOk(t *testing.T) {
+	legacyKeyOk := models.Attribute{Key: wmbusKeyOkAttribute, Value: "false"}
+	legacyWebUiKeyOk := models.Attribute{Key: wmbusKeyOkAttribute, Value: "false", Origin: "web-ui"}
+	handler, token, cached, _ := newWmbusTestDevice(t, wmbusTestMessage("77231609"), []models.Attribute{wmbusTestKey, legacyKeyOk, legacyWebUiKeyOk})
+	changedKey := models.Attribute{Key: "wmbus/key", Value: "000102030405060708090A0B0C0D0E0F"}
+	webUiAttr := models.Attribute{Key: "location", Value: "basement", Origin: "web-ui"}
+	lastSeen := models.Attribute{Key: wmbusLastSeenAttributePrefix + "nimbus", Value: "2026-10-26T12:00:00Z", Origin: "nimbus"}
+	writeStoredAttributes(t, handler, token, cached, []models.Attribute{changedKey, legacyKeyOk, legacyWebUiKeyOk, webUiAttr, lastSeen})
+
+	err := handler.updateDeviceDecryptionStatus(token, cached, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	attributes := readStoredAttributes(t, handler, token, cached.Id)
+	keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: "true", Origin: connectorOrigin}
+	want := []models.Attribute{changedKey, keyOkAttr, webUiAttr, lastSeen}
+	if len(attributes) != len(want) || !containsAll(attributes, want) {
+		t.Errorf("expected both legacy wmbus/key-ok replaced and the other attributes kept, got %#v", attributes)
+	}
+}
+
+// an account default is merged into the device on read and must neither count as legacy nor get stored
+func TestDecryptionStatusIgnoresDefaultKeyOk(t *testing.T) {
+	defaultKeyOk := models.Attribute{Key: wmbusKeyOkAttribute, Value: "false", Origin: defaultAttributeOrigin}
+	defaultAttr := models.Attribute{Key: "last_message_max_age", Value: "6h", Origin: defaultAttributeOrigin}
+	handler, token, cached, _ := newWmbusTestDevice(t, wmbusTestMessage("77231610"), []models.Attribute{wmbusTestKey, defaultKeyOk, defaultAttr})
+
+	err := handler.updateDeviceDecryptionStatus(token, cached, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	attributes := readStoredAttributes(t, handler, token, cached.Id)
+	keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: "true", Origin: connectorOrigin}
+	want := []models.Attribute{wmbusTestKey, defaultKeyOk, defaultAttr, keyOkAttr}
+	if len(attributes) != len(want) || !containsAll(attributes, want) {
+		t.Errorf("expected wmbus/key-ok of the connector next to untouched defaults, got %#v", attributes)
+	}
+}
+
+// the remembered value must not suppress a write of a different value
+func TestDecryptionStatusChangesValue(t *testing.T) {
+	handler, token, cached, _ := newWmbusTestDevice(t, wmbusTestMessage("77231611"), []models.Attribute{wmbusTestKey})
+	for _, value := range []string{"true", "false"} {
+		err := handler.updateDeviceDecryptionStatus(token, cached, value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		attributes := readStoredAttributes(t, handler, token, cached.Id)
+		keyOkAttr := models.Attribute{Key: wmbusKeyOkAttribute, Value: value, Origin: connectorOrigin}
+		if !slices.Contains(attributes, keyOkAttr) {
+			t.Errorf("expected wmbus/key-ok %s, got %#v", value, attributes)
+		}
+	}
+}
+
+func containsAll(attributes []models.Attribute, want []models.Attribute) bool {
+	for _, attr := range want {
+		if !slices.Contains(attributes, attr) {
+			return false
+		}
+	}
+	return true
 }

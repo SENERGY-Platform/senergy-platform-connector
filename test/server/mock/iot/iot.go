@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"runtime/debug"
+	"slices"
 	"sync"
 
 	"github.com/SENERGY-Platform/models/go/models"
@@ -166,6 +167,33 @@ func (this *Controller) PublishDeviceUpdate(id string, device model.Device) (res
 		}
 	}
 	return device, nil, 200
+}
+
+// PublishDeviceAttributesUpdate mirrors the device-manager: with origins, the stored attributes of other origins are kept
+// and only attributes of these origins are taken from the request.
+func (this *Controller) PublishDeviceAttributesUpdate(id string, attributes []model.Attribute, origins []string) (result interface{}, err error, code int) {
+	this.mux.Lock()
+	device, exists := this.devices[id]
+	this.mux.Unlock()
+	if !exists {
+		return nil, errors.New("404"), 404
+	}
+	if len(origins) > 0 {
+		merged := []model.Attribute{}
+		for _, attr := range device.Attributes {
+			if !slices.Contains(origins, attr.Origin) {
+				merged = append(merged, attr)
+			}
+		}
+		for _, attr := range attributes {
+			if slices.Contains(origins, attr.Origin) {
+				merged = append(merged, attr)
+			}
+		}
+		attributes = merged
+	}
+	device.Attributes = attributes
+	return this.PublishDeviceUpdate(id, device)
 }
 
 func (this *Controller) PublishDeviceDelete(id string) (err error, code int) {
