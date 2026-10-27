@@ -40,6 +40,25 @@ type Envelope struct {
 	Value     map[string]interface{} `json:"value"`
 }
 
+// HealthReport documents the payload on the health topic; the connector forwards it verbatim.
+type HealthReport struct {
+	Version      int                    `json:"version"`
+	Time         string                 `json:"time" format:"date-time"`
+	State        int                    `json:"state" description:"0 undetermined, 1 healthy, 2 unhealthy"`
+	Reasons      []string               `json:"reasons"`
+	Core         map[string]interface{} `json:"core" description:"body of core-manager GET /health or null"`
+	CoreError    string                 `json:"core_error"`
+	Modules      map[string]interface{} `json:"modules" description:"body of module-manager GET /health/deployments or null"`
+	ModulesError string                 `json:"modules_error"`
+}
+
+type GatewayHealthMessage struct {
+	HubId  string       `json:"hub_id"`
+	UserId string       `json:"user_id"`
+	Time   string       `json:"time" format:"date-time" description:"when the connector accepted the publish"`
+	Report HealthReport `json:"report"`
+}
+
 func main() {
 	configLocation := flag.String("config", "../../config.json", "configuration file")
 	flag.Parse()
@@ -143,6 +162,21 @@ func main() {
 				Title: "HubLog",
 			},
 			MessageSample: new(connectionlog.HubLog),
+		},
+	}))
+
+	mustNotFail(reflector.AddChannel(asyncapi.ChannelInfo{
+		Name: conf.GatewayHealthTopic,
+		BaseChannelItem: &spec.ChannelItem{
+			Servers:     []string{"kafka"},
+			Description: "may be configured by config.GatewayHealthTopic; message key is the hub id",
+		},
+		Subscribe: &asyncapi.MessageSample{
+			MessageEntity: spec.MessageEntity{
+				Name:  "GatewayHealth",
+				Title: "GatewayHealth",
+			},
+			MessageSample: new(GatewayHealthMessage),
 		},
 	}))
 
@@ -305,6 +339,21 @@ func main() {
 				Title: "Error-Message",
 			},
 			MessageSample: "",
+		},
+	}))
+
+	mustNotFail(reflector.AddChannel(asyncapi.ChannelInfo{
+		Name: "health",
+		BaseChannelItem: &spec.ChannelItem{
+			Servers:     []string{"mqtt"},
+			Description: "may be configured by config.HealthTopic, disabled by default. the client id must be a hub the user may access; accepted reports are forwarded to config.GatewayHealthTopic. subscriptions are rejected. technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks.",
+		},
+		Publish: &asyncapi.MessageSample{
+			MessageEntity: spec.MessageEntity{
+				Name:  "HealthReport",
+				Title: "HealthReport",
+			},
+			MessageSample: new(HealthReport),
 		},
 	}))
 

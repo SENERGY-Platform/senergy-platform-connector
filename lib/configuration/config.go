@@ -90,6 +90,11 @@ type ConfigStruct struct {
 
 	FogHandlerTopicPrefix string
 
+	HealthTopic                 string // "" or "-" disables the health handler
+	GatewayHealthTopic          string
+	HealthHubCheckCacheDuration string
+	HealthMaxPayloadSize        int64
+
 	KafkaPartitionNum      int
 	KafkaReplicationFactor int
 

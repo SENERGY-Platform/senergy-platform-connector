@@ -36,6 +36,7 @@ import (
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/event"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/export"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/fog"
+	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/health"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/notifications"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/process"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler/response"
@@ -205,6 +206,14 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 	}
 	if config.FogHandlerTopicPrefix != "" && config.FogHandlerTopicPrefix != "-" {
 		handlers = append(handlers, fog.NewHandler(connector, config.FogHandlerTopicPrefix))
+	}
+	if health.Enabled(config.HealthTopic) {
+		healthHandler, err := health.NewFromConfig(config, connector, connector.Security(), connector.Iot())
+		if err != nil {
+			config.GetLogger().Error("unable to init health handler", "error", err)
+			return err
+		}
+		handlers = append(handlers, healthHandler)
 	}
 
 	var connectionLimit *connectionlimit.ConnectionLimitHandler

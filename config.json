@@ -52,6 +52,11 @@
 
     "FogHandlerTopicPrefix": "fog/",
 
+    "HealthTopic": "-",
+    "GatewayHealthTopic": "gateway_health",
+    "HealthHubCheckCacheDuration": "10m",
+    "HealthMaxPayloadSize": 65536,
+
     "KafkaPartitionNum": 1,
     "KafkaReplicationFactor": 1,
 
@@ -181,6 +186,32 @@
             }
         ],
         "gateway_log":[
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "retention.bytes",
+                "ConfigValue": "-1"
+            },
+            {
+                "ConfigName":  "cleanup.policy",
+                "ConfigValue": "compact"
+            },
+            {
+                "ConfigName":  "delete.retention.ms",
+                "ConfigValue": "86400000"
+            },
+            {
+                "ConfigName":  "segment.ms",
+                "ConfigValue": "604800000"
+            },
+            {
+                "ConfigName":  "min.cleanable.dirty.ratio",
+                "ConfigValue": "0.1"
+            }
+        ],
+        "gateway_health":[
             {
                 "ConfigName":  "retention.ms",
                 "ConfigValue": "-1"

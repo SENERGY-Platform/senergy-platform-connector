@@ -223,6 +223,20 @@
                 }
             ]
         },
+        "gateway_health": {
+            "address": "gateway_health",
+            "messages": {
+                "subscribe.message": {
+                    "$ref": "#/components/messages/GatewayHealthMessage"
+                }
+            },
+            "description": "may be configured by config.GatewayHealthTopic; message key is the hub id",
+            "servers": [
+                {
+                    "$ref": "#/servers/kafka"
+                }
+            ]
+        },
         "gateway_log": {
             "address": "gateway_log",
             "messages": {
@@ -233,6 +247,20 @@
             "servers": [
                 {
                     "$ref": "#/servers/kafka"
+                }
+            ]
+        },
+        "health": {
+            "address": "health",
+            "messages": {
+                "publish.message": {
+                    "$ref": "#/components/messages/HealthReport"
+                }
+            },
+            "description": "may be configured by config.HealthTopic, disabled by default. the client id must be a hub the user may access; accepted reports are forwarded to config.GatewayHealthTopic. subscriptions are rejected. technically not received by mqtt subscription. published mqtt messages will be received by vernemqtt webhooks.",
+            "servers": [
+                {
+                    "$ref": "#/servers/mqtt"
                 }
             ]
         },
@@ -433,6 +461,17 @@
                 }
             ]
         },
+        "gateway_health.subscribe": {
+            "action": "send",
+            "channel": {
+                "$ref": "#/channels/gateway_health"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/gateway_health/messages/subscribe.message"
+                }
+            ]
+        },
         "gateway_log.subscribe": {
             "action": "send",
             "channel": {
@@ -441,6 +480,17 @@
             "messages": [
                 {
                     "$ref": "#/channels/gateway_log/messages/subscribe.message"
+                }
+            ]
+        },
+        "health.publish": {
+            "action": "receive",
+            "channel": {
+                "$ref": "#/channels/health"
+            },
+            "messages": [
+                {
+                    "$ref": "#/channels/health/messages/publish.message"
                 }
             ]
         },
@@ -535,6 +585,72 @@
                             "object",
                             "null"
                         ]
+                    }
+                },
+                "type": "object"
+            },
+            "GatewayHealthMessage": {
+                "properties": {
+                    "hub_id": {
+                        "type": "string"
+                    },
+                    "report": {
+                        "$ref": "#/components/schemas/HealthReport"
+                    },
+                    "time": {
+                        "description": "when the connector accepted the publish",
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "HealthReport": {
+                "properties": {
+                    "core": {
+                        "additionalProperties": {},
+                        "description": "body of core-manager GET /health or null",
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "core_error": {
+                        "type": "string"
+                    },
+                    "modules": {
+                        "additionalProperties": {},
+                        "description": "body of module-manager GET /health/deployments or null",
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "modules_error": {
+                        "type": "string"
+                    },
+                    "reasons": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": [
+                            "array",
+                            "null"
+                        ]
+                    },
+                    "state": {
+                        "description": "0 undetermined, 1 healthy, 2 unhealthy",
+                        "type": "integer"
+                    },
+                    "time": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
                     }
                 },
                 "type": "object"
@@ -1016,6 +1132,20 @@
                 },
                 "name": "Envelope",
                 "title": "Envelope"
+            },
+            "GatewayHealthMessage": {
+                "payload": {
+                    "$ref": "#/components/schemas/GatewayHealthMessage"
+                },
+                "name": "GatewayHealth",
+                "title": "GatewayHealth"
+            },
+            "HealthReport": {
+                "payload": {
+                    "$ref": "#/components/schemas/HealthReport"
+                },
+                "name": "HealthReport",
+                "title": "HealthReport"
             },
             "LibRequestEnvelope": {
                 "payload": {
