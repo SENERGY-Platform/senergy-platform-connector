@@ -94,6 +94,38 @@ type Controller struct {
 	hubs             map[string]model.Hub
 	protocols        map[string]model.Protocol
 	kafkaProducer    kafka.ProducerInterface
+	localDeviceReads map[LocalDeviceAccessGrant]bool
+}
+
+// LocalDeviceAccessGrant allows UserId to read the device LocalId of OwnerId (see CheckLocalDeviceRead).
+type LocalDeviceAccessGrant struct {
+	UserId  string `json:"user_id"`
+	OwnerId string `json:"owner_id"`
+	LocalId string `json:"local_id"`
+}
+
+func (this *Controller) GrantLocalDeviceAccess(grant LocalDeviceAccessGrant) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	if this.localDeviceReads == nil {
+		this.localDeviceReads = map[LocalDeviceAccessGrant]bool{}
+	}
+	this.localDeviceReads[grant] = true
+}
+
+// CheckLocalDeviceRead mirrors the device-repository lookup by owner and local id:
+// 404 if the device does not belong to the owner, 403 if the user is neither the owner nor granted access.
+func (this *Controller) CheckLocalDeviceRead(userId string, ownerId string, localId string, device interface{}) (err error, code int) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	d, ok := device.(model.Device)
+	if !ok || d.OwnerId != ownerId {
+		return errors.New("404"), http.StatusNotFound
+	}
+	if userId == ownerId || this.localDeviceReads[LocalDeviceAccessGrant{UserId: userId, OwnerId: ownerId, LocalId: localId}] {
+		return nil, http.StatusOK
+	}
+	return errors.New("403"), http.StatusForbidden
 }
 
 type command string

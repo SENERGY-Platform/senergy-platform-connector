@@ -24,12 +24,38 @@ func LocalDevicesEndpoints(control *Controller, router *httprouter.Router) {
 			http.Error(writer, err.Error(), errCode)
 			return
 		}
+		//like the device-repository: with owner_id the device is looked up by owner and local id
+		//and the caller needs read access; without it nothing is checked (behavior of the other tests)
+		if ownerId := request.URL.Query().Get("owner_id"); ownerId != "" {
+			token, err := jwt.GetParsedToken(request)
+			if err != nil {
+				http.Error(writer, err.Error(), http.StatusUnauthorized)
+				return
+			}
+			err, errCode = control.CheckLocalDeviceRead(token.GetUserId(), ownerId, params.ByName("id"), result)
+			if err != nil {
+				http.Error(writer, err.Error(), errCode)
+				return
+			}
+		}
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = json.NewEncoder(writer).Encode(result)
 		if err != nil {
 			log.Println("ERROR: unable to encode response", err)
 		}
 		return
+	})
+
+	//test setup: grants a user read access to a device of another owner, used by GET /local-devices/:id?owner_id=
+	router.PUT("/mock/local-device-access", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		grant := LocalDeviceAccessGrant{}
+		err := json.NewDecoder(request.Body).Decode(&grant)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		control.GrantLocalDeviceAccess(grant)
+		writer.WriteHeader(http.StatusOK)
 	})
 
 	router.POST(resource, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
