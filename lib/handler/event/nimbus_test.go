@@ -251,6 +251,47 @@ func TestKeepUnmanagedAttributes(t *testing.T) {
 	}
 }
 
+func TestMarkNewUnfinishedAttribute(t *testing.T) {
+	generated := []models.Attribute{{Key: "wmbus/version", Value: "0x1b"}}
+
+	result := markNewUnfinishedAttribute(generated, true)
+	if len(result) != 2 || result[1].Key != unfinishedAttribute || result[1].Value != "true" {
+		t.Errorf("new device type must get %v=true, got %v", unfinishedAttribute, result)
+	}
+
+	result = markNewUnfinishedAttribute(generated, false)
+	if len(result) != 1 {
+		t.Errorf("existing device type must not get %v, got %v", unfinishedAttribute, result)
+	}
+}
+
+func TestUnfinishedAttributeOnExistingDeviceType(t *testing.T) {
+	generated := []models.Attribute{{Key: "wmbus/version", Value: "0x1b"}}
+
+	// existing device type without the attribute: keepUnmanagedAttributes adds nothing, so it stays absent
+	existingWithout := keepUnmanagedAttributes([]models.Attribute{{Key: "wmbus/version", Value: "0x1a"}}, generated)
+	result := markNewUnfinishedAttribute(existingWithout, false)
+	if slices.ContainsFunc(result, func(a models.Attribute) bool { return a.Key == unfinishedAttribute }) {
+		t.Errorf("existing device type without %v must not get it, got %v", unfinishedAttribute, result)
+	}
+
+	// existing device type with the attribute: kept exactly once
+	existingWith := keepUnmanagedAttributes([]models.Attribute{
+		{Key: "wmbus/version", Value: "0x1a"},
+		{Key: unfinishedAttribute, Value: "true"},
+	}, generated)
+	result = markNewUnfinishedAttribute(existingWith, false)
+	count := 0
+	for _, a := range result {
+		if a.Key == unfinishedAttribute {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("existing %v must be kept exactly once, got %d in %v", unfinishedAttribute, count, result)
+	}
+}
+
 func requireWmbusmeters(t *testing.T) {
 	_, err := exec.Command("wmbusmeters").CombinedOutput()
 	if err != nil && strings.Contains(err.Error(), "executable file not found in $PATH") {

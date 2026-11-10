@@ -42,6 +42,7 @@ const (
 	wmbusDataProtocolSegment     = "data"
 	wmbusDecryptedService        = "decrypted"
 	wmbusDriverAttribute         = "wmbus/driver"
+	unfinishedAttribute          = "unfinished" // marks a device type that still needs manual completion; value "true"
 	wmbusKeyOkAttribute          = "wmbus/key-ok"
 	connectorOrigin              = "senergy-platform-connector"
 	defaultAttributeOrigin       = "default" // account defaults, merged into the device on read but not stored with it
@@ -228,6 +229,7 @@ func (this *Handler) ensureWmbusDeviceType(deviceTypeId string, msg model.Encryp
 
 	deviceType = util.DeviceType(deviceTypeId, msg.Manufacturer, msg.Type, msg.Version, this.config.WmbusDeviceClassId, this.config.SenergyProtocolId, this.config.SenergyProtoclSegment, decoded)
 	deviceType.Attributes = keepUnmanagedAttributes(existingDeviceType.Attributes, deviceType.Attributes)
+	deviceType.Attributes = markNewUnfinishedAttribute(deviceType.Attributes, existingDeviceType.Id == "")
 
 	if wmbusDeviceTypeNeedsUpdate(existingDeviceType, deviceType) {
 		this.config.GetLogger().Info("Updating wmbus device type " + deviceType.Id)
@@ -282,6 +284,15 @@ func keepUnmanagedAttributes(existing []models.Attribute, generated []models.Att
 		}
 	}
 	return result
+}
+
+// markNewUnfinishedAttribute appends the unfinished attribute to the attributes of a device type that is created for the first time.
+// Existing device types are returned unchanged, so an attribute removed by a person stays removed.
+func markNewUnfinishedAttribute(attributes []models.Attribute, isNew bool) []models.Attribute {
+	if !isNew || slices.ContainsFunc(attributes, func(a models.Attribute) bool { return a.Key == unfinishedAttribute }) {
+		return attributes
+	}
+	return append(attributes, models.Attribute{Key: unfinishedAttribute, Value: "true"})
 }
 
 // recordWmbusReceiver stores the time the nimbus received a telegram of the device, in one attribute per nimbus.
