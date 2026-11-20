@@ -202,7 +202,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 		httpHandler = router
 	}
 
-	server := &http.Server{Addr: ":" + config.WebhookPort, Handler: httpHandler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
+	server := newServer(":"+config.WebhookPort, httpHandler)
 	server.RegisterOnShutdown(func() {
 		config.GetLogger().Debug("server shutdown")
 	})
@@ -215,6 +215,21 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	}()
 
 	return server
+}
+
+// webhookIdleTimeout has to exceed the time VerneMQ keeps an idle webhook connection in its pool (vmq_webhooks.pool_timeout, 60s).
+// Otherwise the server closes connections the broker still reuses, the broker refuses the publish and disconnects the client.
+const webhookIdleTimeout = 90 * time.Second
+
+func newServer(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		WriteTimeout:      10 * time.Second,
+		ReadTimeout:       2 * time.Second,
+		ReadHeaderTimeout: 2 * time.Second,
+		IdleTimeout:       webhookIdleTimeout,
+	}
 }
 
 func contains(list []string, element string) bool {
