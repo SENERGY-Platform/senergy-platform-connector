@@ -25,7 +25,12 @@ The login webhook receives the mountpoint of the listener. With
 `TOKEN_LOGIN_MOUNTPOINT` set and equal to it, the login is a token login:
 
 1. The password is the access token; a `Bearer ` prefix is stripped.
-2. Signature and key are verified against `KEYCLOAK_CERT_URL`.
+2. Signature and key are verified against `KEYCLOAK_CERT_URL`. The keys are
+   cached by `kid`; a token with an unknown `kid` triggers a download, at most
+   one at a time and one per 10 seconds, with a 10 second timeout (service-commons
+   from 2026-11-12 on). The listener is public, so without that bound every login
+   attempt with a made-up `kid` would cost a request to Keycloak and could hold
+   the webhook pool the device logins share.
 3. The token must not be expired and must carry an `exp`; the connector reads
    `exp` itself, because the verification of service-commons does not check it.
 4. The `sub` of the token must equal the username.
