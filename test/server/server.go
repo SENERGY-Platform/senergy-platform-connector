@@ -50,29 +50,35 @@ func getOutboundIP() (net.IP, error) {
 }
 
 func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config, mqttVersion client.MqttVersion) (config configuration.Config, brokerUrlForClients string, err error) {
+	config, brokerUrlForClients, _, err = NewWithBrokerOptions(ctx, wg, startConfig, mqttVersion, docker.VernemqttOptions{})
+	return
+}
+
+// NewWithBrokerOptions is New with a customized broker; websocketUrl is the url of the WebSocket listener, if the options ask for one
+func NewWithBrokerOptions(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Config, mqttVersion client.MqttVersion, brokerOptions docker.VernemqttOptions) (config configuration.Config, brokerUrlForClients string, websocketUrl string, err error) {
 	config = startConfig
 
 	err = auth.Mock(config, ctx)
 	if err != nil {
-		return config, "", err
+		return config, "", "", err
 	}
 
 	config.WebhookPort, err = GetFreePort()
 	if err != nil {
 		log.Println("unable to find free port", err)
-		return config, "", err
+		return config, "", "", err
 	}
 
 	config.HttpCommandConsumerPort, err = GetFreePort()
 	if err != nil {
 		log.Println("unable to find free port", err)
-		return config, "", err
+		return config, "", "", err
 	}
 
 	outboundIp, err := getOutboundIP()
 	if err != nil {
 		log.Println("unable to determine outbound ip", err)
-		return config, "", err
+		return config, "", "", err
 	}
 	hostIp := outboundIp.String()
 
@@ -80,19 +86,19 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
-		return config, "", err
+		return config, "", "", err
 	}
 
 	_, err = iot.Mock(config, ctx, true)
 	if err != nil {
-		return config, "", err
+		return config, "", "", err
 	}
 
 	memcachePort, memcacheIp, err := docker.Memcached(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
-		return config, "", err
+		return config, "", "", err
 	}
 	config.MemcachedUrl = memcacheIp + ":" + memcachePort
 	config.IotCacheUrls = memcacheIp + ":" + memcachePort
@@ -102,11 +108,11 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 		config.MqttVersion = "5"
 	}
 	var brokerUrlForConnector string
-	brokerUrlForConnector, brokerUrlForClients, config.VmqAdminApiUrl, err = docker.Vernemqtt(ctx, wg, hostIp+":"+config.WebhookPort, config)
+	brokerUrlForConnector, brokerUrlForClients, config.VmqAdminApiUrl, websocketUrl, err = docker.VernemqttWithOptions(ctx, wg, hostIp+":"+config.WebhookPort, config, brokerOptions)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
-		return config, "", err
+		return config, "", "", err
 	}
 	config.MqttBroker = brokerUrlForConnector
 
@@ -119,10 +125,10 @@ func New(ctx context.Context, wg *sync.WaitGroup, startConfig configuration.Conf
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
-		return config, "", err
+		return config, "", "", err
 	}
 
-	return config, brokerUrlForClients, nil
+	return config, brokerUrlForClients, websocketUrl, nil
 }
 
 func getFreePort() (int, error) {

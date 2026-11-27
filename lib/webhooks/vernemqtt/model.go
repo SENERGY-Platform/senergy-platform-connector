@@ -37,6 +37,7 @@ type SubscribeWebhookMsg struct {
 
 type UnsubscribeWebhookMsg struct {
 	Username string   `json:"username"`
+	ClientId string   `json:"client_id"`
 	Topics   []string `json:"topics"`
 }
 
@@ -45,9 +46,21 @@ type LoginWebhookMsg struct {
 	PeerPort     int    `json:"peer_port"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
+	Mountpoint   string `json:"mountpoint"`
 	ClientId     string `json:"client_id"`
 	CleanSession bool   `json:"clean_session"` //v4
 	CleanStart   bool   `json:"clean_start"`   //v5
+}
+
+// TokenLoginResponse answers a successful token login; VerneMQ applies both modifiers
+type TokenLoginResponse struct {
+	Result    string              `json:"result" example:"ok" default:"ok"`
+	Modifiers TokenLoginModifiers `json:"modifiers"`
+}
+
+type TokenLoginModifiers struct {
+	Mountpoint string `json:"mountpoint"`
+	ClientId   string `json:"client_id"`
 }
 
 type OnlineWebhookMsg struct {

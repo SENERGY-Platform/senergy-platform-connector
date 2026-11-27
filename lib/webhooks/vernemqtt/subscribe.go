@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strings"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/handler"
@@ -60,6 +61,13 @@ func subscribe(writer http.ResponseWriter, request *http.Request, config configu
 		return
 	} else {
 		for _, topic := range msg.Topics {
+			if isTokenSessionClientId(msg.ClientId) && strings.SplitN(topic.Topic, "/", 2)[0] != "event" {
+				// token sessions (browser clients) may only subscribe to events; $share/<group>/ subscriptions
+				// are covered too, because their first level is "$share"
+				config.GetLogger().Debug("InitWebhooks::subscribe refuse topic of token session", "clientId", msg.ClientId, "topic", topic.Topic)
+				rejected = append(rejected, topic)
+				continue
+			}
 			handlerResult, err := handler.HandleTopicSubscribe(msg.ClientId, msg.Username, prepareTopic(topic.Topic), handlers)
 			if err != nil {
 				config.GetLogger().Debug("InitWebhooks::subscribe handler error", "error", err)

@@ -32,6 +32,8 @@ definitions:
         type: boolean
       client_id:
         type: string
+      mountpoint:
+        type: string
       password:
         type: string
       peer_addr:
@@ -108,6 +110,22 @@ definitions:
         items:
           $ref: '#/definitions/vernemqtt.WebhookmsgTopic'
         type: array
+    type: object
+  vernemqtt.TokenLoginModifiers:
+    properties:
+      client_id:
+        type: string
+      mountpoint:
+        type: string
+    type: object
+  vernemqtt.TokenLoginResponse:
+    properties:
+      modifiers:
+        $ref: '#/definitions/vernemqtt.TokenLoginModifiers'
+      result:
+        default: ok
+        example: ok
+        type: string
     type: object
   vernemqtt.UnsubResponse:
     properties:
@@ -203,8 +221,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: checks auth; all responses are with code=200, differences in swagger
-        doc are because of technical incompatibilities of the documentation format
+      description: checks auth; logins on the token login mountpoint authenticate
+        with a keycloak access token as password and are answered with TokenLoginResponse;
+        all responses are with code=200, differences in swagger doc are because of
+        technical incompatibilities of the documentation format
       parameters:
       - description: login infos
         in: body
@@ -219,6 +239,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/vernemqtt.OkResponse'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/vernemqtt.TokenLoginResponse'
         "400":
           description: Bad Request
           schema:

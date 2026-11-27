@@ -112,6 +112,9 @@
     "VmqAdminApiUrl": "",
     "DisconnectCommandDelay": "120s",
 
+    "KeycloakCertUrl": "",
+    "TokenLoginMountpoint": "",
+
     "InitTopics": false,
 
     "KafkaTopicConfigs": {

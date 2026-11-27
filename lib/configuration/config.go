@@ -161,6 +161,13 @@ type ConfigStruct struct {
 	VmqAdminApiUrl         string
 	DisconnectCommandDelay string
 
+	// KeycloakCertUrl is the JWKS url of the realm (.../protocol/openid-connect/certs) that verifies the
+	// access tokens of token logins; token logins are refused while it is empty
+	KeycloakCertUrl string
+	// TokenLoginMountpoint is the VerneMQ mountpoint whose logins authenticate with a Keycloak access token
+	// as password (browser WebSocket listener); "" disables token logins and refuses every non-empty mountpoint
+	TokenLoginMountpoint string
+
 	InitTopics bool
 
 	NimbusDeviceTypeId       string

@@ -222,6 +222,7 @@ func Start(ctx context.Context, config configuration.Config, waitingRoom event.W
 	}
 
 	InitWebhooks(config, connector, logger, handlers, connectionLimit)
+	StartTokenSessionSweeper(ctx, config)
 
 	if config.StartupDelay != 0 {
 		time.Sleep(time.Duration(config.StartupDelay) * time.Second)

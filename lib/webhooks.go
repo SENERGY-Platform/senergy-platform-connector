@@ -17,6 +17,7 @@
 package lib
 
 import (
+	"context"
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlog"
@@ -28,4 +29,9 @@ import (
 
 func InitWebhooks(config configuration.Config, connector *platform_connector_lib.Connector, logger connectionlog.Logger, handlers []handler.Handler, connectionLimit *connectionlimit.ConnectionLimitHandler) *http.Server {
 	return vernemqtt.InitWebhooks(config, connector, logger, handlers, connectionLimit)
+}
+
+// StartTokenSessionSweeper disconnects the sessions of token logins whose token has expired
+func StartTokenSessionSweeper(ctx context.Context, config configuration.Config) {
+	vernemqtt.StartTokenSessionSweeper(ctx, config)
 }

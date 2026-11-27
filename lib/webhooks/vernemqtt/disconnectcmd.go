@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/configuration"
@@ -103,8 +104,19 @@ func execDisconnectCommand(config configuration.Config, cmd DisconnectCommand, l
 
 func listSessionsClientIdsOfUser(apiUrl string, user string) (result []string, err error) {
 	// vmq-admin session show --user=<user>
+	return listSessionsClientIds(apiUrl, "?--user="+url.QueryEscape(user))
+}
 
-	path := "/api/v1/session/show?--user=" + url.QueryEscape(user)
+// sessionListLimit lifts the default limit of vmq-admin session show (100 sessions)
+const sessionListLimit = 1000000
+
+func listAllSessionsClientIds(apiUrl string) (result []string, err error) {
+	// vmq-admin session show --client_id --limit=<n>
+	return listSessionsClientIds(apiUrl, "?--client_id&--limit="+strconv.Itoa(sessionListLimit))
+}
+
+func listSessionsClientIds(apiUrl string, query string) (result []string, err error) {
+	path := "/api/v1/session/show" + query
 	req, err := http.NewRequest("GET", apiUrl+path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("ubable to get user sessions: %w", err)

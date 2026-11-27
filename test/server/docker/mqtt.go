@@ -18,7 +18,25 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+// VernemqttOptions are the deviations from the default broker of the tests
+type VernemqttOptions struct {
+	// Image overrides the broker image
+	Image string
+	// WebsocketMountpoint adds a WebSocket listener with this mountpoint (token logins)
+	WebsocketMountpoint string
+}
+
+const defaultVernemqttImage = "ghcr.io/senergy-platform/vernemq:v2.1.2"
+
+const websocketPort = "8083"
+
 func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config) (brokerUrlForConnector string, brokerUrlForClients string, apiUrl string, err error) {
+	brokerUrlForConnector, brokerUrlForClients, apiUrl, _, err = VernemqttWithOptions(ctx, wg, connecorUrl, config, VernemqttOptions{})
+	return
+}
+
+// VernemqttWithOptions additionally returns the url of the WebSocket listener, if one is configured
+func VernemqttWithOptions(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, config configuration.Config, options VernemqttOptions) (brokerUrlForConnector string, brokerUrlForClients string, apiUrl string, websocketUrl string, err error) {
 	log.Println("start mqtt")
 	ports := []string{"1883/tcp", "8888/tcp"}
 	env := map[string]string{}
@@ -50,7 +68,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			return nil
 		})
 		if err != nil {
-			return "", "", "", err
+			return "", "", "", "", err
 		}
 		err = filepath.WalkDir(filepath.Join(dir, "mqtt_certs", "ca"), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -68,7 +86,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 			return nil
 		})
 		if err != nil {
-			return "", "", "", err
+			return "", "", "", "", err
 		}
 		env = map[string]string{
 			"DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL":                     "debug",
@@ -117,6 +135,13 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 
 	mqttBroker := "3,4,5"
 
+	if options.WebsocketMountpoint != "" {
+		ports = append(ports, websocketPort+"/tcp")
+		env["DOCKER_VERNEMQ_LISTENER__WS__DEFAULT"] = "0.0.0.0:" + websocketPort
+		env["DOCKER_VERNEMQ_LISTENER__WS__DEFAULT__MOUNTPOINT"] = options.WebsocketMountpoint
+		env["DOCKER_VERNEMQ_LISTENER__WS__ALLOWED_PROTOCOL_VERSIONS"] = mqttBroker
+	}
+
 	env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_PROTOCOL_VERSIONS"] = mqttBroker
 	env["DOCKER_VERNEMQ_LISTENER.tcp.allowed_protocol_versions"] = mqttBroker
 	env["DOCKER_VERNEMQ_LISTENER__TCP__ALLOWED_protocol_versions"] = mqttBroker
@@ -133,9 +158,14 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__HOOK"] = "on_unsubscribe_m5"
 	env["DOCKER_VERNEMQ_VMQ_WEBHOOKS__SEPLUNSUBSCR5__ENDPOINT"] = "http://" + connecorUrl + "/unsubscribe"
 
+	image := defaultVernemqttImage
+	if options.Image != "" {
+		image = options.Image
+	}
+
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:           "ghcr.io/senergy-platform/vernemq:v2.1.2",
+			Image:           image,
 			Tmpfs:           map[string]string{},
 			ExposedPorts:    ports,
 			WaitingFor:      wait.ForListeningPort("1883/tcp"),
@@ -146,7 +176,7 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		Started: true,
 	})
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 	wg.Add(1)
 	go func() {
@@ -171,21 +201,29 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 	if config.MqttAuthMethod == "certificate" {
 		port, err := c.MappedPort(ctx, "8883/tcp")
 		if err != nil {
-			return "", "", "", err
+			return "", "", "", "", err
 		}
 		brokerUrlForClients = "ssl://" + ipAddress + ":" + port.Port()
 	} else {
 		port, err := c.MappedPort(ctx, "1883/tcp")
 		if err != nil {
-			return "", "", "", err
+			return "", "", "", "", err
 		}
 		brokerUrlForClients = "tcp://" + ipAddress + ":" + port.Port()
 	}
 	port, err := c.MappedPort(ctx, "1883/tcp")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 	brokerUrlForConnector = "tcp://" + ipAddress + ":" + port.Port()
+
+	if options.WebsocketMountpoint != "" {
+		wsPort, err := c.MappedPort(ctx, websocketPort+"/tcp")
+		if err != nil {
+			return "", "", "", "", err
+		}
+		websocketUrl = "ws://" + ipAddress + ":" + wsPort.Port() + "/mqtt"
+	}
 
 	//the open port does not mean the node answers vmq-admin yet; retry instead of
 	//sleeping for a guessed duration
@@ -204,14 +242,14 @@ func Vernemqtt(ctx context.Context, wg *sync.WaitGroup, connecorUrl string, conf
 		return nil
 	})
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 
 	port, err = c.MappedPort(ctx, "8888/tcp")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 	apiUrl = "http://testkey@" + ipAddress + ":" + port.Port()
 
-	return brokerUrlForConnector, brokerUrlForClients, apiUrl, err
+	return brokerUrlForConnector, brokerUrlForClients, apiUrl, websocketUrl, err
 }

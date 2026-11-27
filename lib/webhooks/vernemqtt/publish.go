@@ -69,6 +69,12 @@ func publish(writer http.ResponseWriter, request *http.Request, config configura
 		sendError(writer, err.Error(), true)
 		return
 	}
+	if isTokenSessionClientId(msg.ClientId) {
+		// token sessions (browser clients) are read only; the prefix is exclusive to them, see login
+		config.GetLogger().Warn("refuse publish of token session", "action", "publish", "clientId", msg.ClientId, "topic", msg.Topic)
+		sendError(writer, "token sessions are not allowed to publish", config.Debug)
+		return
+	}
 	config.GetLogger().Debug("/publish", "clientId", msg.ClientId, "topic", msg.Topic, "msg", msg)
 	if msg.Username == config.AuthClientId {
 		_, err = fmt.Fprint(writer, `{"result": "ok"}`)

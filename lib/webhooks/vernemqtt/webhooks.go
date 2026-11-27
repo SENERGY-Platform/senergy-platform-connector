@@ -29,6 +29,7 @@ import (
 
 	"github.com/SENERGY-Platform/platform-connector-lib/connectionlimit"
 	"github.com/SENERGY-Platform/senergy-platform-connector/lib/webhooks/helper"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"github.com/swaggo/swag"
 
 	platform_connector_lib "github.com/SENERGY-Platform/platform-connector-lib"
@@ -129,6 +130,11 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 
 	logger := config.GetLogger().With("snrgy-log-type", "connector-webhook")
 
+	var tokenCerts *jwt.KeycloakCertProvider
+	if config.KeycloakCertUrl != "" {
+		tokenCerts = &jwt.KeycloakCertProvider{CertUrl: config.KeycloakCertUrl}
+	}
+
 	router.HandleFunc("GET /doc", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		doc, err := swag.ReadDoc()
@@ -161,7 +167,7 @@ func InitWebhooks(config configuration.Config, connector *platform_connector_lib
 	})
 
 	router.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
-		login(writer, request, config, connector, connectionLimit, logger)
+		login(writer, request, config, connector, connectionLimit, tokenCerts, logger)
 	})
 
 	router.HandleFunc("/online", func(writer http.ResponseWriter, request *http.Request) {

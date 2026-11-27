@@ -58,7 +58,8 @@ func unsubscribe(writer http.ResponseWriter, request *http.Request, config confi
 	config.GetLogger().Debug("/unsubscribe", "msg", msg)
 	//defer json.NewEncoder(writer).Encode(map[string]interface{}{"result": "ok", "topics": msg.Topics})
 	defer json.NewEncoder(writer).Encode(UnsubResponse{Result: "ok", Topics: msg.Topics})
-	if msg.Username != config.AuthClientId {
+	// a token session may not subscribe to command topics, so its unsubscribe says nothing about a device connection
+	if msg.Username != config.AuthClientId && !isTokenSessionClientId(msg.ClientId) {
 		token, err := connector.Security().GetCachedUserToken(msg.Username, model.RemoteInfo{})
 		if err != nil {
 			config.GetLogger().Error("InitWebhooks::unsubscribe::GenerateUserToken", "error", err, "username", msg.Username)

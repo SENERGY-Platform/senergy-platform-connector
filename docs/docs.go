@@ -95,7 +95,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "checks auth; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format",
+                "description": "checks auth; logins on the token login mountpoint authenticate with a keycloak access token as password and are answered with TokenLoginResponse; all responses are with code=200, differences in swagger doc are because of technical incompatibilities of the documentation format",
                 "consumes": [
                     "application/json"
                 ],
@@ -119,6 +119,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/vernemqtt.OkResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/vernemqtt.TokenLoginResponse"
                         }
                     },
                     "400": {
@@ -341,6 +347,9 @@ const docTemplate = `{
                 "client_id": {
                     "type": "string"
                 },
+                "mountpoint": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 },
@@ -454,6 +463,30 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/vernemqtt.WebhookmsgTopic"
                     }
+                }
+            }
+        },
+        "vernemqtt.TokenLoginModifiers": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "mountpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "vernemqtt.TokenLoginResponse": {
+            "type": "object",
+            "properties": {
+                "modifiers": {
+                    "$ref": "#/definitions/vernemqtt.TokenLoginModifiers"
+                },
+                "result": {
+                    "type": "string",
+                    "default": "ok",
+                    "example": "ok"
                 }
             }
         },
